@@ -9,24 +9,24 @@ begin
 ;=================== User Settings ================================
 
 out_type = "pdf"
-prescut = 99999.0   ; only storms with pres LOWER than this are included. set to 99999.0 for all storms
-trajDir="./TRAJ_FINAL/"
+trajDir="./trajs/"
 csvdir="./csv-files/"
 gridsize = 8.0
-basin=-1
+;basin=-1
 ;basin=(/1,2,3,4/)
-;basin=1
+basin=1
 pathtoconfiglists="./config-lists/"
-filename="rean_configs.csv"
+filename="sens_configs.csv"
 plot_tables_only=False
 defineMIbypres=False
-styr=1980
-enyr=2016
 
 ;======================= Constants ================================
 ms_to_kts = 1.94384449
 
 ;======================= Calendar logic ================================
+
+styr=1980
+enyr=2016
 
 nyears=enyr-styr+1
 yearArr=ispan(styr,enyr,1)
@@ -69,8 +69,8 @@ isUnstruct = where(isUnstructStr.eq."True",True,False)
 namesplit = get_file_suffix(filename,0)
 basecsv = namesplit@fBase
 
+; create some arrays
 nfiles=dimsizes(files)
-
 valid_files=new(nfiles,"integer")
 
 ;=================== Init arrays ================================
@@ -390,8 +390,8 @@ if (str_get_cols(files(zz),0,0).ne."!") then
   acedens = track_mean(gridsize,0.0,clat,clon,caceall,False,0)
   acedens = acedens/nmodyears
 
-  minpres = track_minmax(gridsize,0.0,clat,clon,cpres,"min",20)
-  maxwind = track_minmax(gridsize,0.0,clat,clon,cwind,"max",20)
+  minpres = track_minmax(gridsize,0.0,clat,clon,cpres,"min",-1)
+  maxwind = track_minmax(gridsize,0.0,clat,clon,cwind,"max",-1)
 
   if (sum(trackdens).eq.0) then
     trackdens=trackdens@_FillValue
