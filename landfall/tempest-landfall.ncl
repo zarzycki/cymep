@@ -1,22 +1,15 @@
-;========================================================
-; This file reads in a traj file produced by the TC tracker
-; and produces a lat-lon plot of trajectories color-coded by intensity
-;========================================================
-load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_code.ncl"
-load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_csm.ncl"
-load "../../../functions/getTrajectoriesGeneric.ncl"
-load "../../../functions/strip_missing.ncl"
-load "../../../functions/find_landfalls.ncl"
-;load "../../../functions/getTrajectories.ncl"
-load "../../../functions/trackDensity.ncl"
-load "../../../functions/mask_tc.ncl"
+load "../functions/getTrajectoriesGeneric.ncl"
+load "../functions/strip_missing.ncl"
+load "../functions/find_landfalls.ncl"
+load "../functions/trackDensity.ncl"
+load "../functions/mask_tc.ncl"
 
 ;========================================================
 begin
 
-trajdir="./TRAJ_FINAL/"
+trajdir="../trajs/"
 ;=================== Get traj data ================================
-filename = "rean_configs.csv"
+filename = "../config-lists/rean_configs.csv"
 lines = asciiread(filename,-1,"string")
 delim = ","
 files  =           str_get_field(lines,1,delim)
@@ -36,6 +29,7 @@ do yy = 0,nfiles-1
 
 ;===========================================================================================
 filebase=files(yy)
+if (str_get_cols(filebase,0,0).ne."!") then
 thefile=trajdir+"/"+filebase
 
 
@@ -397,7 +391,8 @@ delete([/dum,dum1,dum2,dum3,text/])
 delete([/lon,lat,IX,landfall_lon,landfall_lat,yyyy,mm,dd,hh,landfall_region,pres,interp_pres,wind,interp_wind,interp_lon,interp_lat,landfall_wind,landfall_pres,lonjump/])
 list_vars()
 
-end do
+end if  ; end check for !
+end do  ; end file loop
 
 end
 exit

@@ -1,15 +1,9 @@
-;========================================================
-; This file reads in a traj file produced by the TC tracker
-; and produces a lat-lon plot of trajectories color-coded by intensity
-;========================================================
-load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_code.ncl"
-load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_csm.ncl"
-load "read_csv.ncl"
+load "../functions/read_csv.ncl"
 
 begin
 
 ;=================== Get traj data ================================
-filename = "rean_configs.csv"
+filename = "../config-lists/rean_configs.csv"
 lines = asciiread(filename,-1,"string")
 delim = ","
 files  =           str_get_field(lines,1,delim)
@@ -22,13 +16,15 @@ windcorrs = tofloat(str_get_field(lines,6,delim))
 isUnstruct = where(isUnstructStr.eq."True",True,False)
 ;==========================================================
 
-files="./landfall_txt/LF."+files
 delim=","
 
 do ii = 0,dimsizes(files)-1
+if (str_get_cols(files(ii),0,0).ne."!") then
+
+  thisFile="./landfall_txt/LF."+files(ii)
 
   nyears=ensmembers(ii)*yearspermember(ii)
-  file1=read_CSV_f(files(ii))
+  file1=read_CSV_f(thisFile)
 
   lf_reg=file1(:,5)
 
@@ -58,8 +54,10 @@ do ii = 0,dimsizes(files)-1
   end if
 
   delete(file1)
+  delete(thisFile)
   delete(lf_reg)
 
+end if
 end do
 
 end
