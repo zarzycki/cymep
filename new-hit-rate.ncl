@@ -3,10 +3,8 @@
 ; tracking code and plots a track density
 ;==================================================================
 
-load "../../../functions/getTrajectoriesGeneric.ncl"
-load "../../../functions/trackDensity.ncl"
-load "../../../functions/mask_tc.ncl"
-load "./taylor_diagram_cam.ncl"
+load "./functions/mask_tc.ncl"
+load "./functions/getTrajectoriesGeneric.ncl"
 
 begin
 
@@ -47,7 +45,7 @@ styr=1980
 enyr=2015
 nyears=enyr-styr+1
 
-thefile:="TRAJ_FINAL/ibtracs-1980-2019-GLOB.v4.txt"
+thefile:="trajs/ibtracs-1980-2019-GLOB.v4.txt"
 ;thefile:="dev/ibtracs-1998-2008-GLOB.txt"
 ;thefile:="dev/test.txt"
 
@@ -76,7 +74,7 @@ xntimes=xdims(1)
 ; =====
 
 ;thefile:="dev/trajectories.txt.JRA"
-thefile:="TRAJ_FINAL/trajectories.txt.MERRA"
+thefile:="trajs/trajectories.txt.MERRA"
 ;thefile:="e3sm/trajectories.txt.ERA5.T400.DEFAULT"
 
 ncols := 11 ; number of columns in non-header rows of trajectory file
@@ -394,7 +392,7 @@ print("CSI "+CSI)
 ;--------------------------------------------------------
 
 quote = inttochar(34)
-CSVOUTFILE="./rates.txt"
+CSVOUTFILE="./csv-files/rates.txt"
 do h = 0,dimsizes(HR)-1
   if (h .eq. 0) then
     HRstr=tostring(HR(h))
@@ -415,7 +413,7 @@ plotstride=1
 ;--------------------------------------------------------
 print("Beginning plot sequence")
 wcStrtPlot = systemfunc(date_cmd)
-wks  = gsn_open_wks("png","hr_traj")
+wks  = gsn_open_wks("png","fig/hr/hr_traj")
 map = new(1,graphic)
   
 res  = True
