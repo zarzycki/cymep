@@ -16,7 +16,7 @@ gridsize = 8.0
 ;basin=(/1,2,3,4/)
 basin=1
 pathtoconfiglists="./config-lists/"
-filename="sens_configs.csv"
+filename="hyp_configs.csv"
 plot_tables_only=False
 defineMIbypres=False
 
@@ -460,10 +460,11 @@ if (str_get_cols(files(zz),0,0).ne."!") then
 end if
 end do
 
-; Eliminate files that were not valid for some reason
+; Eliminate files that were not valid
 iz = ind(.not.ismissing(valid_files)) 
 valid_files := valid_files(iz)
 valid_strs := strs(iz)
+valid_colors := linecolors(iz)
 nfiles=dimsizes(valid_files)
 
 
@@ -550,6 +551,7 @@ do bb = 0,dimsizes(spapltvarsstr)-1
 
   delete(res)
   delete(plot)
+  delete(toPlot)
   delete(wks)
 end do
 
@@ -806,6 +808,61 @@ plot  = taylor_diagram_cam(wks, taylor_rat, taylor_cco, taylor_bia2, res)
 
 print(res@varLabels+" ")
 print(taylor_rat+" "+taylor_cco+" "+taylor_bia+" "+taylor_bia2)
+
+delete(wks)
+delete(plot)
+delete(res)
+
+
+;; now draw line plot
+thisDir="./fig/line/"
+system("mkdir -p "+thisDir)
+lettercount=0
+linepltvarsstr=(/"stormsByMonth","tcdByMonth","aceByMonth","paceByMonth"/)
+linepltvars=[/ stormsByMonth, tcdByMonth, aceByMonth, paceByMonth /] 
+lineunitsstr=(/"number","days","(10~S~4~N~ kn~S~2~N~)","(10~S~4~N~ kn~S~2~N~)"/)
+
+do mm = 0,dimsizes(linepltvarsstr)-1
+
+toPlot=linepltvars[mm]
+
+wks   = gsn_open_wks("pdf",thisDir+"/seasonal_"+tostring(linepltvarsstr(mm))+"."+basinstr+"_"+filename)
+res                   = True                      ; plot mods desired
+res@gsnDraw=False
+res@gsnFrame=False
+res@tiMainString      = linepltvarsstr(mm)+" seasonal cycle"       ; add title
+res@xyMonoDashPattern=True
+res@xyMonoLineThickness=True
+res@xyLineThicknessF = 4.0
+res@trYMinF=0.0
+res@xyLineColors      = linecolors
+res@tiXAxisString = "Month"
+res@tiYAxisString = linepltvarsstr(mm)+" "+lineunitsstr(mm)
+res@trXMinF = 1
+res@trXMaxF = 12
+;plot  = gsn_csm_xy (wks,yearArr,aceByYear,res) ; create plot
+plot  = gsn_csm_xy (wks,monArr,toPlot,res) ; create plot
+textres=True
+lineres=True
+textres@lgLabels     = valid_strs
+lineres@lgLineColors = valid_colors
+plot = simple_legend(wks,plot,res,lineres,textres)
+draw(plot)
+frame(wks)
+
+;cleanup
+delete(plot)
+delete(wks)
+delete(res)
+delete(lineres)
+delete(textres)
+delete(toPlot)
+
+end do
+
+
+
+
 
 ; Generate tables
 
