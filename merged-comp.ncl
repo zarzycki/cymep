@@ -16,7 +16,7 @@ gridsize = 8.0
 ;basin=(/1,2,3,4/)
 basin=1
 pathtoconfiglists="./config-lists/"
-filename="hyp_configs.csv"
+filename="sens_configs.csv"
 plot_tables_only=False
 defineMIbypres=False
 
@@ -276,6 +276,7 @@ if (str_get_cols(files(zz),0,0).ne."!") then
       print(quad_a)
     end if
     xwindtmp = quad_a(0) + quad_a(1)*xpres + quad_a(2)*xpres^2
+    print(quad_a(0)+" + "+quad_a(1)+"p + "+quad_a(2)+"p^2")
     xpaceall = 1e-4*(ms_to_kts*xwindtmp)^2.
     delete(xwindtmp)
   else
@@ -827,6 +828,8 @@ do mm = 0,dimsizes(linepltvarsstr)-1
 toPlot=linepltvars[mm]
 
 wks   = gsn_open_wks("pdf",thisDir+"/seasonal_"+tostring(linepltvarsstr(mm))+"."+basinstr+"_"+filename)
+
+; draw xy curves
 res                   = True                      ; plot mods desired
 res@gsnDraw=False
 res@gsnFrame=False
@@ -837,16 +840,20 @@ res@xyLineThicknessF = 4.0
 res@trYMinF=0.0
 res@xyLineColors      = linecolors
 res@tiXAxisString = "Month"
-res@tiYAxisString = linepltvarsstr(mm)+" "+lineunitsstr(mm)
+res@tiYAxisString = linepltvarsstr(mm)+" ("+lineunitsstr(mm)+")"
 res@trXMinF = 1
 res@trXMaxF = 12
 ;plot  = gsn_csm_xy (wks,yearArr,aceByYear,res) ; create plot
 plot  = gsn_csm_xy (wks,monArr,toPlot,res) ; create plot
+
+; Build legend
 textres=True
 lineres=True
 textres@lgLabels     = valid_strs
-lineres@lgLineColors = valid_colors
+lineres@lgLineColors=valid_colors
+lineres@lgLineThicknesses=res@xyLineThicknessF
 plot = simple_legend(wks,plot,res,lineres,textres)
+
 draw(plot)
 frame(wks)
 
@@ -860,13 +867,9 @@ delete(toPlot)
 
 end do
 
-
-
-
+end if  ; plot_tables_only
 
 ; Generate tables
-
-end if  ; plot_tables_only
 
 quote = inttochar(34) 
 system("./driver-table.sh "+basecsv+" "+basinstr)
