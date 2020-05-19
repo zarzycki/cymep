@@ -106,7 +106,17 @@ begin
       var(ii,:) = var(ii,:) - varref(ii)
     end do
     var(:,0) = varref(:)
-    header = str_sub_str(header,"u~B~","b~B~")
+  end if
+
+  if (plot_bias) then
+    barvar = "b~H-15V6F35~E~FV-6H3~" 
+    ;http://www.ncl.ucar.edu/Applications/text.shtml text 14
+    ;Uuml    = "U~H-15V6F35~H~FV-6H3~"
+    ;uuml    = "u~H-13V2F35~H~FV-2H3~"
+    header = str_sub_str(header,"u~B~",barvar+"~B~")
+  else
+    barvar = "x~H-13V2F35~E~FV-2H3~" 
+    header = str_sub_str(header,"u~B~",barvar+"~B~")
   end if
 
   ; NDC math...
