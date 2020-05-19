@@ -74,7 +74,7 @@ xntimes=xdims(1)
 ; =====
 
 ;thefile:="dev/trajectories.txt.JRA"
-thefile:="trajs/trajectories.txt.MERRA"
+thefile:="trajs/trajectories.txt.MERRA2"
 ;thefile:="e3sm/trajectories.txt.ERA5.T400.DEFAULT"
 
 ncols := 11 ; number of columns in non-header rows of trajectory file
