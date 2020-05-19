@@ -24,6 +24,10 @@ begin
   ;csvfilename=
   filename = filepath+"/"+csvfilename
 
+
+  plot_title = str_sub_str(plot_title,"_"," ")
+
+
   if (plot_bias .eq. False .and. calc_deltas .eq. True) then
     print("you can't really calc_deltas if you aren't plotting bias")
     print("... exiting.")
