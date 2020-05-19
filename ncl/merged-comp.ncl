@@ -14,9 +14,9 @@ csvdir="./csv-files/"
 gridsize = 8.0
 ;basin=-1
 ;basin=(/1,2,3,4/)
-basin=1
+basin=-1
 pathtoconfiglists="./config-lists/"
-filename="sens_configs.csv"
+filename="rean_configs.csv"
 plot_tables_only=False
 defineMIbypres=False
 
