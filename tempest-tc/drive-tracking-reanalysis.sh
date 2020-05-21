@@ -32,13 +32,10 @@ TOPOFILE=/glade/u/home/zarzycki/work/reanalysis-detection/topo/MERRA2.topo.nc
 CONNECTFLAG="" 
 
 ## List of years to process
-#YEARSTRARR=`seq 1980 2016`
 YEARSTRARR=`seq 1980 2018`
 
 ## Path where files are
 PATHTOFILES=/glade/u/home/zarzycki/scratch/h1files/MERRA2/
-#PATHTOFILES=/glade/u/home/zarzycki/scratch/h1files/TC/h1files/JRA_DZ300500/
-#PATHTOFILES=/glade/u/home/zarzycki/scratch/JRA-ETC/2017/
 
 ############ TRACKER MECHANICS #####################
 starttime=$(date -u +"%s")
