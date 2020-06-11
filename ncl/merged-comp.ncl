@@ -12,9 +12,7 @@ out_type = "pdf"
 trajDir="./trajs/"
 csvdir="./csv-files/"
 gridsize = 8.0
-;basin=-1
-;basin=(/1,2,3,4/)
-basin=-1
+basin=-1      ; negative for global, (/1,2,3,4/) for NH
 pathtoconfiglists="./config-lists/"
 filename="rean_configs.csv"
 plot_tables_only=False
@@ -22,6 +20,8 @@ defineMIbypres=False
 
 ;======================= Constants ================================
 ms_to_kts = 1.94384449
+
+; DO NOT EDIT BELOW THIS LINE
 
 ;======================= Calendar logic ================================
 
@@ -575,7 +575,7 @@ do qq = 0,nfiles-1
   aceByMonth(mm,:)=aceByMonth(mm,:)/ensmembers(mm)/yearspermember(mm)
   paceByMonth(mm,:)=paceByMonth(mm,:)/ensmembers(mm)/yearspermember(mm)
   tcdByMonth(mm,:)=tcdByMonth(mm,:)/ensmembers(mm)/yearspermember(mm)
-  ;print(yearArr+" "+stormsByYear(mm,:)+" "+aceByYear(mm,:)+" "+tcdByYear(mm,:))
+  print(monArr+" "+stormsByMonth(mm,:)+" "+aceByMonth(mm,:)+" "+tcdByMonth(mm,:))
 end do
 
 ;print("Bias correction.")
@@ -703,7 +703,7 @@ delim=","
 OPT=0
 system("rm "+outputname)
 ;system("echo Model,Track,SLP,WIND,TCD,ACE,PACE,GEN >> "+outputname)
-system("echo Model,rxy_track,rxy_gen,rxy_slp,rxy_u10,rxy_ace >> "+outputname)
+system("echo Model,rxy_track,rxy_gen,rxy_slp,rxy_u10,rxy_ace,rxy_pace >> "+outputname)
 
 do qq = 0,nfiles-1
   mm = valid_files(qq)
@@ -734,9 +734,8 @@ do qq = 0,nfiles-1
     pattern_cor(tm2refr,tm2test,denslatwgt,OPT)+delim+ \
     pattern_cor(fullpres(0,:,:),fullpres(mm,:,:),denslatwgt,OPT)+delim+ \
     pattern_cor(fullwind(0,:,:),fullwind(mm,:,:),denslatwgt,OPT)+delim+ \
-    ;pattern_cor(fulltcd(0,:,:),fulltcd(mm,:,:),denslatwgt,OPT)+delim+ \
-    ;pattern_cor(fullpace(0,:,:),fullpace(mm,:,:),denslatwgt,OPT)+delim+ \
-    pattern_cor(fullace(0,:,:),fullace(mm,:,:),denslatwgt,OPT)
+    pattern_cor(fullace(0,:,:),fullace(mm,:,:),denslatwgt,OPT)+delim+ \
+    pattern_cor(fullpace(0,:,:),fullpace(mm,:,:),denslatwgt,OPT)
   print(OUTSTR+"")
   system("echo "+OUTSTR+" >> "+outputname)
 
@@ -804,7 +803,11 @@ res@txFontHeightF = 0.02
 res@markerTxYOffset = 0.03
 res@Colors = (/"blue","red"/)
 res@varLabels = valid_strs(1:nfiles-1)  ; don't include obs
-res@drawCorLabel=False
+res@centerDiffRMS = True
+res@stnRad        = (/  0.5,1.5  /)   ; additional standard radii
+res@ccRays        = (/  0.6,0.9  /)   ; correlation rays 
+res@varLabelsYloc = 1.7
+;res@drawCorLabel=False
 plot  = taylor_diagram_cam(wks, taylor_rat, taylor_cco, taylor_bia2, res)
 
 print(res@varLabels+" ")
