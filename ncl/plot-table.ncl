@@ -126,7 +126,7 @@ begin
   ; NDC math...
   TOPOFTABLE=0.95
   forcedheight=0.045
-  forcedwidth=0.15
+  forcedwidth=0.14
   ndcgap=0.02
   labelbarheight=0.05
   labelbarwidthdelta=0.1
@@ -363,6 +363,7 @@ begin
   titres@txJust="TopCenter"
   gsn_text_ndc(wks,titlestr,total_width/2.,1.0,titres)
 
+  ;drawNDCGrid(wks)
 
   frame(wks)      ; Advance the frame.
 
