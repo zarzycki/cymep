@@ -2,15 +2,15 @@
 ; This file reads in a traj file produced by the TC tracker
 ; and produces a lat-lon plot of trajectories color-coded by intensity
 ;========================================================
-load "../../../functions/surfaceWindCorrFactor.ncl"
-load "../../../functions/getTrajectoriesGeneric.ncl"
-load "../../../functions/mask_tc.ncl"
+load "../functions/surfaceWindCorrFactor.ncl"
+load "../functions/getTrajectoriesGeneric.ncl"
+load "../functions/mask_tc.ncl"
 
 ;========================================================
 begin
 
 output_type="png"
-basin="tropics"
+basin="global"
 cutwind=0.0
 factor = 1.0
 
@@ -19,15 +19,15 @@ basinfilt = 1
 maskspacing=1.0
 tcMask = mask_tc(0,-999,-999,maskspacing,360)
 
-thedir="./TRAJ_FINAL/"
+thedir="../trajs/"
 ;thefile="trajectories.txt.theta.20190910.branch_noCNT.n438b.unc03.A_WCYCL1950S_CMIP6_HR.ne120_oRRS18v3_ICG"
-thefile="trajectories.txt.JRA"
+thefile="trajectories.txt.CHEY.VR28.NATL.REF.CAM5.4CLM5.0.tau3600_MPdiff"
 ncols = -1                    ; assign number of columns
 maxLines = -1
 headerDelimStr = "start"
 delimStr="tab"
 isHeader=False
-traj_data = getTrajectoriesGeneric(thedir+"/"+thefile,ncols,maxLines,headerDelimStr,delimStr,False,isHeader)
+traj_data = getTrajectoriesGeneric(thedir+"/"+thefile,ncols,maxLines,headerDelimStr,delimStr,True,isHeader)
 
 lon = traj_data(:,2,:)
 lat = traj_data(:,3,:)
@@ -44,7 +44,7 @@ ndims = dimsizes(lon)
 nstorms = ndims(0)
 ntimes = ndims(1)
 
-if (0 .eq. 0) then
+if (1 .eq. 0) then
   do ii = 0,nstorms-1
     if (yyyy(ii,0) .ne. 2017) then
       lat(ii,:)=lat@_FillValue
@@ -79,7 +79,7 @@ end if
 
 ;--------------------------------------------------------
 print("Beginning plot sequence")
-wks  = gsn_open_wks(output_type,"fig.trajs/fig."+thefile)
+wks  = gsn_open_wks(output_type,"traj."+thefile)
 map = new(1,graphic)
   
 res  = True
