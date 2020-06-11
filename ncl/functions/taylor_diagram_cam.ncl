@@ -97,7 +97,7 @@ begin
   else
       outlier = False                            ; no outliers
   end if  
-  outlier=False
+  ;outlier=False
  
 ; ----------------------------------------------------------------
 ; Part 1:
@@ -128,7 +128,7 @@ begin
   rxy@tmXBValues        = (/0.0,0.25,0.50,0.75,1.00,1.25,1.5,1.75/)    ; major tm
                                                                   ; default  "OBS" or "REF"
  ;rxy@tmXBLabels        = (/"0.00","0.25","0.50","0.75","REF" ,"1.25","1.50"/)
-  rxy@tmXBLabels        = (/"    ","0.25","0.50","0.75","REF" ,"1.25","1.50","1.75"/)
+  rxy@tmXBLabels        = (/"    ","0.25","0.50","0.75","PERF" ,"1.25","1.50","1.75"/)
   if (rOpts .and. isatt(rOpts,"OneX") )  then                     ; eg: rOpts@OneX="1.00" 
      ;rxy@tmXBLabels        = (/"0.00","0.25","0.50","0.75",rOpts@OneX,"1.25","1.50"/)
       rxy@tmXBLabels        = (/"    ","0.25","0.50","0.75",rOpts@OneX,"1.25","1.50","1.75"/)
@@ -144,8 +144,8 @@ begin
   rxy@tmYLMajorLengthF  = rxy@tmXBMajorLengthF
   rxy@tmYLLabelFontHeightF = FontHeightF
   rxy@tmYLMode          = "Explicit" 
-  rxy@tmYLValues        = (/0.0, .25,0.50, 0.75, 1.00, 1.25, 1.5/) ; major tm
-  rxy@tmYLLabels        = (/"0.00","0.25","0.50","0.75","1.00","1.25","1.50"/)
+  rxy@tmYLValues        = (/0.0, .25,0.50, 0.75, 1.00, 1.25, 1.5, 1.75/) ; major tm
+  rxy@tmYLLabels        = (/"0.00","0.25","0.50","0.75","1.00","1.25","1.50","1.75"/)
  ;rxy@tmYLLabels        = (/"    ","0.25","0.50","0.75","1.00","1.25","1.50"/)
   rxy@trYMaxF           = xyMax_Panel
 
@@ -243,7 +243,8 @@ begin
   txRes@tmYLLabelFont = tmYLLabelFont             ; match YL
   txRes@txAngleF      = -50.
   if (.not.isatt(rOpts,"drawCorLabel") .or. rOpts@drawCorLabel) then 
-      dum4 = gsn_add_text(wks,taylor,"Correlation",1.40,1.20,txRes)
+      nudgecoef = 1.13  ; CMZ, was = 1.0 by default, used to "push" correlation label away from origin
+      dum4 = gsn_add_text(wks,taylor,"Correlation",1.40*1.13,1.20*1.13,txRes)
 	 taylor@$unique_string("dum")$ = dum4
   end if
   txRes@txAngleF      = 0.0 
@@ -295,8 +296,10 @@ begin
       angRL = acos(rOpts@ccRays)/rad             ; angles: radial lines
 
       rlRes = True
-      rlRes@xyDashPattern    = 4  ; line pattern
-      rlRes@xyLineThicknessF = 1  ; choose line thickness
+
+      rlRes@gsLineDashPattern    = 16  ; line pattern
+      rlRes@gsLineThicknessF = 1  ; choose line thickness
+      rlRes@gsLineColor = "grey30"
 
       dum8 = new(dimsizes(angRL),graphic)
       do i=0,dimsizes(angRL)-1
@@ -318,7 +321,7 @@ begin
             .and. rOpts@centerDiffRMS) then
       respl                    = True                ; polyline mods desired
       respl@gsLineThicknessF   = 1.0                 ; line thickness
-      respl@gsLineColor        = "Black"             ; line color     
+      respl@gsLineColor        = "grey30"             ; line color     
       respl@gsLineDashPattern  = 2                   ; short dash lines
       
       dx   = 0.25
@@ -332,15 +335,17 @@ begin
          rr  = n*dx            ; radius from 1.0 [OBS] abscissa
          xx  = 1. + rr*cos(ang)
          yy  = fabs( rr*sin(ang) )
-         if (n.le.2) then
+         if (n.le.3) then
              dum9(n-1) = gsn_add_polyline(wks,taylor,xx,yy,respl)
          end if
-         if (n.eq.3) then
-             n3 = floattointeger( 0.77*npts ) 
-             dum9(n-1) = gsn_add_polyline(wks,taylor,xx(0:n3),yy(0:n3),respl)
-         end if
+         ;if (n.eq.3) then
+         ;    ;n3 = floattointeger( 0.77*npts ) 
+         ;    n3 = floattointeger( 0.9*npts ) 
+         ;    dum9(n-1) = gsn_add_polyline(wks,taylor,xx(0:n3),yy(0:n3),respl)
+         ;end if
          if (n.eq.4) then
-             n4 = floattointeger( 0.61*npts ) 
+             ;n4 = floattointeger( 0.61*npts ) 
+             n4 = floattointeger( 0.74*npts ) 
              dum9(n-1) = gsn_add_polyline(wks,taylor,xx(0:n4),yy(0:n4),respl)
          end if
       end do
@@ -554,12 +559,16 @@ begin
 		end if
 		if (scntr.ge.24) then
 		   print("Non-fatal error: More than 24 cases have correlations < 0 and/or ratios > 1.65. Only 20 cases will be shown beneath the taylor diagram.")
-	     end if	
-		dum14(scntr)   = gsn_add_polymarker(wks,dplot,xval,yval-.04,gsRes) 
-		dum15(scntr,0) = gsn_add_text(wks,dplot,(i+1),xval,yval+stmarkerTxYOffset-.02,ptRes)	
-		dum15(scntr,1) = gsn_add_text(wks,dplot,sprintf("%3.2f",RATIO(n,i)),xval+.05,yval+stmarkerTxYOffset-.01,stRes)
-		dum15(scntr,2) = gsn_add_text(wks,dplot,"____",xval+.05,yval+stmarkerTxYOffset-.04,stRes)
-	     dum15(scntr,3) = gsn_add_text(wks,dplot,sprintf("%3.2f",CC(n,i)),xval+.05,yval+stmarkerTxYOffset-.12,stRes)	
+	  end if	
+
+    ;stRes@txFontHeightF  = 0.01  
+
+    cmzyoffset=-0.05
+		dum14(scntr)   = gsn_add_polymarker(wks,dplot,xval,yval-.05+cmzyoffset,gsRes) 
+		dum15(scntr,0) = gsn_add_text(wks,dplot,(i+1),xval,yval+stmarkerTxYOffset-.02+cmzyoffset,ptRes)	
+		dum15(scntr,1) = gsn_add_text(wks,dplot,sprintf("%3.2f",RATIO(n,i)),xval+.08,yval+stmarkerTxYOffset-.02+cmzyoffset,stRes)
+		;dum15(scntr,2) = gsn_add_text(wks,dplot,"____",xval+.05,yval+stmarkerTxYOffset-.04+cmzyoffset,stRes)
+	  dum15(scntr,3) = gsn_add_text(wks,dplot,sprintf("%3.2f",CC(n,i)),xval+.08,yval+stmarkerTxYOffset-.13+cmzyoffset ,stRes)	
 		scntr = scntr+1
 	  else	
           dum11(n*nVar+i) = gsn_add_polymarker(wks,taylor,X(n,i),Y(n,i),gsRes) 
@@ -596,10 +605,10 @@ begin
       lgres@lgMarkerIndexes    = (/4,new_index_down,new_index_down,new_index_down,new_index_down/)     ; Markers 
       lgres@lgMarkerSizes      =  BiasMarkerScale*gsMarkerSizeF ; Marker size
       lgres@lgItemType         = "Markers"     ; draw markers only
-      lgres@lgLabelFontHeightF = 0.05  ; font height of legend case labels
-      lgres@lgTitleFontHeightF = 0.01
+      lgres@lgLabelFontHeightF = 0.07  ; font height of legend case labels
+      lgres@lgTitleFontHeightF = 0.015
 ;      lgres@lgTitleOffsetF     =
-      lgres@lgTitleString      = "       - / +"
+      lgres@lgTitleString      = "   - / +"
       lgres@lgLabelsOn         = False
       
      
@@ -607,18 +616,18 @@ begin
       lbid = gsn_create_legend(wks,5,BiasLabels,lgres)
 	 
       amres = True
-      amres@amParallelPosF     =  -0.45           
-      amres@amOrthogonalPosF   = -0.28             
+      amres@amParallelPosF     = 0.35   ; x axis (positive to the right)        
+      amres@amOrthogonalPosF   = -0.38  ; y axis (positive down)       
       annoid1 = gsn_add_annotation(taylor,lbid,amres)	; add legend to plot
 
 
 ; Up triangles - with text     
       lgres@lgLabelsOn         = True
-      lgres@lgTitleString      = "             Bias"
+      lgres@lgTitleString      = "       Bias"
       lgres@lgMarkerIndexes(1:4)    =    (/new_index_up,new_index_up,new_index_up,new_index_up/)
       lbid = gsn_create_legend(wks,5,BiasLabels,lgres)
 	 
-      amres@amParallelPosF     =  -0.38           
+      amres@amParallelPosF     =  amres@amParallelPosF+0.07           
       annoid2 = gsn_add_annotation(taylor,lbid,amres)	; add legend to plot
 
       delete(lgres)
@@ -693,13 +702,14 @@ begin
           ys  = max( (/nVar*delta_y , 0.30/) )
       end if
 
-      
+      xs=0.10
+
       do i = 1,nVar     
          if (i.eq.1) then
              dum13 = new(nVar,graphic)
-	 end if
+	       end if
 
-         dum13(i-1) = gsn_add_text(wks,taylor,i+" - "+rOpts@varLabels(i-1), .06,ys,txres)
+         dum13(i-1) = gsn_add_text(wks,taylor,i+" - "+rOpts@varLabels(i-1), xs,ys,txres)
          ys = ys- delta_y
       end do
 
