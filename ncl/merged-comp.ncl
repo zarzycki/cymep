@@ -703,7 +703,7 @@ delim=","
 OPT=0
 system("rm "+outputname)
 ;system("echo Model,Track,SLP,WIND,TCD,ACE,PACE,GEN >> "+outputname)
-system("echo Model,rxy_track,rxy_gen,rxy_slp,rxy_u10,rxy_ace,rxy_pace >> "+outputname)
+system("echo Model,rxy_track,rxy_gen,rxy_u10,rxy_slp,rxy_ace,rxy_pace >> "+outputname)
 
 do qq = 0,nfiles-1
   mm = valid_files(qq)
@@ -732,8 +732,8 @@ do qq = 0,nfiles-1
   OUTSTR=strs(mm)+delim+ \
     pattern_cor(tmprefr,tmptest,denslatwgt,OPT)+delim+ \
     pattern_cor(tm2refr,tm2test,denslatwgt,OPT)+delim+ \
-    pattern_cor(fullpres(0,:,:),fullpres(mm,:,:),denslatwgt,OPT)+delim+ \
     pattern_cor(fullwind(0,:,:),fullwind(mm,:,:),denslatwgt,OPT)+delim+ \
+    pattern_cor(fullpres(0,:,:),fullpres(mm,:,:),denslatwgt,OPT)+delim+ \
     pattern_cor(fullace(0,:,:),fullace(mm,:,:),denslatwgt,OPT)+delim+ \
     pattern_cor(fullpace(0,:,:),fullpace(mm,:,:),denslatwgt,OPT)
   print(OUTSTR+"")
