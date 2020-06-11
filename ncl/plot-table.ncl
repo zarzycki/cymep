@@ -125,14 +125,14 @@ begin
 
   ; NDC math...
   TOPOFTABLE=0.95
-  forcedheight=0.05
+  forcedheight=0.045
   forcedwidth=0.15
   ndcgap=0.02
   labelbarheight=0.05
   labelbarwidthdelta=0.1
 
-  bottom_of_header=TOPOFTABLE-forcedheight   ; FYI, top of table
-  bottom_of_table=TOPOFTABLE-forcedheight*(ncases+1)
+  bottom_of_header=TOPOFTABLE-forcedheight*2   ; FYI, top of table
+  bottom_of_table=bottom_of_header-(forcedheight*ncases)
   top_of_label_bar=bottom_of_table-ndcgap
   bottom_of_label_bar=top_of_label_bar-labelbarheight
   top_of_label_text=bottom_of_label_bar-ndcgap
@@ -147,11 +147,32 @@ begin
 
   startxloc=total_width/(nvars+1)
 
-; Sub header
-  ncr2  = (/1,nvars/)               ; 2 rows, 2 columns
+; header (var names)
+  ncr2  = (/2,nvars/)               ; 2 rows, 2 columns
   x2    = (/startxloc,total_width/)       ; Start and end X
   y2    = (/bottom_of_header,TOPOFTABLE/)       ; Start and end Y
-  text2 = header
+  text2 = new((/2,nvars/),"string")
+  text2(0,:) = header      ; var names
+  do jj = 0,nvars-1
+    stringToMatch = text2(0,jj)
+    if .not.ismissing((str_match(stringToMatch,"clim,count"))) then
+      text2(1,jj) = "#"  
+    else if .not.ismissing((str_match(stringToMatch,"clim,tcd"))) then
+      text2(1,jj) = "days"  
+    else if .not.ismissing((str_match(stringToMatch,"clim,ace"))) then
+      text2(1,jj) = "kn~S~2~N~"  
+    else if .not.ismissing((str_match(stringToMatch,"clim,pace"))) then
+      text2(1,jj) = "kn~S~2~N~"  
+    else if .not.ismissing((str_match(stringToMatch,"clim,lmi"))) then
+      text2(1,jj) = "~S~o~N~ lat."  
+    else
+      text2(1,jj) = "-"  
+    end if
+    end if
+    end if
+    end if
+    end if
+  end do
 
 ; Main table body
   ncr3  = (/ncases,nvars+1/)              ; 16 rows, 3 columns
@@ -183,7 +204,8 @@ begin
   wks = gsn_open_wks("pdf",thisDir+"/table."+csvfilename)  ; send graphics to PNG file
 
   if (plot_bias) then
-    cmap = read_colormap_file("hotcold_18lev")
+    ;cmap = read_colormap_file("hotcold_18lev")
+    cmap = read_colormap_file("./functions/seaborn_bluetored2.rgb")
   else
     if (invert_stoplight) then
       cmap = read_colormap_file("./functions/excel_greentored.rgb")
@@ -206,8 +228,8 @@ begin
 ; Sub header
 ;
   res2               = True
-  res2@txFontHeightF = 0.022
-  res2@txFont   = "helvetica-bold"
+  res2@txFontHeightF = 0.020
+  res2@txFont   = "helvetica"
 
 
   print(x2)
@@ -221,8 +243,8 @@ begin
 
   res3@gsnDebug = True     ; Useful to print NDC row,col values used.
 
-  res3@txFontHeightF = 0.022
-  
+  res3@txFontHeightF = 0.018
+
   FillColors = new(dimsizes(text3),"string")
   FillColors = "white"
   
@@ -280,7 +302,7 @@ begin
 
   ;draw_color_palette(wks,cmap,False)  
 
-  res3@txFont   = "helvetica"
+  res3@txFont   = "helvetica-bold"
 
   gsn_table(wks,ncr3,x3,y3,text3,res3)
 
@@ -302,7 +324,7 @@ begin
   lbres@lbMonoFillPattern  = True          ; Solid fill pattern
   lbres@lbOrientation      = "Horizontal"
   lbres@lbPerimOn          = False
-  lbres@lbBoxLinesOn       = True
+  lbres@lbBoxLinesOn       = False
 
   ; all of this gets rid of white space around label bar...
   ; per: https://www.ncl.ucar.edu/Support/talk_archives/2009/1477.html
