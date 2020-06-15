@@ -55,7 +55,6 @@ begin
   lines(0) = ","+lines(0)
   do jj = 0,nvars-1
     header(jj) = str_get_field(lines(0),jj+2,delim)
-
     
     ;if (header(jj) .eq. "SLP") then
     ;  header(jj) = "r~B~xy,SLP~N~"
@@ -131,7 +130,13 @@ begin
   labelbarheight=0.05
   labelbarwidthdelta=0.1
 
-  bottom_of_header=TOPOFTABLE-forcedheight*2   ; FYI, top of table
+  do_units=True
+  if (do_units) then
+    bottom_of_header=TOPOFTABLE-forcedheight*2   ; FYI, top of table
+  else
+    bottom_of_header=TOPOFTABLE-forcedheight*1   ; FYI, top of table
+  end if
+
   bottom_of_table=bottom_of_header-(forcedheight*ncases)
   top_of_label_bar=bottom_of_table-ndcgap
   bottom_of_label_bar=top_of_label_bar-labelbarheight
@@ -147,32 +152,41 @@ begin
 
   startxloc=total_width/(nvars+1)
 
-; header (var names)
-  ncr2  = (/2,nvars/)               ; 2 rows, 2 columns
+  if (do_units) then
+    nheadrows=2
+  else
+    nheadrows=1
+  end if
+
+  ncr2  = (/nheadrows,nvars/)               ; 2 rows, 2 columns
   x2    = (/startxloc,total_width/)       ; Start and end X
   y2    = (/bottom_of_header,TOPOFTABLE/)       ; Start and end Y
-  text2 = new((/2,nvars/),"string")
+  text2 = new((/nheadrows,nvars/),"string")
+
+  if (do_units) then
+    do jj = 0,nvars-1
+      stringToMatch = text2(0,jj)
+      if .not.ismissing((str_match(stringToMatch,"clim,count"))) then
+        text2(1,jj) = "#"  
+      else if .not.ismissing((str_match(stringToMatch,"clim,tcd"))) then
+        text2(1,jj) = "days"  
+      else if .not.ismissing((str_match(stringToMatch,"clim,ace"))) then
+        text2(1,jj) = "kn~S~2~N~"  
+      else if .not.ismissing((str_match(stringToMatch,"clim,pace"))) then
+        text2(1,jj) = "kn~S~2~N~"  
+      else if .not.ismissing((str_match(stringToMatch,"clim,lmi"))) then
+        text2(1,jj) = "~S~o~N~ lat."  
+      else
+        text2(1,jj) = "-"  
+      end if
+      end if
+      end if
+      end if
+      end if
+    end do
+  end if
   text2(0,:) = header      ; var names
-  do jj = 0,nvars-1
-    stringToMatch = text2(0,jj)
-    if .not.ismissing((str_match(stringToMatch,"clim,count"))) then
-      text2(1,jj) = "#"  
-    else if .not.ismissing((str_match(stringToMatch,"clim,tcd"))) then
-      text2(1,jj) = "days"  
-    else if .not.ismissing((str_match(stringToMatch,"clim,ace"))) then
-      text2(1,jj) = "kn~S~2~N~"  
-    else if .not.ismissing((str_match(stringToMatch,"clim,pace"))) then
-      text2(1,jj) = "kn~S~2~N~"  
-    else if .not.ismissing((str_match(stringToMatch,"clim,lmi"))) then
-      text2(1,jj) = "~S~o~N~ lat."  
-    else
-      text2(1,jj) = "-"  
-    end if
-    end if
-    end if
-    end if
-    end if
-  end do
+
 
 ; Main table body
   ncr3  = (/ncases,nvars+1/)              ; 16 rows, 3 columns
@@ -363,7 +377,7 @@ begin
   titres@txJust="TopCenter"
   gsn_text_ndc(wks,titlestr,total_width/2.,1.0,titres)
 
-  ;drawNDCGrid(wks)
+  drawNDCGrid(wks)
 
   frame(wks)      ; Advance the frame.
 
