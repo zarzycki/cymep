@@ -12,7 +12,7 @@ out_type = "pdf"
 trajDir="./trajs/"
 csvdir="./csv-files/"
 gridsize = 8.0
-basin=-1      ; negative for global, (/1,2,3,4/) for NH
+basin=1      ; negative for global, (/1,2,3,4/) for NH
 pathtoconfiglists="./config-lists/"
 filename="rean_configs.csv"
 plot_tables_only=False
@@ -152,21 +152,24 @@ if (str_get_cols(files(zz),0,0).ne."!") then
   ; Filter observational records
   if (zz.eq.0) then
 
-    aaa=4.4
+    aaa=2.3
     bbb=1010.
     ccc=0.76
     ;xpres := 980.
     ;xwind := -1.
+    print("Total cyclones with valid lat/lon "+num(.not.ismissing(xlat)))
     ; first, when xpres is missing but xwind exists, try to fill in xpres
+    print("Fixing "+num(xpres .lt. 0. .and. xwind .gt. 0.))
     xpres=where( xpres .lt. 0. .and. xwind .gt. 0. , -1*((xwind/aaa)^(1./ccc)-bbb) , xpres)
     ; next, when xwind is missing but xpres exists, try to fill in xwind
+    print("Fixing "+num(xwind .lt. 0. .and. xpres .gt. 0.))
     xwind=where( xwind .lt. 0. .and. xpres .gt. 0. , aaa*(bbb - xpres)^ccc , xwind)
     ;print(xpres+" "+xwind)
     ;exit
 
     ; now if still missing assume TD
+    print("Fixing "+num(xpres .lt. 0.))
     xpres=where( xpres .lt. 0. , 1008. , xpres)
-    ; next, when xwind is missing but xpres exists, try to fill in xwind
     xwind=where( xwind .lt. 0. , 15. , xwind)
 
     windthreshold=17.5
@@ -272,16 +275,18 @@ if (str_get_cols(files(zz),0,0).ne."!") then
       print("Calculating regression for best-fit line")
       polyn = 3
       xprestmp = where(xpres.lt.1010,xpres,1010.)
-      quad_a = lspoly(ndtooned(xpres), ndtooned(xwind) , 1, polyn)
-      print(quad_a)
+      xprestmp = 1010.-xprestmp
+      quad_a = lspoly(ndtooned(xprestmp), ndtooned(xwind) , 1, polyn)
+      print(quad_a(0)+" + "+quad_a(1)+"p + "+quad_a(2)+"p^2")
     end if
-    xwindtmp = quad_a(0) + quad_a(1)*xpres + quad_a(2)*xpres^2
-    print(quad_a(0)+" + "+quad_a(1)+"p + "+quad_a(2)+"p^2")
+    xwindtmp = quad_a(0) + quad_a(1)*(1010.-xpres) + quad_a(2)*(1010.-xpres)^2
     xpaceall = 1e-4*(ms_to_kts*xwindtmp)^2.
     delete(xwindtmp)
   else
     ;print("min: "+min(xpres)+"   max: "+max(xpres))
-    xpaceall = 1e-4*(4.4*(1010.-xprestmp)^0.76)^2.
+    xprestmp = where(xpres.lt.1010,xpres,1010.)
+    ; Holland 2007 Eqn. 3
+    xpaceall = 1e-4 * (ms_to_kts*2.3*(1010.-xprestmp)^0.76)^2.
     delete(xprestmp)
     ;print("min: "+min(xpace)+"   max: "+max(xpace))
   end if
