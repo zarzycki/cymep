@@ -24,9 +24,9 @@ begin
   ;csvfilename=
   filename = filepath+"/"+csvfilename
 
+  ;write_units=False
 
   plot_title = str_sub_str(plot_title,"_"," ")
-
 
   if (plot_bias .eq. False .and. calc_deltas .eq. True) then
     print("you can't really calc_deltas if you aren't plotting bias")
@@ -34,14 +34,13 @@ begin
     exit
   end if
 
-
   lines = asciiread(filename,-1,"string")
   delim = ","
 
   ; get nvars by going to first line, finding number of entries
   ; and subtracting one because we don't want to count the model title
   nvars=dimsizes(str_split(lines(1),delim))-1
-  print("reading "+nvars+" variables")
+  ;print("reading "+nvars+" variables")
 
   header_name    = str_get_field(lines(0),1,delim)
 
@@ -94,7 +93,6 @@ begin
     ;end if
   end do
 
-  print(var)
   do ii = 0,nvars-1
     do jj = 0,ncases-1
       if (.not.ismissing(var(ii,jj)) .and. abs(var(ii,jj)) .gt. 1E8) then
@@ -124,14 +122,14 @@ begin
 
   ; NDC math...
   TOPOFTABLE=0.95
-  forcedheight=0.045
-  forcedwidth=0.14
+  forcedheight=0.05
+  forcedwidth=0.11
+  namelabwidth=0.16
   ndcgap=0.02
   labelbarheight=0.05
   labelbarwidthdelta=0.1
 
-  do_units=True
-  if (do_units) then
+  if (write_units) then
     bottom_of_header=TOPOFTABLE-forcedheight*2   ; FYI, top of table
   else
     bottom_of_header=TOPOFTABLE-forcedheight*1   ; FYI, top of table
@@ -143,16 +141,18 @@ begin
   top_of_label_text=bottom_of_label_bar-ndcgap
 
   ; calculate width
-  total_width = forcedwidth*(nvars+1)
+  ; total width is the leftmost column + var width * nvars
+  total_width = namelabwidth+forcedwidth*(nvars)
   if (total_width .gt. 1)
     print("resetting width to 1.0")
     total_width=1.0
     forcedwidth = total_width/(nvars+1)
   end if
 
-  startxloc=total_width/(nvars+1)
+  ; How far left does the header line start
+  startxloc=namelabwidth
 
-  if (do_units) then
+  if (write_units) then
     nheadrows=2
   else
     nheadrows=1
@@ -163,18 +163,21 @@ begin
   y2    = (/bottom_of_header,TOPOFTABLE/)       ; Start and end Y
   text2 = new((/nheadrows,nvars/),"string")
 
-  if (do_units) then
+  text2(0,:) = header      ; var names
+  if (write_units) then
     do jj = 0,nvars-1
       stringToMatch = text2(0,jj)
-      if .not.ismissing((str_match(stringToMatch,"clim,count"))) then
+      if .not.ismissing((str_match(stringToMatch,",count"))) then
         text2(1,jj) = "#"  
-      else if .not.ismissing((str_match(stringToMatch,"clim,tcd"))) then
+      else if .not.ismissing((str_match(stringToMatch,",tcd"))) then
         text2(1,jj) = "days"  
-      else if .not.ismissing((str_match(stringToMatch,"clim,ace"))) then
+      else if .not.ismissing((str_match(stringToMatch,",ace"))) then
         text2(1,jj) = "kn~S~2~N~"  
-      else if .not.ismissing((str_match(stringToMatch,"clim,pace"))) then
+      else if .not.ismissing((str_match(stringToMatch,",pace"))) then
         text2(1,jj) = "kn~S~2~N~"  
-      else if .not.ismissing((str_match(stringToMatch,"clim,lmi"))) then
+      else if .not.ismissing((str_match(stringToMatch,",lmi"))) then
+        text2(1,jj) = "~S~o~N~ lat."
+      else if .not.ismissing((str_match(stringToMatch,",latgen"))) then
         text2(1,jj) = "~S~o~N~ lat."  
       else
         text2(1,jj) = "-"  
@@ -185,12 +188,23 @@ begin
       end if
     end do
   end if
-  text2(0,:) = header      ; var names
+
+
+; Left column names
+  ncr4  = (/ncases,1/)              ; 16 rows, 3 columns
+  x4    = (/0.0,startxloc/)       ; Start and end X
+  y4    = (/bottom_of_table,bottom_of_header/)       ; Start and end Y
+
+  text4 = reshape(name_var,(/ncases,1/))
+
+
+
+
 
 
 ; Main table body
-  ncr3  = (/ncases,nvars+1/)              ; 16 rows, 3 columns
-  x3    = (/0.0,total_width/)       ; Start and end X
+  ncr3  = (/ncases,nvars/)              ; 16 rows, 3 columns
+  x3    = (/startxloc,total_width/)       ; Start and end X
   y3    = (/bottom_of_table,bottom_of_header/)       ; Start and end Y
 
   if ( .not.ismissing(str_match_ic(csvfilename,"_mean.csv"))) then
@@ -200,18 +214,16 @@ begin
   end if
   vartext = where(ismissing(var)," ",vartext)
 
+  print(name_var)
 
   xreshape = reshape(name_var,(/ncases,1/))
-  printVarSummary(xreshape)
-  do ii = 0,nvars-1
-    if (ii .eq. 0) then
-      text3 := table_attach_columns(reshape(name_var,(/ncases,1/)), reshape(vartext(ii,:),(/ncases,1/)), 0)
+  do ii = 1,nvars-1
+    if (ii .eq. 1) then
+      text3 := table_attach_columns(reshape(vartext(0,:),(/ncases,1/)), reshape(vartext(ii,:),(/ncases,1/)), 0)
     else
       text3 := table_attach_columns(text3, reshape(vartext(ii,:),(/ncases,1/)), 0)
     end if
   end do
-
-  print(text3)
 
   thisDir="./fig/tables/"
   system("mkdir -p "+thisDir)
@@ -232,7 +244,6 @@ begin
 
   ntotcolors=tofloat(tmpdims(0))
   ncolors=ntotcolors-2-1
-  print(ncolors+" ")
 
   setvalues wks            
     "wkBackgroundColor" : (/1.,1.,1./) 
@@ -245,10 +256,19 @@ begin
   res2@txFontHeightF = 0.020
   res2@txFont   = "helvetica"
 
-
-  print(x2)
-  print(y2)
   gsn_table(wks,ncr2,x2,y2,text2,res2)
+
+
+; left column names
+  res4 = True
+  res4@txFontHeightF = 0.018
+  res4@gsFillColor = "white"
+  res4@txFont   = "helvetica"
+
+  gsn_table(wks,ncr4,x4,y4,text4,res4)
+
+
+
 
 ;
 ; Main body of table.
@@ -257,7 +277,7 @@ begin
 
   res3@gsnDebug = True     ; Useful to print NDC row,col values used.
 
-  res3@txFontHeightF = 0.018
+  res3@txFontHeightF = 0.02
 
   FillColors = new(dimsizes(text3),"string")
   FillColors = "white"
@@ -269,10 +289,7 @@ begin
   end if
   STCOLORVAR=1
 
-  do ii = 1,nvars
-    print("ii "+ii)
-    print("ncases "+ncases)
-    print(var)
+  do ii = 0,nvars-1
     ; First, insert a reference color, this will get overwritten later if STCOLOR is 0
     FillColors(0,ii) = "grey75"
 
@@ -285,15 +302,15 @@ begin
     ;end if
 
     if (plot_bias) then
-      minVal=-1.*max(abs(tofloat(var(ii-1,STCOLORVAR:(ncases-1)))))
-      maxVal= 1.*max(abs(tofloat(var(ii-1,STCOLORVAR:(ncases-1)))))
+      minVal=-1.*max(abs(tofloat(var(ii,STCOLORVAR:(ncases-1)))))
+      maxVal= 1.*max(abs(tofloat(var(ii,STCOLORVAR:(ncases-1)))))
     else
-      maxVal = max(tofloat(var(ii-1,STCOLORVAR:(ncases-1))))
-      minVal = min(tofloat(var(ii-1,STCOLORVAR:(ncases-1))))
+      maxVal = max(tofloat(var(ii,STCOLORVAR:(ncases-1))))
+      minVal = min(tofloat(var(ii,STCOLORVAR:(ncases-1))))
     end if
 
     do zz = STCOLORVAR,ncases-1
-      thisVal=tofloat(var(ii-1,zz))
+      thisVal=tofloat(var(ii,zz))
       if (ismissing(thisVal)) then
         FillColors(zz,ii) = "grey50"
       else
@@ -353,7 +370,7 @@ begin
 
   ; label bar text
   txres               = True
-  txres@txFontHeightF = 0.018
+  txres@txFontHeightF = 0.02
 
   if (plot_bias) then
     labelstrings=(/"Low Bias","High Bias"/)
