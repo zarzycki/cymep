@@ -24,7 +24,7 @@ begin
   ;csvfilename=
   filename = filepath+"/"+csvfilename
 
-  ;write_units=False
+  ;write_units=True
 
   plot_title = str_sub_str(plot_title,"_"," ")
 
@@ -128,12 +128,13 @@ begin
   ndcgap=0.02
   labelbarheight=0.05
   labelbarwidthdelta=0.1
+  unitheight=0.034
 
-  if (write_units) then
-    bottom_of_header=TOPOFTABLE-forcedheight*2   ; FYI, top of table
-  else
-    bottom_of_header=TOPOFTABLE-forcedheight*1   ; FYI, top of table
+  if (.not. write_units) then
+    unitheight=0.0
   end if
+
+  bottom_of_header=TOPOFTABLE-(forcedheight+unitheight)
 
   bottom_of_table=bottom_of_header-(forcedheight*ncases)
   top_of_label_bar=bottom_of_table-ndcgap
@@ -152,43 +153,45 @@ begin
   ; How far left does the header line start
   startxloc=namelabwidth
 
-  if (write_units) then
-    nheadrows=2
-  else
-    nheadrows=1
-  end if
-
-  ncr2  = (/nheadrows,nvars/)               ; 2 rows, 2 columns
+  ncr2  = (/1,nvars/)               ; 2 rows, 2 columns
   x2    = (/startxloc,total_width/)       ; Start and end X
-  y2    = (/bottom_of_header,TOPOFTABLE/)       ; Start and end Y
-  text2 = new((/nheadrows,nvars/),"string")
-
+  y2    = (/TOPOFTABLE-forcedheight,TOPOFTABLE/)       ; Start and end Y
+  text2 = new((/1,nvars/),"string")
   text2(0,:) = header      ; var names
+
   if (write_units) then
+    ncr5  = (/1,nvars/)               ; 2 rows, 2 columns
+    x5    = (/startxloc,total_width/)       ; Start and end X
+    y5    = (/bottom_of_header,TOPOFTABLE-forcedheight/)       ; Start and end Y
+    text5 = new((/1,nvars/),"string")
     do jj = 0,nvars-1
       stringToMatch = text2(0,jj)
-      if .not.ismissing((str_match(stringToMatch,",count"))) then
-        text2(1,jj) = "#"  
-      else if .not.ismissing((str_match(stringToMatch,",tcd"))) then
-        text2(1,jj) = "days"  
-      else if .not.ismissing((str_match(stringToMatch,",ace"))) then
-        text2(1,jj) = "kn~S~2~N~"  
-      else if .not.ismissing((str_match(stringToMatch,",pace"))) then
-        text2(1,jj) = "kn~S~2~N~"  
-      else if .not.ismissing((str_match(stringToMatch,",lmi"))) then
-        text2(1,jj) = "~S~o~N~ lat."
-      else if .not.ismissing((str_match(stringToMatch,",latgen"))) then
-        text2(1,jj) = "~S~o~N~ lat."  
+      if (str_get_cols(stringToMatch, 0, 0) .ne. "r") then
+        if .not.ismissing((str_match(stringToMatch,",count"))) then
+          text5(0,jj) = "#"  
+        else if .not.ismissing((str_match(stringToMatch,",tcd"))) then
+          text5(0,jj) = "days"  
+        else if .not.ismissing((str_match(stringToMatch,",ace"))) then
+          text5(0,jj) = "kn~S~2~N~"  
+        else if .not.ismissing((str_match(stringToMatch,",pace"))) then
+          text5(0,jj) = "kn~S~2~N~"  
+        else if .not.ismissing((str_match(stringToMatch,",lmi"))) then
+          text5(0,jj) = "~S~o~N~ lat."
+        else if .not.ismissing((str_match(stringToMatch,",latgen"))) then
+          text5(0,jj) = "~S~o~N~ lat."  
+        else
+          text5(0,jj) = "-"  
+        end if
+        end if
+        end if
+        end if
+        end if
+        end if
       else
-        text2(1,jj) = "-"  
-      end if
-      end if
-      end if
-      end if
+        text5(0,jj) = "-"
       end if
     end do
   end if
-
 
 ; Left column names
   ncr4  = (/ncases,1/)              ; 16 rows, 3 columns
@@ -258,6 +261,13 @@ begin
 
   gsn_table(wks,ncr2,x2,y2,text2,res2)
 
+
+  if (write_units) then
+    res5               = True
+    res5@txFontHeightF = 0.014
+    res5@txFont   = "helvetica"
+    gsn_table(wks,ncr5,x5,y5,text5,res5)
+  end if
 
 ; left column names
   res4 = True
@@ -394,7 +404,7 @@ begin
   titres@txJust="TopCenter"
   gsn_text_ndc(wks,titlestr,total_width/2.,1.0,titres)
 
-  drawNDCGrid(wks)
+  ;drawNDCGrid(wks)
 
   frame(wks)      ; Advance the frame.
 

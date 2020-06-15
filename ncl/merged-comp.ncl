@@ -14,7 +14,7 @@ csvdir="./csv-files/"
 gridsize = 8.0
 basin=1      ; negative for global, (/1,2,3,4/) for NH
 pathtoconfiglists="./config-lists/"
-filename="rean_configs.csv"
+filename="sens_configs.csv"
 plot_tables_only=False
 defineMIbypres=False
 
