@@ -127,7 +127,7 @@ begin
   namelabwidth=0.16
   ndcgap=0.02
   labelbarheight=0.05
-  labelbarwidthdelta=0.1
+  labelbarwidthdelta=0.02  ; how far "inset" are the left/right edges of label bar
   unitheight=0.034
 
   if (.not. write_units) then
@@ -299,6 +299,16 @@ begin
   end if
   STCOLORVAR=1
 
+  filename := str_sub_str(filename,"metrics_","means_")
+  if (plot_bias .and. fileexists(filename)) then
+    print("Going to do standard deviations")
+    lines := asciiread(filename,-1,"string")
+    stdevs := str_split(lines(1),delim)
+    colorstd=True
+  else
+    colorstd=False
+  end if
+
   do ii = 0,nvars-1
     ; First, insert a reference color, this will get overwritten later if STCOLOR is 0
     FillColors(0,ii) = "grey75"
@@ -312,8 +322,14 @@ begin
     ;end if
 
     if (plot_bias) then
-      minVal=-1.*max(abs(tofloat(var(ii,STCOLORVAR:(ncases-1)))))
-      maxVal= 1.*max(abs(tofloat(var(ii,STCOLORVAR:(ncases-1)))))
+      if (colorstd) then
+        howmanystd=3
+        minVal=-1*tofloat(howmanystd)
+        maxVal=tofloat(howmanystd)
+      else
+        minVal=-1.*max(abs(tofloat(var(ii,STCOLORVAR:(ncases-1)))))
+        maxVal= 1.*max(abs(tofloat(var(ii,STCOLORVAR:(ncases-1)))))
+      end if
     else
       maxVal = max(tofloat(var(ii,STCOLORVAR:(ncases-1))))
       minVal = min(tofloat(var(ii,STCOLORVAR:(ncases-1))))
@@ -321,6 +337,11 @@ begin
 
     do zz = STCOLORVAR,ncases-1
       thisVal=tofloat(var(ii,zz))
+
+      if (colorstd) then
+        thisVal = thisVal / tofloat(stdevs(ii+1))  ; std need to go up one since we don't want model name
+      end if
+
       if (ismissing(thisVal)) then
         FillColors(zz,ii) = "grey50"
       else
@@ -383,7 +404,11 @@ begin
   txres@txFontHeightF = 0.02
 
   if (plot_bias) then
-    labelstrings=(/"Low Bias","High Bias"/)
+    if (colorstd) then
+      labelstrings=(/"-"+howmanystd+"~F33~s~N~",howmanystd+"~F33~s~N~","0"/)
+    else
+      labelstrings=(/"Low Bias","High Bias","No Bias"/)
+    end if
   else
     if (relative_performance) then
       labelstrings=(/"Worse Performance","Better Performance"/)
@@ -392,10 +417,18 @@ begin
     end if
   end if
 
+print(""+labelbarwidthdelta/2.)
+print(""+(total_width-(labelbarwidthdelta/2.)))
+print(""+(total_width/2.))
+
   txres@txJust="CenterLeft"
   gsn_text_ndc(wks,labelstrings(0),labelbarwidthdelta/2.,top_of_label_text,txres)
   txres@txJust="CenterRight"
   gsn_text_ndc(wks,labelstrings(1),total_width-(labelbarwidthdelta/2.),top_of_label_text,txres)
+  if (plot_bias) then
+    txres@txJust="CenterCenter"
+    gsn_text_ndc(wks,labelstrings(2),total_width/2.,top_of_label_text,txres)
+  end if
 
 
   titres=True

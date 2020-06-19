@@ -3,6 +3,7 @@ load "./functions/getTrajectoriesGeneric.ncl"
 load "./functions/trackDensity.ncl"
 load "./functions/mask_tc.ncl"
 load "./functions/taylor_diagram_cam.ncl"
+load "./functions/taylor_stats.ncl"
 
 begin
 
@@ -14,7 +15,7 @@ csvdir="./csv-files/"
 gridsize = 8.0
 basin=1      ; negative for global, (/1,2,3,4/) for NH
 pathtoconfiglists="./config-lists/"
-filename="sens_configs.csv"
+filename="rean_configs.csv"
 plot_tables_only=False
 defineMIbypres=False
 
@@ -26,7 +27,7 @@ ms_to_kts = 1.94384449
 ;======================= Calendar logic ================================
 
 styr=1980
-enyr=2016
+enyr=2019
 
 nyears=enyr-styr+1
 yearArr=ispan(styr,enyr,1)
@@ -81,6 +82,7 @@ aceByYear=new((/nfiles,nyears/),"float")
 paceByYear=new((/nfiles,nyears/),"float")
 tcdByYear=new((/nfiles,nyears/),"float")
 lmiByYear=new((/nfiles,nyears/),"float")
+latgenByYear=new((/nfiles,nyears/),"float")
 
 ; Init per month arrays
 stormsByMonth=new((/nfiles,nmonths/),"float")
@@ -102,7 +104,6 @@ avgLmiPS=new((/nfiles/),"float")
 avgAcePS=new((/nfiles/),"float")
 avgPacePS=new((/nfiles/),"float")
 avgLatgenPS=new((/nfiles/),"float")
-
 
 ;=================== Loop over data files ================================
 
@@ -325,22 +326,26 @@ if (str_get_cols(files(zz),0,0).ne."!") then
 
   do ii = 0,nyears-1
     thisYr=ii+styr
+    if (thisYr .ge. min(cgyear) .and. thisYr .le. max(cgyear)) then
+      stormsByYear(zz,ii)=num(cgyear.eq.thisYr)
 
-    stormsByYear(zz,ii)=num(cgyear.eq.thisYr)
+      tmpace=where(cgyear.eq.thisYr,cace,cace@_FillValue)
+      aceByYear(zz,ii)=sum(tmpace)
 
-    tmpace=where(cgyear.eq.thisYr,cace,cace@_FillValue)
-    aceByYear(zz,ii)=sum(tmpace)
+      tmppace=where(cgyear.eq.thisYr,cpace,cpace@_FillValue)
+      paceByYear(zz,ii)=sum(tmppace)
 
-    tmppace=where(cgyear.eq.thisYr,cpace,cpace@_FillValue)
-    paceByYear(zz,ii)=sum(tmppace)
+      tmptcd=where(cgyear.eq.thisYr,ctcd,ctcd@_FillValue)
+      tcdByYear(zz,ii)=sum(tmptcd)
 
-    tmptcd=where(cgyear.eq.thisYr,ctcd,ctcd@_FillValue)
-    tcdByYear(zz,ii)=sum(tmptcd)
+      tmplmi=where(cgyear.eq.thisYr,clatmi,clatmi@_FillValue)
+      lmiByYear(zz,ii)=avg(tmplmi)
 
-    tmplmi=where(cgyear.eq.thisYr,clatmi,clatmi@_FillValue)
-    lmiByYear(zz,ii)=avg(tmplmi)
+      tmplatgen=where(cgyear.eq.thisYr,cglat,cglat@_FillValue)
+      latgenByYear(zz,ii)=avg(tmplatgen)
 
-    delete([/tmpace,tmppace,tmptcd,tmplmi/])
+      delete([/tmpace,tmppace,tmptcd,tmplmi,tmplatgen/])
+    end if
   end do
 
   do ii = 1,nmonths
@@ -380,6 +385,7 @@ if (str_get_cols(files(zz),0,0).ne."!") then
   avgAcePS(zz) = avg(cace)
   avgLmiPS(zz) = avg(abs(clatmi))
   avgLatgenPS(zz) = avg(abs(cglat))
+
 
   trackdens = track_density(gridsize,0.0,clat,clon,False)
   trackdens = trackdens/nmodyears
@@ -654,6 +660,26 @@ do qq = 0,nfiles-1
   system("echo "+OUTSTR+" >> "+outputname)
 end do
 
+
+
+
+print("... doing base control stats for climo mean")
+outputname=csvdir+"/"+"means_"+basecsv+"_"+basinstr+"_climo_mean.csv"
+system("rm "+outputname)
+system("echo Model,uclim_count,uclim_tcd,uclim_ace,uclim_pace,uclim_lmi >> "+outputname)
+do qq = 0,nfiles-1
+  mm = valid_files(qq)
+  if (mm .eq. 0) then
+    OUTSTR=strs(mm)+delim+ \
+      stddev(stormsByYear(mm,:))+delim+ \
+      stddev(tcdByYear(mm,:))+delim+ \
+      stddev(aceByYear(mm,:))+delim+ \
+      stddev(paceByYear(mm,:))+delim+ \
+      stddev(lmiByYear(mm,:))
+    system("echo "+OUTSTR+" >> "+outputname)
+  end if
+end do
+
 print("... doing un-paired storm-mean statistics")
 outputname=csvdir+"/"+"metrics_"+basecsv+"_"+basinstr+"_storm_mean.csv"
 system("rm "+outputname)
@@ -668,6 +694,23 @@ do qq = 0,nfiles-1
     avgLmiPS(mm)
   system("echo "+OUTSTR+" >> "+outputname)
 end do
+
+;print("... doing base control stats for storm means")
+;outputname=csvdir+"/"+"means_"+basecsv+"_"+basinstr+"_storm_mean.csv"
+;system("rm "+outputname)
+;system("echo Model,utc_tcd,utc_ace,utc_pace,utc_latgen,utc_lmi >> "+outputname)
+;do qq = 0,nfiles-1
+;  mm = valid_files(qq)
+;  if (mm .eq. 0) then
+;    OUTSTR=strs(mm)+delim+ \
+;      stddev(tcdByYear(mm,:))+delim+ \
+;      stddev(aceByYear(mm,:))+delim+ \
+;      stddev(paceByYear(mm,:))+delim+ \
+;      stddev(lmiByYear(mm,:))+delim+ \
+;      stddev(latgenByYear(mm,:))
+;    system("echo "+OUTSTR+" >> "+outputname)
+;  end if
+;end do
 
 outputname=csvdir+"/"+"metrics_"+basecsv+"_"+basinstr+"_temporal_pcorr.csv"
 system("rm "+outputname)
@@ -727,7 +770,7 @@ do qq = 0,nfiles-1
     taylor_cco(0,qq-1)=taylorVals(0)
     taylor_rat(0,qq-1)=taylorVals(1)
     taylor_bia(0,qq-1)=taylorVals(2)
-    taylor_rms(0,qq-1)=taylorVals(7);/stddev(tmptest)
+    taylor_rms(0,qq-1)=taylorVals(7);/stddev(tmprefr)
   end if
 
   ; these are equivalent...
@@ -805,7 +848,9 @@ system("mkdir -p "+thisDir)
 wks   = gsn_open_wks("pdf",thisDir+"/taylor_"+basecsv+"_"+basinstr)      ; send graphics to PNG file
 res   = True
 res@txFontHeightF = 0.02
-res@markerTxYOffset = 0.03
+res@txMarkerLabelHeight = 0.025
+res@markerTxYOffset = 0.032
+res@varLabelsFontHeightF = 0.018
 res@Colors = (/"blue","red"/)
 res@varLabels = valid_strs(1:nfiles-1)  ; don't include obs
 res@centerDiffRMS = True
@@ -816,7 +861,7 @@ res@varLabelsYloc = 1.7
 plot  = taylor_diagram_cam(wks, taylor_rat, taylor_cco, taylor_bia2, res)
 
 print(res@varLabels+" ")
-print(taylor_rat+" "+taylor_cco+" "+taylor_bia+" "+taylor_bia2)
+print(taylor_rat+" "+taylor_cco+" "+taylor_bia+" "+taylor_bia2+" "+taylor_rms)
 
 delete(wks)
 delete(plot)
