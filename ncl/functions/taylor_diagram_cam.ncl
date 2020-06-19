@@ -398,8 +398,8 @@ begin
   ptRes@txJust             = "BottomCenter"; Default="CenterCenter".
   ptRes@txFontThicknessF   = 1.2      ; default=1.00
   ptRes@txFontHeightF      = 0.0125   ; default=0.05
-  if (rOpts .and. isatt(rOpts,"txFontHeightF")) then
-      ptRes@txFontHeightF  = rOpts@txFontHeightF  
+  if (rOpts .and. isatt(rOpts,"txMarkerLabelHeight")) then
+      ptRes@txFontHeightF  = rOpts@txMarkerLabelHeight  
   end if
 
   markerTxYOffset          = 0.0175   ; default
@@ -694,8 +694,7 @@ begin
       txres@txFontHeightF = varLabelsFontHeightF
       txres@txJust = "CenterLeft"              ; justify to the center left
 
-     ;delta_y = 0.02       
-      delta_y = 0.06   
+      delta_y = 0.075   
       if (rOpts .and. isatt(rOpts,"varLabelsYloc")) then
           ys  = rOpts@varLabelsYloc            ; user specified
       else

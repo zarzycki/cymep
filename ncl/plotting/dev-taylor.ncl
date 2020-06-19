@@ -41,12 +41,14 @@ taylor_bia2(0,:) = (/-29.413, \
 wks   = gsn_open_wks("x11","devtaylor")      ; send graphics to PNG file
 res   = True
 res@txFontHeightF = 0.02
-res@markerTxYOffset = 0.03
+res@txMarkerLabelHeight = 0.025
+res@markerTxYOffset = 0.032
+res@varLabelsFontHeightF = 0.018
 res@Colors = (/"blue","red"/)
 res@varLabels = valid_strs(1:nfiles-1)  ; don't include obs
 res@centerDiffRMS = True
 res@stnRad        = (/  0.5,1.5  /)   ; additional standard radii
-res@ccRays        = (/  0.6,0.9  /)   ; correlation rays 
+res@ccRays        = (/  0.5,0.6,0.7,0.8,0.9,0.95  /)   ; correlation rays 
 res@varLabelsYloc = 1.72
 ;res@drawCorLabel=False
 
