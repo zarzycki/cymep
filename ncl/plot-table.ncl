@@ -345,7 +345,13 @@ begin
       if (ismissing(thisVal)) then
         FillColors(zz,ii) = "grey50"
       else
-        percentage = (thisVal - minVal) / (maxVal - minVal)
+        ; check for odd cases when maxval = minval and div / 0
+        if ((maxVal - minVal) .eq. 0) then
+          denom = 0.5
+        else
+          denom = (maxVal - minVal)
+        end if
+        percentage = (thisVal - minVal) / denom
         percentage = max((/0.,percentage/))
         percentage = min((/1.,percentage/))
         ;if (ii .eq. 1) then
