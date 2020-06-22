@@ -13,9 +13,9 @@ out_type = "pdf"
 trajDir="./trajs/"
 csvdir="./csv-files/"
 gridsize = 8.0
-basin=1      ; negative for global, (/1,2,3,4/) for NH
+basin=(/1,2,3,4,5/)      ; negative for global, (/1,2,3,4/) for NH
 pathtoconfiglists="./config-lists/"
-filename="rean_configs.csv"
+filename="highresmip_configs.csv"
 plot_tables_only=False
 defineMIbypres=False
 
@@ -34,8 +34,9 @@ yearArr=ispan(styr,enyr,1)
 
 stmon=1
 enmon=12
-nmonths=enmon-stmon+1
-monArr=ispan(stmon,enmon,1)
+
+nmonths=12
+monArr=ispan(1,12,1)
 
 ;======================= Masking ================================
 
@@ -60,10 +61,16 @@ isUnstructStr   = str_get_field(lines,3,delim)
 ensmembers= toint(str_get_field(lines,4,delim))
 yearspermember= toint(str_get_field(lines,5,delim))
 windcorrs = tofloat(str_get_field(lines,6,delim))
-linecolors = str_get_field(lines,7,delim)
+;linecolors = str_get_field(lines,7,delim)
 
 ; convert string to logical
 isUnstruct = where(isUnstructStr.eq."True",True,False)
+
+;=================== Some defaults ================================
+
+linecolors = (/"black","dodgerblue3","peru","palegreen3","orangered2","darkorchid4","gold1","steelblue2"/)
+
+linedashes = (/0,1,2,3,4,5,6,7,8,9,10,11,12/)
 
 ;=================== Internal logic ================================
 
@@ -150,9 +157,6 @@ if (str_get_cols(files(zz),0,0).ne."!") then
   nstorms=dims(0)
   ntimes=dims(1)
 
-  ; Filter observational records
-  if (zz.eq.0) then
-
     aaa=2.3
     bbb=1010.
     ccc=0.76
@@ -172,6 +176,9 @@ if (str_get_cols(files(zz),0,0).ne."!") then
     print("Fixing "+num(xpres .lt. 0.))
     xpres=where( xpres .lt. 0. , 1008. , xpres)
     xwind=where( xwind .lt. 0. , 15. , xwind)
+
+  ; Filter observational records
+  if (zz.eq.0) then
 
     windthreshold=17.5
     xlon=where(xwind.gt.windthreshold,xlon,xlon@_FillValue)
@@ -237,6 +244,32 @@ if (str_get_cols(files(zz),0,0).ne."!") then
       end if
     end do
   end if
+
+; CMZ month filtering
+do ii = 0,nstorms-1
+  maskoff=True
+  if (.not. ismissing(xglat(ii))) then
+    maskoff=False
+    orimon=xgmonth(ii)
+    if (orimon .lt. stmon .or. orimon .gt. enmon) then
+      maskoff=True
+    end if
+  end if
+
+  if maskoff then
+    xlon(ii,:)=xlon@_FillValue
+    xlat(ii,:)=xlat@_FillValue
+    xpres(ii,:)=xpres@_FillValue
+    xwind(ii,:)=xwind@_FillValue
+    xyear(ii,:)=xyear@_FillValue
+    xmonth(ii,:)=xmonth@_FillValue
+    xglon(ii)=xglon@_FillValue
+    xglat(ii)=xglat@_FillValue
+    xgyear(ii)=xgyear@_FillValue
+    xgmonth(ii)=xgmonth@_FillValue
+  end if
+end do
+
 
   ; Get location of maximum intensity for each trajectory
   xlatmi=new(nstorms,typeof(xlat))
@@ -437,7 +470,8 @@ if (str_get_cols(files(zz),0,0).ne."!") then
     fulltcd=fulldens
     fulltrackbias=fulldens
     fullgenbias=fulldens
-
+    fullacebias=fulldens
+    fullpacebias=fulldens
     delete(tmpdims)
   end if
   
@@ -455,9 +489,15 @@ if (str_get_cols(files(zz),0,0).ne."!") then
   trackbias = trackdens(:,:) - fulldens(0,:,:)
   genbias = gendens
   genbias = gendens(:,:) - fullgen(0,:,:)
+  acebias = acedens
+  acebias = acedens(:,:) - fullace(0,:,:)
+  pacebias = pacedens
+  pacebias = pacedens(:,:) - fullpace(0,:,:)
 
   fulltrackbias(zz,:,:)=trackbias(:,:)
   fullgenbias(zz,:,:)=genbias(:,:)
+  fullacebias(zz,:,:)=acebias(:,:)
+  fullpacebias(zz,:,:)=pacebias(:,:)
 
   ; clean up arrays before returning to start of loop
   delete([/xyear,xmonth,xhour,xday/])
@@ -465,7 +505,7 @@ if (str_get_cols(files(zz),0,0).ne."!") then
   delete([/clon,clat,cpres,cwind,cace,caceall,cpace,cpaceall,ctcd,ctcdpp,clatmi,clonmi,cglon,cglat,cmpres,cmwind,cgyear,cgmonth/])
   delete([/traj_data,maxLines,ncols,thefile/])
   delete([/thisYr/])
-  delete([/trackdens,minpres,maxwind,trackbias/])
+  delete([/trackdens,minpres,maxwind,trackbias,genbias,acebias,pacebias/])
 
   print("---------------------------------------------------- DONE")
 
@@ -477,15 +517,17 @@ iz = ind(.not.ismissing(valid_files))
 valid_files := valid_files(iz)
 valid_strs := strs(iz)
 valid_colors := linecolors(iz)
+valid_dashes := linedashes(iz)
 nfiles=dimsizes(valid_files)
 
 
 
 lettercount=0
-spapltvarsstr=(/"trackdens","minpres","maxwind","gendens","pacedens","acedens","tcddens", "trackbias","genbias"/)
-spapltvars=[/ fulldens, fullpres, fullwind, fullgen, fullpace,fullace,fulltcd, fulltrackbias , fullgenbias /] 
-spapltmincontour=(/0.,880.,0.,0.,0.,0.,0.,-20.,-1.0/)
-spapltmaxcontour=(/30.,1010.,100.,1.,6.,6.,5.,20.,1.0/)
+spapltvarsstr=(/"trackdens","minpres","maxwind","gendens","pacedens","acedens","tcddens", "trackbias","genbias","acebias","pacebias"/)
+spapltvars=[/ fulldens, fullpres, fullwind, fullgen, fullpace,fullace,fulltcd, fulltrackbias , fullgenbias, fullacebias, fullpacebias /] 
+spapltmincontour=(/0.,870.,0.,0.,0.,0.,0.,-20.,-1.,-5.,-5./)
+spapltmaxcontour=(/30.,1000.,80.,2.,6.,6.,5.,20.,1.,5.,5./)    ; use this for global
+;spapltmaxcontour=(/15.,1000.,80.,0.5,3.,3.,3.,10.,0.5/)    ; use this for NATL
 letterstr=(/"a.","b.","c.","d.","e.","f.","g.","h.","i.","j.","k.","l."/)
 
 
@@ -500,7 +542,7 @@ do bb = 0,dimsizes(spapltvarsstr)-1
   plot = new(nfiles,"graphic")
 
   toPlot=spapltvars[bb]
-  if (spapltvarsstr(bb) .eq. "trackbias" .or. spapltvarsstr(bb) .eq. "genbias") then
+  if (spapltvarsstr(bb) .eq. "trackbias" .or. spapltvarsstr(bb) .eq. "genbias" .or. spapltvarsstr(bb) .eq. "acebias" .or. spapltvarsstr(bb) .eq. "pacebias") then
     colorMap1="NCV_blu_red"
     ncontlev = 9
   else
@@ -874,7 +916,7 @@ system("mkdir -p "+thisDir)
 lettercount=0
 linepltvarsstr=(/"stormsByMonth","tcdByMonth","aceByMonth","paceByMonth"/)
 linepltvars=[/ stormsByMonth, tcdByMonth, aceByMonth, paceByMonth /] 
-lineunitsstr=(/"number","days","(10~S~4~N~ kn~S~2~N~)","(10~S~4~N~ kn~S~2~N~)"/)
+lineunitsstr=(/"number","days","10~S~-4~N~ kn~S~2~N~","10~S~-4~N~ kn~S~2~N~"/)
 
 do mm = 0,dimsizes(linepltvarsstr)-1
 
@@ -887,11 +929,11 @@ res                   = True                      ; plot mods desired
 res@gsnDraw=False
 res@gsnFrame=False
 res@tiMainString      = linepltvarsstr(mm)+" seasonal cycle"       ; add title
-res@xyMonoDashPattern=True
+res@xyDashPatterns = valid_dashes
 res@xyMonoLineThickness=True
-res@xyLineThicknessF = 4.0
+res@xyLineThicknessF = 3.0
 res@trYMinF=0.0
-res@xyLineColors      = linecolors
+res@xyLineColors      = valid_colors
 res@tiXAxisString = "Month"
 res@tiYAxisString = linepltvarsstr(mm)+" ("+lineunitsstr(mm)+")"
 res@trXMinF = 1
@@ -902,9 +944,11 @@ plot  = gsn_csm_xy (wks,monArr,toPlot,res) ; create plot
 ; Build legend
 textres=True
 lineres=True
-textres@lgLabels     = valid_strs
+textres@lgLabels=valid_strs
 lineres@lgLineColors=valid_colors
+lineres@lgDashIndexes=valid_dashes
 lineres@lgLineThicknesses=res@xyLineThicknessF
+
 plot = simple_legend(wks,plot,res,lineres,textres)
 
 draw(plot)
