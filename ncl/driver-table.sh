@@ -1,5 +1,7 @@
 #!/bin/bash -l
 
+conda activate ncl_stable
+
 THECSVFILE=$1
 BASIN=$2
 

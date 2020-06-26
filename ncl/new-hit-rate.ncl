@@ -42,7 +42,7 @@ dq       = str_get_dq()
 date_cmd = "date +" + dq + "%a %b %d %H:%M:%S %Z %Y" + dq
 
 styr=1980
-enyr=2015
+enyr=2018
 nyears=enyr-styr+1
 
 thefile:="trajs/ibtracs-1980-2019-GLOB.v4.txt"
@@ -74,7 +74,7 @@ xntimes=xdims(1)
 ; =====
 
 ;thefile:="dev/trajectories.txt.JRA"
-thefile:="trajs/trajectories.txt.MERRA2"
+thefile:="trajs/trajectories.txt.TC-ALL_TRACK_ERA5_Reanalysis_r1i1p1f1_gr_19790101-20181231.nc"
 ;thefile:="e3sm/trajectories.txt.ERA5.T400.DEFAULT"
 
 ncols := 11 ; number of columns in non-header rows of trajectory file
