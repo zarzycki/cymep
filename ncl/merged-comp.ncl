@@ -13,7 +13,7 @@ out_type = "pdf"
 trajDir="./trajs/"
 csvdir="./csv-files/"
 gridsize = 8.0
-basin=(/1,2,3,4,5/)      ; negative for global, (/1,2,3,4/) for NH
+basin=-1    ; negative for global, (/1,2,3,4,5/) for NH or (/6,7,8/) for SH
 pathtoconfiglists="./config-lists/"
 filename="highresmip_configs.csv"
 plot_tables_only=False
@@ -32,6 +32,8 @@ enyr=2019
 nyears=enyr-styr+1
 yearArr=ispan(styr,enyr,1)
 
+; start and end month, 1 based (1 = J, etc.)
+; 1 - 12 for everything
 stmon=1
 enmon=12
 
@@ -44,7 +46,11 @@ if (any(basin.gt.0)) then
   if (dimsizes(basin) .eq. 1) then
     basinstr=getbasinmaskstr(basin)
   else
-    basinstr="NHEMI"
+    if (basin(0) .eq. 1) then
+      basinstr="NHEMI"
+    else
+      basinstr="SHEMI"
+    end if
   end if
 else
   basinstr="GLOB"
@@ -251,8 +257,16 @@ do ii = 0,nstorms-1
   if (.not. ismissing(xglat(ii))) then
     maskoff=False
     orimon=xgmonth(ii)
-    if (orimon .lt. stmon .or. orimon .gt. enmon) then
-      maskoff=True
+    if (enmon .le. stmon) then
+      ; if endmonth is LESS than ST month, we need to *eliminate* "middle" months
+      if (orimon .gt. enmon .and. orimon .lt. stmon) then
+        maskoff=True
+      end if
+    else
+      ; otherwise, normal case
+      if (orimon .lt. stmon .or. orimon .gt. enmon) then
+        maskoff=True
+      end if
     end if
   end if
 
@@ -519,7 +533,7 @@ valid_strs := strs(iz)
 valid_colors := linecolors(iz)
 valid_dashes := linedashes(iz)
 nfiles=dimsizes(valid_files)
-
+print(valid_files+" "+valid_strs+" "+valid_colors+" "+valid_dashes)
 
 
 lettercount=0
@@ -921,6 +935,7 @@ lineunitsstr=(/"number","days","10~S~-4~N~ kn~S~2~N~","10~S~-4~N~ kn~S~2~N~"/)
 do mm = 0,dimsizes(linepltvarsstr)-1
 
 toPlot=linepltvars[mm]
+print(toPlot)
 
 wks   = gsn_open_wks("pdf",thisDir+"/seasonal_"+tostring(linepltvarsstr(mm))+"."+basinstr+"_"+filename)
 
@@ -929,11 +944,11 @@ res                   = True                      ; plot mods desired
 res@gsnDraw=False
 res@gsnFrame=False
 res@tiMainString      = linepltvarsstr(mm)+" seasonal cycle"       ; add title
-res@xyDashPatterns = valid_dashes
-res@xyMonoLineThickness=True
+res@xyDashPatterns = linedashes ; have to use full dash set since missing data may be included
+;res@xyMonoLineThickness=True
 res@xyLineThicknessF = 3.0
 res@trYMinF=0.0
-res@xyLineColors      = valid_colors
+res@xyLineColors      = linecolors ; we have to use linecolors here since missing data included
 res@tiXAxisString = "Month"
 res@tiYAxisString = linepltvarsstr(mm)+" ("+lineunitsstr(mm)+")"
 res@trXMinF = 1
@@ -944,7 +959,7 @@ plot  = gsn_csm_xy (wks,monArr,toPlot,res) ; create plot
 ; Build legend
 textres=True
 lineres=True
-textres@lgLabels=valid_strs
+textres@lgLabels=valid_strs   ; use only valid_strs here since we don't want missing data in legend, only uncommented files
 lineres@lgLineColors=valid_colors
 lineres@lgDashIndexes=valid_dashes
 lineres@lgLineThicknesses=res@xyLineThicknessF
