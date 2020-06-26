@@ -49,7 +49,7 @@ end if
   ; Coefficients for calculating ATL/EPAC sloped line
   m = -0.58
   b = 00 - m*295
-  maxlat = 45.0
+  maxlat = 50.0
  
   ; 1 = ATL
   ; 2 = EPAC
@@ -62,14 +62,14 @@ end if
   ; Atlantic
   do i = 0,nlat-1
     do j = 0,mlon-1
-      if (lat(i) .ge. 0 .and. lat(i) .le. maxlat .and. lon(j) .gt. 257 .and. lon(j) .le. 355) then
+      if (lat(i) .ge. 0 .and. lat(i) .le. maxlat .and. lon(j) .gt. 257 .and. lon(j) .le. 359) then
         ;print(lon(j))
         funcval = m*lon(j) + b
       ;print(funcval)
         if (lat(i) .gt. funcval) then
-        maskArr(i,j) = 1
+          maskArr(i,j) = 1
         else
-        maskArr(i,j) = 2
+          maskArr(i,j) = 2
         end if
       else if (lat(i) .ge. 0 .and. lat(i) .le. maxlat .and. lon(j) .gt. 220 .and. lon(j) .le. 257) then
               maskArr(i,j) = 2
@@ -83,10 +83,11 @@ end if
               maskArr(i,j) = 6
       else if (lat(i) .lt. 0 .and. lat(i) .ge. -maxlat .and. lon(j) .gt. 135 .and. lon(j) .le. 290) then
               maskArr(i,j) = 7   
-      
-      
+      else if (lat(i) .lt. 0 .and. lat(i) .ge. -maxlat .and. lon(j) .gt. 290 .and. lon(j) .le. 359) then
+              maskArr(i,j) = 8
       else
         maskArr(i,j) = 0
+      end if
       end if
       end if
       end if
