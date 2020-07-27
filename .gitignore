@@ -1,3 +1,6 @@
+netcdf-files/*.nc
+spatial-tau.ncl
+simple.nc
 _*.nc
 *.so
 tmp.nc
