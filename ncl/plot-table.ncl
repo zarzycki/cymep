@@ -172,9 +172,9 @@ begin
         else if .not.ismissing((str_match(stringToMatch,",tcd"))) then
           text5(0,jj) = "days"  
         else if .not.ismissing((str_match(stringToMatch,",ace"))) then
-          text5(0,jj) = "kn~S~2~N~"  
+          text5(0,jj) = "10~S~4~N~ kn~S~2~N~"  
         else if .not.ismissing((str_match(stringToMatch,",pace"))) then
-          text5(0,jj) = "kn~S~2~N~"  
+          text5(0,jj) = "10~S~4~N~ kn~S~2~N~"  
         else if .not.ismissing((str_match(stringToMatch,",lmi"))) then
           text5(0,jj) = "~S~o~N~ lat."
         else if .not.ismissing((str_match(stringToMatch,",latgen"))) then
