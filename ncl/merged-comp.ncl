@@ -12,10 +12,11 @@ begin
 out_type = "pdf"
 trajDir="./trajs/"
 csvdir="./csv-files/"
+netcdfdir="./netcdf-files/"
 gridsize = 8.0
-basin=-1    ; negative for global, (/1,2,3,4,5/) for NH or (/6,7,8/) for SH
+basin=1    ; negative for global, (/1,2,3,4,5/) for NH or (/6,7,8/) for SH
 pathtoconfiglists="./config-lists/"
-filename="highresmip_configs.csv"
+filename="rean_configs.csv"
 plot_tables_only=False
 defineMIbypres=False
 
@@ -27,7 +28,7 @@ ms_to_kts = 1.94384449
 ;======================= Calendar logic ================================
 
 styr=1980
-enyr=2019
+enyr=2018
 
 nyears=enyr-styr+1
 yearArr=ispan(styr,enyr,1)
@@ -67,7 +68,6 @@ isUnstructStr   = str_get_field(lines,3,delim)
 ensmembers= toint(str_get_field(lines,4,delim))
 yearspermember= toint(str_get_field(lines,5,delim))
 windcorrs = tofloat(str_get_field(lines,6,delim))
-;linecolors = str_get_field(lines,7,delim)
 
 ; convert string to logical
 isUnstruct = where(isUnstructStr.eq."True",True,False)
@@ -535,16 +535,45 @@ valid_dashes := linedashes(iz)
 nfiles=dimsizes(valid_files)
 print(valid_files+" "+valid_strs+" "+valid_colors+" "+valid_dashes)
 
+printVarSummary(valid_strs)
+
+;fulldens!0="model"
 
 lettercount=0
 spapltvarsstr=(/"trackdens","minpres","maxwind","gendens","pacedens","acedens","tcddens", "trackbias","genbias","acebias","pacebias"/)
 spapltvars=[/ fulldens, fullpres, fullwind, fullgen, fullpace,fullace,fulltcd, fulltrackbias , fullgenbias, fullacebias, fullpacebias /] 
-spapltmincontour=(/0.,870.,0.,0.,0.,0.,0.,-20.,-1.,-5.,-5./)
-spapltmaxcontour=(/30.,1000.,80.,2.,6.,6.,5.,20.,1.,5.,5./)    ; use this for global
-;spapltmaxcontour=(/15.,1000.,80.,0.5,3.,3.,3.,10.,0.5/)    ; use this for NATL
+;spapltmincontour=(/0. ,870. , 0., 0., 0., 0., 0.,-20.,-1.5,-5.,-5./); use this for global
+;spapltmaxcontour=(/30.,1000.,80., 2., 6., 6., 5., 20., 1.5, 5., 5./)    
+spapltmincontour=(/0. ,870. ,0. ,0. ,0. ,0., 0.,-10.,-1.0,-5.,-5./)  ; use this for NATL
+spapltmaxcontour=(/15.,1000.,80.,1. ,5. ,5., 3., 10., 1.0, 5., 5./)    
 letterstr=(/"a.","b.","c.","d.","e.","f.","g.","h.","i.","j.","k.","l."/)
 
+; ========================================================================
 
+ncoutfile=netcdfdir+"/"+"spatial_"+basecsv+"_"+basinstr+".nc"
+system("/bin/rm -f "+ncoutfile)   ; remove any pre-existing file
+ncdf = addfile(ncoutfile ,"c")  ; open output netCDF file
+
+fAtt               = True            ; assign file attributes
+fAtt@title         = "Coastal metrics spatial netcdf"
+fAtt@creation_date = systemfunc ("date")
+fileattdef( ncdf, fAtt )            ; copy file attributes
+
+do bb = 0,dimsizes(spapltvarsstr)-1
+  print("saving "+bb)
+  spapltvars[bb]!0="model"
+  tmpvar = spapltvars[bb]
+  ncdf->$spapltvarsstr(bb)$ = tmpvar(iz,:,:)
+  delete(tmpvar)
+end do
+
+tmpchars=stringtochar(valid_strs)
+tmpchars!0="model"
+tmpchars!1="characters"
+ncdf->model_names = tmpchars
+delete(tmpchars)
+
+; ========================================================================
 
 
 
@@ -557,8 +586,13 @@ do bb = 0,dimsizes(spapltvarsstr)-1
 
   toPlot=spapltvars[bb]
   if (spapltvarsstr(bb) .eq. "trackbias" .or. spapltvarsstr(bb) .eq. "genbias" .or. spapltvarsstr(bb) .eq. "acebias" .or. spapltvarsstr(bb) .eq. "pacebias") then
-    colorMap1="NCV_blu_red"
-    ncontlev = 9
+    ;colorMap1="NCV_blu_red"
+    ;colorMap1="BlueWhiteOrangeRed"
+    ;colorMap1=read_colormap_file("./functions/seaborn_bluetored2.rgb")
+    colorMap1=read_colormap_file("NCV_blu_red")
+    ; currently a hack to make middle 30 colors = white so that the +/- small contours = white
+    colorMap1(111:141,0:2)=1.0
+    ncontlev=20
   else
     toPlot = where(toPlot.gt.0.,toPlot,toPlot@_FillValue)
     colorMap1="WhiteBlueGreenYellowRed"
@@ -592,6 +626,7 @@ do bb = 0,dimsizes(spapltvarsstr)-1
   res@cnLevelSpacingF       = (res@cnMaxLevelValF - res@cnMinLevelValF) / tofloat(ncontlev)
   res@cnFillPalette=colorMap1
 
+
   res@lbLabelStride = 2
   res@lbLabelBarOn        = False           ; turn off individual cb's
 
@@ -618,6 +653,7 @@ do bb = 0,dimsizes(spapltvarsstr)-1
   end if
 
   delete(res)
+  delete(colorMap1)
   delete(plot)
   delete(toPlot)
   delete(wks)
