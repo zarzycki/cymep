@@ -1,13 +1,3 @@
-!rean_configs.csv
-!ibtracs-1980-2019-GLOB.v4.txt
-!trajectories.txt.CFSR
-!trajectories.txt.CR20
-!trajectories.txt.ERA5
-!trajectories.txt.ERAI
-!trajectories.txt.JRA
-!trajectories.txt.MERRA
-!trajectories.txt.MERRA2
-!trajectories.txt.NARR
 netcdf-files/*.nc
 spatial-tau.ncl
 simple.nc
@@ -48,3 +38,13 @@ out.*
 slice-*nc
 *timesArray_*
 projects/ke/*.nc
+!rean_configs.csv
+!ibtracs-1980-2019-GLOB.v4.txt
+!trajectories.txt.CFSR
+!trajectories.txt.CR20
+!trajectories.txt.ERA5
+!trajectories.txt.ERAI
+!trajectories.txt.JRA
+!trajectories.txt.MERRA
+!trajectories.txt.MERRA2
+!trajectories.txt.NARR
