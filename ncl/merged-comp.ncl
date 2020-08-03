@@ -123,6 +123,9 @@ avgAcePS=new((/nfiles/),"float")
 avgPacePS=new((/nfiles/),"float")
 avgLatgenPS=new((/nfiles/),"float")
 
+
+fill_missing_pw=True
+
 ;=================== Loop over data files ================================
 
 if (.not.plot_tables_only) then
@@ -168,6 +171,8 @@ if (.not.plot_tables_only) then
       nstorms=dims(0)
       ntimes=dims(1)
 
+      if (fill_missing_pw) then
+        ; fill in missing pressure wind
         aaa=2.3
         bbb=1010.
         ccc=0.76
@@ -182,11 +187,12 @@ if (.not.plot_tables_only) then
         xwind=where( xwind .lt. 0. .and. xpres .gt. 0. , aaa*(bbb - xpres)^ccc , xwind)
         ;print(xpres+" "+xwind)
         ;exit
+      end if
 
-        ; now if still missing assume TD
-        print("Fixing "+num(xpres .lt. 0.))
-        xpres=where( xpres .lt. 0. , 1008. , xpres)
-        xwind=where( xwind .lt. 0. , 15. , xwind)
+      ; now if still missing assume TD
+      print("Fixing "+num(xpres .lt. 0.))
+      xpres=where( xpres .lt. 0. , 1008. , xpres)
+      xwind=where( xwind .lt. 0. , 15. , xwind)
 
       ; Filter observational records
       if (zz.eq.0) then
@@ -256,39 +262,38 @@ if (.not.plot_tables_only) then
         end do
       end if
 
-    ; CMZ month filtering
-    do ii = 0,nstorms-1
-      maskoff=True
-      if (.not. ismissing(xglat(ii))) then
-        maskoff=False
-        orimon=xgmonth(ii)
-        if (enmon .le. stmon) then
-          ; if endmonth is LESS than ST month, we need to *eliminate* "middle" months
-          if (orimon .gt. enmon .and. orimon .lt. stmon) then
-            maskoff=True
-          end if
-        else
-          ; otherwise, normal case
-          if (orimon .lt. stmon .or. orimon .gt. enmon) then
-            maskoff=True
+      ; CMZ month filtering
+      do ii = 0,nstorms-1
+        maskoff=True
+        if (.not. ismissing(xglat(ii))) then
+          maskoff=False
+          orimon=xgmonth(ii)
+          if (enmon .le. stmon) then
+            ; if endmonth is LESS than ST month, we need to *eliminate* "middle" months
+            if (orimon .gt. enmon .and. orimon .lt. stmon) then
+              maskoff=True
+            end if
+          else
+            ; otherwise, normal case
+            if (orimon .lt. stmon .or. orimon .gt. enmon) then
+              maskoff=True
+            end if
           end if
         end if
-      end if
 
-      if maskoff then
-        xlon(ii,:)=xlon@_FillValue
-        xlat(ii,:)=xlat@_FillValue
-        xpres(ii,:)=xpres@_FillValue
-        xwind(ii,:)=xwind@_FillValue
-        xyear(ii,:)=xyear@_FillValue
-        xmonth(ii,:)=xmonth@_FillValue
-        xglon(ii)=xglon@_FillValue
-        xglat(ii)=xglat@_FillValue
-        xgyear(ii)=xgyear@_FillValue
-        xgmonth(ii)=xgmonth@_FillValue
-      end if
-    end do
-
+        if maskoff then
+          xlon(ii,:)=xlon@_FillValue
+          xlat(ii,:)=xlat@_FillValue
+          xpres(ii,:)=xpres@_FillValue
+          xwind(ii,:)=xwind@_FillValue
+          xyear(ii,:)=xyear@_FillValue
+          xmonth(ii,:)=xmonth@_FillValue
+          xglon(ii)=xglon@_FillValue
+          xglat(ii)=xglat@_FillValue
+          xgyear(ii)=xgyear@_FillValue
+          xgmonth(ii)=xgmonth@_FillValue
+        end if
+      end do
 
       ; Get location of maximum intensity for each trajectory
       xlatmi=new(nstorms,typeof(xlat))
@@ -736,7 +741,6 @@ if (.not.plot_tables_only) then
   ;>  system("echo "+OUTSTR+" >> "+outputname)
   ;>end do
 
-
   print("... doing un-paired basin-mean statistics")
   outputname=csvdir+"/"+"metrics_"+basecsv+"_"+basinstr+"_climo_mean.csv"
   system("rm "+outputname)
@@ -751,9 +755,6 @@ if (.not.plot_tables_only) then
       avgLmiPY(mm)
     system("echo "+OUTSTR+" >> "+outputname)
   end do
-
-
-
 
   print("... doing base control stats for climo mean")
   outputname=csvdir+"/"+"means_"+basecsv+"_"+basinstr+"_climo_mean.csv"
