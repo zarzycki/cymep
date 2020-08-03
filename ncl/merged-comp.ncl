@@ -9,16 +9,22 @@ begin
 
 ;=================== User Settings ================================
 
-out_type = "pdf"
-gridsize = 8.0
-basin=1    ; negative for global, (/1,2,3,4,5/) for NH or (/6,7,8/) for SH
+; General options
+out_type = "pdf" ; output format type for graphical products. Generally either "png" or "pdf"
+gridsize = 8.0   ; size of lat/lon "aggregation" grid in reg lat-lon degrees
+basin=1          ; negative for no basin filtering, (/1,2,3,4,5/) for NH or (/6,7,8/) for SH
 filename="rean_configs.csv"
-plot_tables_only=False
-defineMIbypres=False
 
 ; This is used for years that overlap for interannual correlation
+; Generally only used for comparing reanalysis or other nudged product to observations
 styr=0
 enyr=1
+
+; Various "special" options
+do_defineMIbypres=False
+do_fill_missing_pw=True
+do_special_filter_obs=True
+plot_tables_only=False
 
 ;======================= Dirs ================================
 ; only modify if you need to change dir structure
@@ -123,9 +129,6 @@ avgAcePS=new((/nfiles/),"float")
 avgPacePS=new((/nfiles/),"float")
 avgLatgenPS=new((/nfiles/),"float")
 
-
-fill_missing_pw=True
-
 ;=================== Loop over data files ================================
 
 if (.not.plot_tables_only) then
@@ -156,7 +159,8 @@ if (.not.plot_tables_only) then
       end if
       traj_data = getTrajectoriesGeneric(thefile,ncols,maxLines,"start","tab",isUnstruct(zz),False)
 
-      ; load in trajectory data (need to be modified if using different tempest output
+      ; load in trajectory data (need to be modified if using different ASCII output)
+      ; USER_MODIFY
       xlon  = traj_data(:,2,:)
       xlat  = traj_data(:,3,:)
       xpres  = tofloat(traj_data(:,4,:))/100.
@@ -171,7 +175,7 @@ if (.not.plot_tables_only) then
       nstorms=dims(0)
       ntimes=dims(1)
 
-      if (fill_missing_pw) then
+      if (do_fill_missing_pw) then
         ; fill in missing pressure wind
         aaa=2.3
         bbb=1010.
@@ -186,16 +190,19 @@ if (.not.plot_tables_only) then
         print("Fixing "+num(xwind .lt. 0. .and. xpres .gt. 0.))
         xwind=where( xwind .lt. 0. .and. xpres .gt. 0. , aaa*(bbb - xpres)^ccc , xwind)
         ;print(xpres+" "+xwind)
-        ;exit
+
+        ; now if still missing assume TD
+        print("Fixing "+num(xpres .lt. 0.))
+        xpres=where( xpres .lt. 0. , 1008. , xpres)
+        xwind=where( xwind .lt. 0. , 15. , xwind)
       end if
 
-      ; now if still missing assume TD
-      print("Fixing "+num(xpres .lt. 0.))
-      xpres=where( xpres .lt. 0. , 1008. , xpres)
-      xwind=where( xwind .lt. 0. , 15. , xwind)
-
       ; Filter observational records
-      if (zz.eq.0) then
+      ; if "control" record and do_special_filter_obs = true, we can apply specific
+      ; criteria here to match objective tracks better
+      ; for example, ibtracs includes tropical depressions, eliminate these to get WMO
+      ; tropical storms > 17 m/s.
+      if (zz.eq.0 .and. do_special_filter_obs) then
 
         windthreshold=17.5
         xlon=where(xwind.gt.windthreshold,xlon,xlon@_FillValue)
@@ -300,7 +307,7 @@ if (.not.plot_tables_only) then
       xlonmi=xlatmi
       do kk = 0,nstorms-1
         if(.not.all(ismissing(xpres(kk,:)))) then
-          if defineMIbypres then
+          if do_defineMIbypres then
             locMI=minind(xpres(kk,:))
           else
             locMI=maxind(xwind(kk,:))
@@ -589,7 +596,7 @@ if (.not.plot_tables_only) then
   do bb = 0,dimsizes(spapltvarsstr)-1
     thisDir="./fig/spatial/"
     system("mkdir -p "+thisDir)
-    wks = gsn_open_wks("pdf",thisDir+"/"+tostring(spapltvarsstr(bb))+"."+basinstr+"_"+filename)
+    wks = gsn_open_wks(out_type,thisDir+"/"+tostring(spapltvarsstr(bb))+"."+basinstr+"_"+filename)
     plot = new(nfiles,"graphic")
 
     toPlot=spapltvars[bb]
@@ -938,7 +945,7 @@ if (.not.plot_tables_only) then
   ; plot Taylor diagram
   thisDir="./fig/taylor/"
   system("mkdir -p "+thisDir)
-  wks   = gsn_open_wks("pdf",thisDir+"/taylor_"+basecsv+"_"+basinstr)      ; send graphics to PNG file
+  wks   = gsn_open_wks(out_type,thisDir+"/taylor_"+basecsv+"_"+basinstr)      ; send graphics to PNG file
   res   = True
   res@txFontHeightF = 0.02
   res@txMarkerLabelHeight = 0.025
