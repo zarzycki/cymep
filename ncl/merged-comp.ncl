@@ -27,14 +27,19 @@ do_special_filter_obs=True
 plot_tables_only=False
 
 ;======================= Dirs ================================
-; only modify if you need to change dir structure
+; (only modify if you need to change dir structure in repo)
 
 trajDir="./trajs/"
 csvdir="./csv-files/"
 netcdfdir="./netcdf-files/"
 pathtoconfiglists="./config-lists/"
 
-; DO NOT EDIT BELOW THIS LINE
+; ******* (MOSTLY) DO NOT EDIT BELOW THIS LINE
+
+;=================== Some defaults ================================
+
+linecolors = (/"black","dodgerblue3","peru","palegreen3","orangered2","darkorchid4","gold1","steelblue2"/)
+linedashes = (/0,1,2,3,4,5,6,7,8,9,10,11,12/)
 
 ;======================= Constants ================================
 ms_to_kts = 1.94384449
@@ -52,7 +57,7 @@ enmon=12
 nmonths=12
 monArr=ispan(1,12,1)
 
-;======================= Masking ================================
+;======================= Gen masking ================================
 
 if (any(basin.gt.0)) then
   if (dimsizes(basin) .eq. 1) then
@@ -83,22 +88,15 @@ windcorrs = tofloat(str_get_field(lines,6,delim))
 ; convert string to logical
 isUnstruct = where(isUnstructStr.eq."True",True,False)
 
-;=================== Some defaults ================================
-
-linecolors = (/"black","dodgerblue3","peru","palegreen3","orangered2","darkorchid4","gold1","steelblue2"/)
-
-linedashes = (/0,1,2,3,4,5,6,7,8,9,10,11,12/)
-
-;=================== Internal logic ================================
-
+; get CSV basename without extension
 namesplit = get_file_suffix(filename,0)
 basecsv = namesplit@fBase
+
+;=================== Initialize arrays ================================
 
 ; create some arrays
 nfiles=dimsizes(files)
 valid_files=new(nfiles,"integer")
-
-;=================== Init arrays ================================
 
 ; Init PAIRED per year arrays
 stormsByYear=new((/nfiles,nyears/),"float")
@@ -136,6 +134,7 @@ if (.not.plot_tables_only) then
   do zz = 0,nfiles-1
     if (str_get_cols(files(zz),0,0).ne."!") then
 
+      ; if not "!" then add to valid_files list and analyze
       valid_files(zz) = zz
 
       print("    starting "+zz+" of "+(nfiles-1))
@@ -479,14 +478,14 @@ if (.not.plot_tables_only) then
         maxwind=trackdens@_FillValue
       end if
 
+      ; if first data file...
+      ; A.) Generate cosine weights
+      ; B.) build structure to hold all density grids
       if (zz.eq.0) then
         print("Generating cosine weights...")
         deg2rad = get_d2r("float")
         denslatwgt = cos(deg2rad*trackdens&lat)
-      end if
 
-      ; if first data file, build structure to hold all density grids
-      if (zz.eq.0) then
         tmpdims=dimsizes(trackdens)
         fulldens=new((/nfiles,tmpdims(0),tmpdims(1)/),typeof(trackdens))
         fulldens!1="lat"
@@ -505,17 +504,8 @@ if (.not.plot_tables_only) then
         fullpacebias=fulldens
         delete(tmpdims)
       end if
-  
-      fulldens(zz,:,:)=trackdens(:,:)
-      fullpres(zz,:,:)=minpres(:,:)
-      fullwind(zz,:,:)=maxwind(:,:)
-      fullgen(zz,:,:)=gendens(:,:)
-      fullpace(zz,:,:)=pacedens(:,:)
-      fullace(zz,:,:)=acedens(:,:)
-      fulltcd(zz,:,:)=tcddens(:,:)
 
-      ; calculate biases
-
+      ; calculate biases relative to the "control"
       trackbias = trackdens
       trackbias = trackdens(:,:) - fulldens(0,:,:)
       genbias = gendens
@@ -524,7 +514,15 @@ if (.not.plot_tables_only) then
       acebias = acedens(:,:) - fullace(0,:,:)
       pacebias = pacedens
       pacebias = pacedens(:,:) - fullpace(0,:,:)
-
+  
+      ; add this data products spatial information into master array
+      fulldens(zz,:,:)=trackdens(:,:)
+      fullpres(zz,:,:)=minpres(:,:)
+      fullwind(zz,:,:)=maxwind(:,:)
+      fullgen(zz,:,:)=gendens(:,:)
+      fullpace(zz,:,:)=pacedens(:,:)
+      fullace(zz,:,:)=acedens(:,:)
+      fulltcd(zz,:,:)=tcddens(:,:)
       fulltrackbias(zz,:,:)=trackbias(:,:)
       fullgenbias(zz,:,:)=genbias(:,:)
       fullacebias(zz,:,:)=acebias(:,:)
@@ -540,8 +538,8 @@ if (.not.plot_tables_only) then
 
       print("---------------------------------------------------- DONE")
 
-    end if
-  end do
+    end if   ; if statement to check for file validity (leading "!")
+  end do  ; finish looping over input trajectory files
 
   ; Eliminate files that were not valid
   iz = ind(.not.ismissing(valid_files)) 
@@ -552,9 +550,7 @@ if (.not.plot_tables_only) then
   nfiles=dimsizes(valid_files)
   print(valid_files+" "+valid_strs+" "+valid_colors+" "+valid_dashes)
 
-  printVarSummary(valid_strs)
-
-  ;fulldens!0="model"
+  ; ==================== SPATIAL DUMP/VIZ ===========================
 
   lettercount=0
   spapltvarsstr=(/"trackdens","minpres","maxwind","gendens","pacedens","acedens","tcddens", "trackbias","genbias","acebias","pacebias"/)
@@ -565,7 +561,7 @@ if (.not.plot_tables_only) then
   spapltmaxcontour=(/15.,1000.,80.,1. ,5. ,5., 3., 10., 1.0, 5., 5./)    
   letterstr=(/"a.","b.","c.","d.","e.","f.","g.","h.","i.","j.","k.","l."/)
 
-  ; ========================================================================
+  ; ================== write spatial output netcdf =============================
 
   ncoutfile=netcdfdir+"/"+"spatial_"+basecsv+"_"+basinstr+".nc"
   system("/bin/rm -f "+ncoutfile)   ; remove any pre-existing file
@@ -590,9 +586,8 @@ if (.not.plot_tables_only) then
   ncdf->model_names = tmpchars
   delete(tmpchars)
 
-  ; ========================================================================
+  ; ==================== do spatial plotting ===========================
 
-  ; do spatial plotting
   do bb = 0,dimsizes(spapltvarsstr)-1
     thisDir="./fig/spatial/"
     system("mkdir -p "+thisDir)
@@ -640,7 +635,6 @@ if (.not.plot_tables_only) then
     res@cnMaxLevelValF        = spapltmaxcontour(bb)
     res@cnLevelSpacingF       = (res@cnMaxLevelValF - res@cnMinLevelValF) / tofloat(ncontlev)
     res@cnFillPalette=colorMap1
-
 
     res@lbLabelStride = 2
     res@lbLabelBarOn        = False           ; turn off individual cb's
