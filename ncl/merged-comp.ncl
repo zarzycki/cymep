@@ -159,7 +159,7 @@ if (.not.plot_tables_only) then
       print("corr wind: "+wind_factor)
       print("******************************************************")
 
-      ncols = 11 ; number of columns in non-header rows of trajectory file
+      ncols = -1 ; number of columns in non-header rows of trajectory file
       maxLines = -1  ; set to -1 for auto-detection
       if (isUnstruct(zz)) then
         ncols = ncols-1
