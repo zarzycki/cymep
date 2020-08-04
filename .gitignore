@@ -1,3 +1,4 @@
+spatial_*.nc
 netcdf-files/*.nc
 spatial-tau.ncl
 simple.nc

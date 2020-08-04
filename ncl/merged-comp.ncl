@@ -33,6 +33,7 @@ trajDir="./trajs/"
 csvdir="./csv-files/"
 netcdfdir="./netcdf-files/"
 pathtoconfiglists="./config-lists/"
+figdir="./fig/"
 
 ; ******* (MOSTLY) DO NOT EDIT BELOW THIS LINE
 
@@ -56,6 +57,13 @@ enmon=12
 
 nmonths=12
 monArr=ispan(1,12,1)
+
+;======================= Make directories ================================
+
+system("mkdir -p "+csvdir)
+system("mkdir -p "+netcdfdir)
+system("mkdir -p "+figdir)
+
 
 ;======================= Gen masking ================================
 
@@ -823,7 +831,7 @@ if (.not.plot_tables_only) then
   end do
 
   ; plot Taylor diagram
-  thisDir="./fig/taylor/"
+  thisDir=figdir+"/taylor/"
   system("mkdir -p "+thisDir)
   wks   = gsn_open_wks(out_type,thisDir+"/taylor_"+basecsv+"_"+basinstr)
   res   = True
@@ -886,7 +894,7 @@ if (.not.plot_tables_only) then
   ; ==================== do spatial plotting ===========================
 
   do bb = 0,dimsizes(spapltvarsstr)-1
-    thisDir="./fig/spatial/"
+    thisDir=figdir+"/spatial/"
     system("mkdir -p "+thisDir)
     wks = gsn_open_wks(out_type,thisDir+"/"+tostring(spapltvarsstr(bb))+"."+basinstr+"_"+filename)
     plot = new(nfiles,"graphic")
@@ -968,7 +976,7 @@ if (.not.plot_tables_only) then
   ; ==================== TEMPORAL VIZ ===========================
 
   ;; now draw line plot
-  thisDir="./fig/line/"
+  thisDir=figdir+"/line/"
   system("mkdir -p "+thisDir)
   lettercount=0
   linepltvarsstr=(/"stormsByMonth","tcdByMonth","aceByMonth","paceByMonth"/)
