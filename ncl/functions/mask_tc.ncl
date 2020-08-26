@@ -1,4 +1,4 @@
-function mask_tc(gridchoice:integer,latin[*]:numeric,lonin[*]:numeric,gridsize[*]:numeric,lonstart:integer)
+function mask_tc_allbasin(gridchoice:integer,latin[*]:numeric,lonin[*]:numeric,gridsize[*]:numeric,lonstart:integer)
 
 ; Gridchoice -- specify how you want to generate the TC mask
 ; 0 means you specify a regular lat/lon spacing (gridsize) and a lonstart
@@ -107,6 +107,71 @@ end if
 end
 
 
+function mask_tc_single(gridchoice:integer,latin[*]:numeric,lonin[*]:numeric,gridsize[*]:numeric,lonstart:integer,thisbasin:integer)
+
+begin
+
+if (gridchoice .eq. 0) then
+  latS = -90
+  latN =  90
+  lonW =   0
+  lonE = 360
+
+  dlat =  gridsize
+  dlon =  gridsize
+
+  nlat = toint((latN-latS)/dlat) + 1
+  mlon = toint((lonE-lonW)/dlon)
+
+  lat  = fspan(latS, latN, nlat)
+  lon  = fspan(lonW, lonE-dlon, mlon)
+  lat@units = "degrees_north"
+  lon@units = "degrees_east"
+else if (gridchoice .eq. 1) then
+  lat = latin
+  lon = lonin
+  nlat = dimsizes(lat)
+  mlon = dimsizes(lon)
+  lat@units = "degrees_north"
+  lon@units = "degrees_east"
+else
+  print("Invalid gridchoice value")
+  exit
+end if
+end if
+  
+maskArr = new((/nlat,mlon/),integer)
+
+maskArr!0 = "lat"
+maskArr!1 = "lon"
+maskArr&lat = lat
+maskArr&lon = lon
+
+lat2d = conform(maskArr,lat,0)
+lon2d = conform(maskArr,lon,1)
+
+if (thisbasin .eq. 9) then
+  minlat=18.
+  maxlat=36.
+  minlon=-90.
+  maxlon=-70.
+else
+  print("unsupported basin in mask_tc_single")
+  exit
+end if
+
+maskArr = where(lat2d .ge. minlat .and. lat2d .le. maxlat .and. lon2d .ge. minlon .and. lon2d .le. maxlon, thisbasin, 0)
+  
+if (lonstart .ne. 360) then
+  maskArr = lonPivot(maskArr,lonstart)
+end if
+
+return(maskArr)
+
+end
+
+
+
 
 
 function getbasinmaskstr(gridchoice:integer)
@@ -129,6 +194,8 @@ else if (gridchoice .eq. 7) then
   basinstr="SPAC"
 else if (gridchoice .eq. 8) then
   basinstr="SATL"
+else if (gridchoice .eq. 9) then
+  basinstr="FLA"
 else
   basinstr="NONE"
 end if
@@ -139,7 +206,8 @@ end if
 end if
 end if
 end if
-  
+end if
+
 return(basinstr)
 
 end
