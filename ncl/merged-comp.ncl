@@ -12,13 +12,13 @@ begin
 ; General options
 out_type = "pdf" ; output format type for graphical products. Generally either "png" or "pdf"
 gridsize = 8.0   ; size of lat/lon "aggregation" grid in reg lat-lon degrees
-basin=1          ; negative for no basin filtering, (/1,2,3,4,5/) for NH or (/6,7,8/) for SH
-filename="rean_configs.csv"
+basin=-1          ; negative for no basin filtering, (/1,2,3,4,5/) for NH or (/6,7,8/) for SH
+filename="ERA5_configs.csv"
 
 ; This is used for years that overlap for interannual correlation
 ; Generally only used for comparing reanalysis or other nudged product to observations
-styr=0
-enyr=1
+styr=1980
+enyr=2019
 
 ; Various "special" options
 do_defineMIbypres=False
@@ -81,7 +81,14 @@ else
   basinstr="GLOB"
 end if
 maskspacing=1.0
-tcMask = mask_tc(0,-999,-999,maskspacing,360)
+
+if (basin .gt. 0 .and. basin .le. 8) then
+  tcMask = mask_tc_allbasin(0,-999,-999,maskspacing,360)
+else if (basin .gt. 8) then
+  tcMask = mask_tc_single(0,-999,-999,maskspacing,360,basin)
+else
+end if
+end if
 
 ;=================== Get namelist data ================================
 lines = asciiread(pathtoconfiglists+"/"+filename,-1,"string")
@@ -979,33 +986,49 @@ if (.not.plot_tables_only) then
   thisDir=figdir+"/line/"
   system("mkdir -p "+thisDir)
   lettercount=0
-  linepltvarsstr=(/"stormsByMonth","tcdByMonth","aceByMonth","paceByMonth"/)
-  linepltvars=[/ stormsByMonth, tcdByMonth, aceByMonth, paceByMonth /] 
-  lineunitsstr=(/"number","days","10~S~-4~N~ kn~S~2~N~","10~S~-4~N~ kn~S~2~N~"/)
+  linepltvarsstr=(/"stormsByMonth","tcdByMonth","aceByMonth","paceByMonth","stormsByYear","tcdByYear","aceByYear","paceByYear"/)
+  linepltvars=[/ stormsByMonth, tcdByMonth, aceByMonth, paceByMonth, stormsByYear, tcdByYear, aceByYear, paceByYear /] 
+  lineunitsstr=(/"number","days","10~S~-4~N~ kn~S~2~N~","10~S~-4~N~ kn~S~2~N~","number","days","10~S~-4~N~ kn~S~2~N~","10~S~-4~N~ kn~S~2~N~"/)
 
   do mm = 0,dimsizes(linepltvarsstr)-1
 
     toPlot=linepltvars[mm]
     print(toPlot)
 
-    wks   = gsn_open_wks("pdf",thisDir+"/seasonal_"+tostring(linepltvarsstr(mm))+"."+basinstr+"_"+filename)
+    if (isStrSubset(linepltvarsstr(mm),"Month")) then
+      print("Seasonal plots!")
+      linefilelabstr="seasonal"
+    else        
+      print("Interannual plots!")
+      linefilelabstr="interann"
+    end if   
+
+    wks   = gsn_open_wks("pdf",thisDir+"/"+linefilelabstr+"_"+tostring(linepltvarsstr(mm))+"."+basinstr+"_"+filename)
 
     ; draw xy curves
     res                   = True                      ; plot mods desired
     res@gsnDraw=False
     res@gsnFrame=False
-    res@tiMainString      = linepltvarsstr(mm)+" seasonal cycle"       ; add title
     res@xyDashPatterns = linedashes ; have to use full dash set since missing data may be included
     ;res@xyMonoLineThickness=True
     res@xyLineThicknessF = 3.0
     res@trYMinF=0.0
     res@xyLineColors      = linecolors ; we have to use linecolors here since missing data included
-    res@tiXAxisString = "Month"
     res@tiYAxisString = linepltvarsstr(mm)+" ("+lineunitsstr(mm)+")"
-    res@trXMinF = 1
-    res@trXMaxF = 12
-    ;plot  = gsn_csm_xy (wks,yearArr,aceByYear,res) ; create plot
-    plot  = gsn_csm_xy (wks,monArr,toPlot,res) ; create plot
+
+    if (isStrSubset(linepltvarsstr(mm),"Month")) then  
+      res@tiMainString = linepltvarsstr(mm)+" seasonal cycle"
+      res@tiXAxisString = "Month"
+      res@trXMinF = 1
+      res@trXMaxF = 12
+      plot = gsn_csm_xy (wks,monArr,toPlot,res) ; create plot
+    else                                    
+      res@tiMainString = linepltvarsstr(mm)+" interannual cycle"     
+      res@tiXAxisString = "Year"
+      res@trXMinF = styr
+      res@trXMaxF = enyr
+      plot = gsn_csm_xy (wks,yearArr,toPlot,res) ; create plot
+    end if   
 
     ; Build legend
     textres=True
