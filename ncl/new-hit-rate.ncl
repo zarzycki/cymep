@@ -12,7 +12,6 @@ begin
 
 out_type = "pdf"
 prescut = 99999.0   ; only storms with pres LOWER than this are included. set to 99999.0 for all storms
-basin=-1
 ;basin=(/1,2,3,4/)
 ;basin=1
 SEARCHRADIUS=2.0
@@ -30,7 +29,7 @@ if (any(basin.gt.0)) then
     basinstr="NHEMI"
   end if
   maskspacing=1.0
-  tcMask = mask_tc(0,-999,-999,maskspacing,360)
+  tcMask = mask_tc_allbasin(0,-999,-999,maskspacing,360)
 else
   basinstr="GLOB"
 end if
@@ -42,14 +41,16 @@ dq       = str_get_dq()
 date_cmd = "date +" + dq + "%a %b %d %H:%M:%S %Z %Y" + dq
 
 styr=1980
-enyr=2018
+enyr=2019
 nyears=enyr-styr+1
 
-thefile:="trajs/ibtracs-1980-2019-GLOB.v4.txt"
+;thefile:="trajs/ibtracs-1980-2019-GLOB.v4.txt"
+thefile:="trajs/trajectories.txt.ERA5"
+
 ;thefile:="dev/ibtracs-1998-2008-GLOB.txt"
 ;thefile:="dev/test.txt"
 
-ncols := 11 ; number of columns in non-header rows of trajectory file
+ncols := -1 ; number of columns in non-header rows of trajectory file
 maxLines := -1  ; set to -1 for auto-detection
 traj_data := getTrajectoriesGeneric(thefile,ncols,maxLines,"start","tab",False,False)
 
@@ -74,10 +75,16 @@ xntimes=xdims(1)
 ; =====
 
 ;thefile:="dev/trajectories.txt.JRA"
-thefile:="trajs/trajectories.txt.TC-ALL_TRACK_ERA5_Reanalysis_r1i1p1f1_gr_19790101-20181231.nc"
+;thefile:="trajs/trajectories.txt.TC-ALL_TRACK_ERA5_Reanalysis_r1i1p1f1_gr_19790101-20181231.nc"
 ;thefile:="e3sm/trajectories.txt.ERA5.T400.DEFAULT"
+;thefile:="trajs/trajectories.txt.ERA5"
+thefile:="trajs/ERA5_TC_tracks_hightopo.txt"
+;thefile:="trajs/trajectories.txt.CFSR.ALL.RELAX"
+;thefile:="trajs/traj_et_acfsr_avg"
+;thefile:="trajs/trajectories.CFSR.CPS2.orig"
+;thefile:="trajs/trajectories.CFSR.CPSorig"
 
-ncols := 11 ; number of columns in non-header rows of trajectory file
+ncols := -1 ; number of columns in non-header rows of trajectory file
 maxLines := -1  ; set to -1 for auto-detection
 traj_data := getTrajectoriesGeneric(thefile,ncols,maxLines,"start","tab",False,False)
 
@@ -90,6 +97,17 @@ yyear  = toint(traj_data(:,7,:))
 ymonth  = toint(traj_data(:,8,:))
 yday  = toint(traj_data(:,9,:))
 yhour  = toint(traj_data(:,10,:))
+
+; CMZ -- CPS modify
+;ylon  = traj_data(:,0,:)
+;ylat  = traj_data(:,1,:)
+;ypres  = tofloat(traj_data(:,2,:))
+;ywind  = traj_data(:,3,:)*1.0
+;yyear  = toint(traj_data(:,9,:))
+;ymonth  = toint(traj_data(:,10,:))
+;yday  = toint(traj_data(:,11,:))
+;yhour  = toint(traj_data(:,12,:))
+
 yzero=yhour
 yzero=0
 ytime = cd_inv_calendar(yyear,ymonth,yday,yhour,yzero,yzero,timeunits,0)
@@ -99,9 +117,68 @@ ydims=dimsizes(ylon)
 ynstorms=ydims(0)
 yntimes=ydims(1)
 
-
 ; cleanup
 delete(traj_data)
+
+
+
+; if basin filtering requested, loop over all storms to filter using TC mask
+if (any(basin .gt. 0)) then
+  print("FILTER!")
+  do ii = 0,xnstorms-1
+    maskoff=True
+    if (.not. ismissing(xlat(ii,0))) then
+      maskoff=False
+      orilat=xlat(ii,0)
+      orilon=xlon(ii,0)
+      if (orilon .gt. 360.0-maskspacing) then
+        orilon=360.0-maskspacing
+        print("    original lon: "+xlon(ii,0)+"   modified lon: "+orilon)
+      end if
+      if (all(basin .ne. tcMask({orilat},{orilon}))) then
+        maskoff=True
+      end if
+    end if
+    if maskoff then
+      xlon(ii,:)=xlon@_FillValue
+      xlat(ii,:)=xlat@_FillValue
+      xpres(ii,:)=xpres@_FillValue
+      xwind(ii,:)=xwind@_FillValue
+      xyear(ii,:)=xyear@_FillValue
+      xmonth(ii,:)=xmonth@_FillValue
+    end if
+  end do
+end if
+
+; if basin filtering requested, loop over all storms to filter using TC mask
+if (any(basin .gt. 0)) then
+  print("FILTER!")
+  do ii = 0,ynstorms-1
+    maskoff=True
+    if (.not. ismissing(ylat(ii,0))) then
+      maskoff=False
+      orilat=ylat(ii,0)
+      orilon=ylon(ii,0)
+      if (orilon .gt. 360.0-maskspacing) then
+        orilon=360.0-maskspacing
+        print("    original lon: "+ylon(ii,0)+"   modified lon: "+orilon)
+      end if
+      if (all(basin .ne. tcMask({orilat},{orilon}))) then
+        maskoff=True
+      end if
+    end if
+    if maskoff then
+      ylon(ii,:)=ylon@_FillValue
+      ylat(ii,:)=ylat@_FillValue
+      ypres(ii,:)=ypres@_FillValue
+      ywind(ii,:)=ywind@_FillValue
+      yyear(ii,:)=yyear@_FillValue
+      ymonth(ii,:)=ymonth@_FillValue
+    end if
+  end do
+end if
+
+
 
 
 
@@ -241,12 +318,12 @@ analyzeObsStorm=True
 ; filter by intensity
 xmwind=dim_max_n_Wrap(xwind,1)
 
+; set xmwind missing to negative values for cutoff
+xmwind=where(ismissing(xmwind),-999.,xmwind)
+
 ;filter by year
 xgyear=xyear(:,0)
 analyzeObsStorm=where(xgyear.ge.styr .and. xgyear.le.enyr, analyzeObsStorm, False)
-
-
-
 
 
 ; HIT RATE
@@ -333,6 +410,9 @@ analyzeTrackedStorm=new(ynstorms,"logical")
 analyzeTrackedStorm=True
 ;filter by year
 ygyear=yyear(:,0)
+; set missing years to large negative values
+ygyear=where(ismissing(ygyear),-999,ygyear)
+
 analyzeTrackedStorm=where(ygyear.ge.styr .and. ygyear.le.enyr, analyzeTrackedStorm, False)
 
 
