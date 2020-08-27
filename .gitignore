@@ -1,3 +1,4 @@
+ncl/trajs/traj*
 spatial_*.nc
 netcdf-files/*.nc
 spatial-tau.ncl
