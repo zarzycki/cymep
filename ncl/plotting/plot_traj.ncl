@@ -9,25 +9,24 @@ load "../functions/mask_tc.ncl"
 ;========================================================
 begin
 
-output_type="png"
-basin="global"
-cutwind=0.0
+output_type="pdf"
+basin="tropics"
+cutatTS=True
 factor = 1.0
 
 pres_thresh=950.
 basinfilt = 1
 maskspacing=1.0
-tcMask = mask_tc(0,-999,-999,maskspacing,360)
+tcMask = mask_tc_allbasin(0,-999,-999,maskspacing,360)
 
 thedir="../trajs/"
-;thefile="trajectories.txt.theta.20190910.branch_noCNT.n438b.unc03.A_WCYCL1950S_CMIP6_HR.ne120_oRRS18v3_ICG"
-thefile="trajectories.txt.CHEY.VR28.NATL.REF.CAM5.4CLM5.0.tau3600_MPdiff"
+thefile="ERA5_TC_tracks_hightopo.txt"
 ncols = -1                    ; assign number of columns
 maxLines = -1
 headerDelimStr = "start"
 delimStr="tab"
 isHeader=False
-traj_data = getTrajectoriesGeneric(thedir+"/"+thefile,ncols,maxLines,headerDelimStr,delimStr,True,isHeader)
+traj_data = getTrajectoriesGeneric(thedir+"/"+thefile,ncols,maxLines,headerDelimStr,delimStr,False,isHeader)
 
 lon = traj_data(:,2,:)
 lat = traj_data(:,3,:)
@@ -79,6 +78,8 @@ end if
 
 ;--------------------------------------------------------
 print("Beginning plot sequence")
+;wks_type@wkWidth = 2500
+;wks_type@wkHeight = 2500 
 wks  = gsn_open_wks(output_type,"traj."+thefile)
 map = new(1,graphic)
   
@@ -127,19 +128,21 @@ gsn_define_colormap(wks,"rainbow+white+gray")
 dum = new((/nstorms,ntimes/),graphic)
 text = new((/nstorms/),graphic)
 
-;nstorms=1000
-do i = 0,nstorms-1
-print("storm: "+i)
-do j = 0,ntimes-1
 
-thisWind=wind(i,j)
+SSthresh_wind = (/17.,33.,43.,49.,58./)
+
+color_pw=False
+if (color_pw) then
+  ; NOTE, these are negative pressures
+  SSthresh_wind := ((SSthresh_wind/4.4/0.514444)^(1/0.76) - 1010)
+end if
 
 ;lineres@gsLineThicknessF = 8.0
 ; We need to use thinner lines for the global map
 if (basin .eq. "global") then
   linethicknesses = (/0.2,0.3,1.3,1.9,2.3,2.7/)
 else if (basin .eq. "tropics") then
-  linethicknesses = (/0.1,0.4,1.6,2.0,2.6,3.2/)
+  linethicknesses = (/0.1,0.25,0.6,1.0,1.3,1.6/)
 else if (basin .eq. "refine") then
   linethicknesses = (/0.1,0.25,0.9,1.3,1.6,2.2/)
 else
@@ -147,28 +150,42 @@ else
 end if
 end if
 end if
-  linethicknesses = 4.0*linethicknesses
+linethicknesses = 3.0*linethicknesses
+
+print(SSthresh_wind)
+
+;nstorms=10
+do i = 0,nstorms-1
+print("storm: "+i)
+do j = 0,ntimes-1
+
+if (color_pw) then
+  thisWind=-pres(i,j)
+else
+  thisWind=wind(i,j)
+end if
 
 if (.not.ismissing(thisWind))
 
+
 ;  polyres@gsMarkerSizeF = 2.0           ; select size to avoid streaking
-  if (thisWind .lt. 17)
+  if (thisWind .lt. SSthresh_wind(0))
     polyres@gsMarkerColor = (/"blue"/)
     lineres@gsLineColor = (/"blue"/)
     lineres@gsLineThicknessF = linethicknesses(0)
-  else if (thisWind .ge. 17 .and. thisWind .lt. 33)
-    polyres@gsMarkerColor = (/"green3"/)
-    lineres@gsLineColor = (/"green3"/)
+  else if (thisWind .ge. SSthresh_wind(0) .and. thisWind .lt. SSthresh_wind(1))
+    polyres@gsMarkerColor = (/"green4"/)
+    lineres@gsLineColor = (/"green4"/)
     lineres@gsLineThicknessF = linethicknesses(1)
-  else if (thisWind .ge. 33 .and. thisWind .lt. 43)
+  else if (thisWind .ge. SSthresh_wind(1) .and. thisWind .lt. SSthresh_wind(2))
     polyres@gsMarkerColor = (/"yellow2"/)
     lineres@gsLineColor = (/"yellow2"/)
     lineres@gsLineThicknessF = linethicknesses(2)
-  else if (thisWind .ge. 43 .and. thisWind .lt. 49)
+  else if (thisWind .ge. SSthresh_wind(2) .and. thisWind .lt. SSthresh_wind(3))
     polyres@gsMarkerColor = (/"orange"/)
     lineres@gsLineColor = (/"orange"/)
     lineres@gsLineThicknessF = linethicknesses(3)
-  else if (thisWind .ge. 49 .and. thisWind .lt. 58)
+  else if (thisWind .ge. SSthresh_wind(3) .and. thisWind .lt. SSthresh_wind(4))
     polyres@gsMarkerColor = (/"darkorange3"/)
     lineres@gsLineColor = (/"darkorange3"/)
     lineres@gsLineThicknessF  = linethicknesses(4)
@@ -181,9 +198,12 @@ if (.not.ismissing(thisWind))
   end if
   end if
   end if
+
+print(thisWind+""+lineres@gsLineColor)
+
   
   if (j .ne. 0) then
-    if(thisWind .ge. cutwind) then
+    if(thisWind .ge. SSthresh_wind(0) .and. cutatTS) then
       dum(i,j) = gsn_add_polyline(wks,map,(/lon(i,j),lon(i,j-1)/),(/lat(i,j),lat(i,j-1)/),lineres)
     end if
   end if
@@ -245,26 +265,24 @@ legendType = "Markers"
 markerSize = .008
 markerIndex = 16
 
-if (cutwind .eq. 0) then
-lgres@lgItemCount        = 6
-;lgres@lgLineDashSegLenF  = 0.8
-lgres@lgItemTypes        = (/"Markers","Markers","Markers","Markers","Markers","Markers"/)
-lgres@lgMarkerIndexes    = (/      16,      16,      16,      16,      16,      16/)
-lgres@lgMarkerThicknesses  = (/    markerSize,    markerSize,    markerSize,    markerSize,    markerSize,    markerSize/)
-lgres@lgMarkerColors       = (/ "red",     "darkorange3",   "orange",  "yellow",   "green",    "blue"    /) ; colors for legend lines
-;lgres@lgDashIndexes      = (/      0,          0,          0,         0,               0,      0      /) ; dash indexes
-legend_labels = (/"Cat. 4/5","Cat. 3","Cat. 2",\
-               "Cat. 1","TS","TD"/)
-else if (cutwind .eq. 17) then
+if (cutatTS) then
   lgres@lgItemCount        = 5
   lgres@lgItemTypes        = (/legendType,legendType,legendType,legendType,legendType/)
   lgres@lgMarkerIndexes    = (/markerIndex,markerIndex,markerIndex,markerIndex,markerIndex/)
   lgres@lgMarkerThicknesses  = (/    markerSize,    markerSize,    markerSize,    markerSize,    markerSize/)
-  lgres@lgMarkerColors       = (/ "red",     "darkorange3",   "orange",  "yellow2",   "green3" /) ; colors for legend lines
+  lgres@lgMarkerColors       = (/ "red",     "darkorange3",   "orange",  "yellow2",   "green4" /) ; colors for legend lines
   legend_labels = (/"Category 4/5","Category 3","Category 2",\
                  "Category 1","Tropical Storm"/)
 else
-end if
+  lgres@lgItemCount        = 6
+  ;lgres@lgLineDashSegLenF  = 0.8
+  lgres@lgItemTypes        = (/"Markers","Markers","Markers","Markers","Markers","Markers"/)
+  lgres@lgMarkerIndexes    = (/      16,      16,      16,      16,      16,      16/)
+  lgres@lgMarkerThicknesses  = (/    markerSize,    markerSize,    markerSize,    markerSize,    markerSize,    markerSize/)
+  lgres@lgMarkerColors       = (/ "red",     "darkorange3",   "orange",  "yellow",   "green",    "blue"    /) ; colors for legend lines
+  ;lgres@lgDashIndexes      = (/      0,          0,          0,         0,               0,      0      /) ; dash indexes
+  legend_labels = (/"Cat. 4/5","Cat. 3","Cat. 2",\
+                 "Cat. 1","TS","TD"/)
 end if
 
 
@@ -275,8 +293,8 @@ if (basin .eq. "atlantic") then
 amres@amParallelPosF   = 0.43		    ; move legend to the right
 amres@amOrthogonalPosF = -.3             ; move the legend down
 else if (basin .eq. "tropics") then
-amres@amParallelPosF   = 0.21		    ; move legend to the right .37 formerly
-amres@amOrthogonalPosF = .27             ; move the legend down
+amres@amParallelPosF   = -0.455		    ; move legend to the right .37 formerly
+amres@amOrthogonalPosF = -0.305            ; move the legend down
 else if (basin .eq. "refine") then
 amres@amParallelPosF   = -0.46
 amres@amOrthogonalPosF = -0.18
@@ -287,7 +305,7 @@ end if
 end if
 end if
 
-;annoid1 = gsn_add_annotation(map,legend,amres)   ; add legend to plot
+annoid1 = gsn_add_annotation(map,legend,amres)   ; add legend to plot
   
 print("Drawing plot")
 
