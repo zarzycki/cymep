@@ -12,13 +12,14 @@ begin
 ; General options
 out_type = "pdf" ; output format type for graphical products. Generally either "png" or "pdf"
 gridsize = 8.0   ; size of lat/lon "aggregation" grid in reg lat-lon degrees
-basin=-1          ; negative for no basin filtering, (/1,2,3,4,5/) for NH or (/6,7,8/) for SH
-filename="ERA5_configs.csv"
+basin=1        ; negative for no basin filtering, (/1,2,3,4,5/) for NH or (/6,7,8/) for SH
+filename="tau_configs.csv"
 
 ; This is used for years that overlap for interannual correlation
 ; Generally only used for comparing reanalysis or other nudged product to observations
 styr=1980
-enyr=2019
+enyr=2014
+truncate_years=False
 
 ; Various "special" options
 do_defineMIbypres=False
@@ -29,7 +30,7 @@ plot_tables_only=False
 ;======================= Dirs ================================
 ; (only modify if you need to change dir structure in repo)
 
-trajDir="./trajs/"
+trajDir=""
 csvdir="./csv-files/"
 netcdfdir="./netcdf-files/"
 pathtoconfiglists="./config-lists/"
@@ -39,8 +40,8 @@ figdir="./fig/"
 
 ;=================== Some defaults ================================
 
-linecolors = (/"black","dodgerblue3","peru","palegreen3","orangered2","darkorchid4","gold1","steelblue2"/)
-linedashes = (/0,1,2,3,4,5,6,7,8,9,10,11,12/)
+linecolors = (/"black","dodgerblue3","peru","palegreen3","orangered2","darkorchid4","gold1","steelblue2","black","dodgerblue3","peru","palegreen3","orangered2","darkorchid4","gold1","steelblue2","black","dodgerblue3","peru","palegreen3","orangered2","darkorchid4","gold1","steelblue2"/)
+linedashes = (/0,1,2,3,4,5,6,7,8,9,10,11,12,0,1,2,3,4,5,6,7,8,9,10,11,12/)
 
 ;======================= Constants ================================
 ms_to_kts = 1.94384449
@@ -82,12 +83,16 @@ else
 end if
 maskspacing=1.0
 
-if (basin .gt. 0 .and. basin .le. 8) then
-  tcMask = mask_tc_allbasin(0,-999,-999,maskspacing,360)
-else if (basin .gt. 8) then
-  tcMask = mask_tc_single(0,-999,-999,maskspacing,360,basin)
+if (dimsizes(basin) .eq. 1) then
+  if (basin .gt. 0 .and. basin .le. 8) then
+    tcMask = mask_tc_allbasin(0,-999,-999,maskspacing,360)
+  else if (basin .gt. 8) then
+    tcMask = mask_tc_single(0,-999,-999,maskspacing,360,basin)
+  else
+  end if
+  end if
 else
-end if
+  tcMask = mask_tc_allbasin(0,-999,-999,maskspacing,360)
 end if
 
 ;=================== Get namelist data ================================
@@ -154,7 +159,14 @@ if (.not.plot_tables_only) then
 
       print("    starting "+zz+" of "+(nfiles-1))
 
-      nmodyears=ensmembers(zz)*yearspermember(zz)
+      if (truncate_years) then
+        print("Truncating years from "+yearspermember(zz)+" to "+nyears)
+        nmodyears=ensmembers(zz)*nyears
+      else
+        print("Using years per member of "+yearspermember(zz))
+        nmodyears=ensmembers(zz)*yearspermember(zz)
+      end if
+
       wind_factor = windcorrs(zz)
 
       thefile=trajDir+"/"+files(zz)
@@ -289,6 +301,8 @@ if (.not.plot_tables_only) then
         if (.not. ismissing(xglat(ii))) then
           maskoff=False
           orimon=xgmonth(ii)
+          oriyear=xgyear(ii)
+          ; do month filtering
           if (enmon .le. stmon) then
             ; if endmonth is LESS than ST month, we need to *eliminate* "middle" months
             if (orimon .gt. enmon .and. orimon .lt. stmon) then
@@ -300,6 +314,14 @@ if (.not.plot_tables_only) then
               maskoff=True
             end if
           end if
+          if (truncate_years) then
+            ; do year filtering
+            if (oriyear .lt. styr .or. oriyear .gt. enyr) then
+              maskoff=True
+            end if
+          end if
+          delete(orimon)
+          delete(oriyear)
         end if
 
         if maskoff then
@@ -314,6 +336,7 @@ if (.not.plot_tables_only) then
           xgyear(ii)=xgyear@_FillValue
           xgmonth(ii)=xgmonth@_FillValue
         end if
+
       end do
 
       ; Get location of maximum intensity for each trajectory
