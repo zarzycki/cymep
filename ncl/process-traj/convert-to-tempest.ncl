@@ -16,6 +16,10 @@ aibtime=f->time
 aibpres=f->psl
 aibwind_=f->sfcWind
 
+print(aibtime@units)
+eps=0.000000001
+aibtime=aibtime+eps
+
 ; convert hPa to Pa
 aibpres = aibpres*100.
 
@@ -99,6 +103,7 @@ delim="	"
 filename="./trajectories.txt."+basename
 system("rm -rf "+filename)
 
+totalerrors=0
 
 do ii = 0,ibstormcount-1
 
@@ -118,6 +123,7 @@ do ii = 0,ibstormcount-1
       end do
 
       thisdate:=cd_calendar(ibtime(ii,IBSTIX),0)
+
 
       if print_names then
         header=ibname(ii,0)
@@ -172,7 +178,20 @@ do ii = 0,ibstormcount-1
             thisPHIS=tofloat(PHIS({iblat(ii,jj)},{max(PHIS&lon)}))
           end if
 
+          ; There is a potential bug here, where either the calendar converts to missing
+          ; or it converts such that the hour is off by one
           thisdate=cd_calendar(ibtime(ii,jj),0)
+          if (any(ismissing(thisdate))) then
+            print("MISSING! "+ibtime(ii,jj)+" at "+ii+" "+jj)
+            totalerrors=totalerrors+1
+          else if (mod(thisdate(0,3),6) .ne. 0) then
+            print("ERROR! "+ibtime(ii,jj)+" at "+ii+" "+jj+"    thinks hour equal "+thisdate(0,3))
+            totalerrors=totalerrors+1
+          else
+            ;nothing
+          end if
+          end if
+
           STORMSTR=delim+thisLon+delim+thisLat+delim+sprintf("%6.2f", iblon(ii,jj))+delim+sprintf("%6.2f", iblat(ii,jj))+delim+sprintf("%6.0f", ibpres(ii,jj))+delim+sprintf("%8.2f", ibwind_(ii,jj))+delim+sprintf("%7.3e", thisPHIS)+delim+thisdate(0,0)+delim+thisdate(0,1)+delim+thisdate(0,2)+delim+thisdate(0,3)
 
 ;          STORMSTR=delim+thisLon+delim+thisLat+delim+iblon(ii,jj)+delim+iblat(ii,jj)+delim+ibpres(ii,jj)+delim+ibwind_(ii,jj)+delim+sprintf("%7.3e", thisPHIS)+delim+thisdate(0,0)+delim+thisdate(0,1)+delim+thisdate(0,2)+delim+thisdate(0,3)
@@ -189,4 +208,5 @@ do ii = 0,ibstormcount-1
 end do
 end
   
+print("Total errors! "+totalerrors)
 	;13056	41.470669	-19.662915	9.957811e+04	1.960049e+01	1979	1	16	12	
