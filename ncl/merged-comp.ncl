@@ -36,7 +36,7 @@ netcdfdir="./netcdf-files/"
 pathtoconfiglists="./config-lists/"
 figdir="./fig/"
 
-; ******* (MOSTLY) DO NOT EDIT BELOW THIS LINE
+;******** (MOSTLY) DO NOT EDIT BELOW THIS LINE
 
 ;=================== Some defaults ================================
 
