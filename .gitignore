@@ -1,3 +1,5 @@
+python/trajs/
+__pycache__/
 ncl/trajs/traj*
 spatial_*.nc
 netcdf-files/*.nc

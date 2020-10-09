@@ -1,0 +1,4 @@
+ibtracs-1980-2019-GLOB.v4.txt,OBS,False,1,40,1.0,black
+trajectories.txt.ERAI,ERAI,False,1,39,1.0,goldenrod
+trajectories.txt.MERRA2,MERRA2,False,1,39,0.85,darkgreen
+trajectories.txt.ERA5,ERA5,False,1,39,1.0,orange
