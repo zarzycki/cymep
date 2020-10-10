@@ -5,16 +5,18 @@ import numpy as np
 import pandas as pd
 from getTrajectories import *
 from mask_tc import *
+from track_density import *
 
 # User settings
 do_special_filter_obs = True
 do_fill_missing_pw = True
-test_basin = 1
+test_basin = -1
 csvfilename = 'rean2_configs.csv'
 styr=1980
 enyr=2014
 truncate_years = False
 do_defineMIbypres = False
+gridsize=8.0
 
 # Constants
 ms_to_kts = 1.94384449
@@ -281,8 +283,15 @@ for ii in range(len(files)):
 
   avgStormsPY[ii] = np.sum(stormsByMonth[ii,:]) / nmodyears      
   avgTcdPY[ii] = np.nansum(xtcd) / nmodyears
-
-
+  
+  trackdens = track_density(gridsize,0.0,xlat.flatten(),xlon.flatten(),False)
+  gendens = track_density(gridsize,0.0,xglat.flatten(),xglon.flatten(),False)
+  tcddens = track_mean(gridsize,0.0,xlat.flatten(),xlon.flatten(),xtcdpp.flatten(),False,0)
+  acedens = track_mean(gridsize,0.0,xglat.flatten(),xglon.flatten(),xace.flatten(),False,0)  
+  pacedens = track_mean(gridsize,0.0,xglat.flatten(),xglon.flatten(),xpace.flatten(),False,0)
+  minpres = track_minmax(gridsize,0.0,xlat.flatten(),xlon.flatten(),xpres.flatten(),"min",-1)
+  maxwind = track_minmax(gridsize,0.0,xlat.flatten(),xlon.flatten(),xwind.flatten(),"max",-1)
+  
   print("-------------------------------------------------------------------------")
 
 
