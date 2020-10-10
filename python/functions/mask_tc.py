@@ -7,9 +7,9 @@ def maskTC(lat,lon):
   # Coefficients for calculating ATL/EPAC sloped line
   m = -0.58
   b = 0. -m*295.
-  maxlat = 45.0
+  maxlat = 50.0
 
-  if lat >= 0. and lat <= maxlat and lon > 257. and lon <= 355.:
+  if lat >= 0. and lat <= maxlat and lon > 257. and lon <= 359.:
     funcval = m*lon + b
     if lat > funcval:
       basin = 1
