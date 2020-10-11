@@ -7,6 +7,7 @@ from netCDF4 import Dataset
 from getTrajectories import *
 from mask_tc import *
 from track_density import *
+from write_spatial import *
 
 # User settings
 do_special_filter_obs = True
@@ -313,92 +314,33 @@ for ii in range(len(files)):
     print("Generating cosine weights...")
     denslatwgt    = np.cos(deg2rad*denslat)
     print("Generating master spatial arrays...")
-    fulldens      = np.empty((nfiles, denslat.size, denslon.size))
-    fullpres      = np.empty((nfiles, denslat.size, denslon.size))
-    fullwind      = np.empty((nfiles, denslat.size, denslon.size))
-    fullgen       = np.empty((nfiles, denslat.size, denslon.size))
-    fullace       = np.empty((nfiles, denslat.size, denslon.size))
-    fullpace      = np.empty((nfiles, denslat.size, denslon.size))
-    fulltcd       = np.empty((nfiles, denslat.size, denslon.size))
-    fulltrackbias = np.empty((nfiles, denslat.size, denslon.size))
-    fullgenbias   = np.empty((nfiles, denslat.size, denslon.size))
-    fullacebias   = np.empty((nfiles, denslat.size, denslon.size))
-    fullpacebias  = np.empty((nfiles, denslat.size, denslon.size))
-  
+    msdict = {}
+    msdict['fulldens'] = np.empty((nfiles, denslat.size, denslon.size))
+    msdict['fullpres'] = np.empty((nfiles, denslat.size, denslon.size))
+    msdict['fullwind'] = np.empty((nfiles, denslat.size, denslon.size))
+    msdict['fullgen'] = np.empty((nfiles, denslat.size, denslon.size))
+    msdict['fullace'] = np.empty((nfiles, denslat.size, denslon.size))
+    msdict['fullpace'] = np.empty((nfiles, denslat.size, denslon.size))
+    msdict['fulltcd'] = np.empty((nfiles, denslat.size, denslon.size))
+    msdict['fulltrackbias'] = np.empty((nfiles, denslat.size, denslon.size))
+    msdict['fullgenbias'] = np.empty((nfiles, denslat.size, denslon.size))    
+    msdict['fullacebias'] = np.empty((nfiles, denslat.size, denslon.size))
+    msdict['fullpacebias'] = np.empty((nfiles, denslat.size, denslon.size))   
+          
   # Store this model's data in the master spatial array
-  fulldens[ii,:,:] = trackdens[:,:]
-  fullgen[ii,:,:]  = gendens[:,:]
-  fullpace[ii,:,:] = pacedens[:,:]
-  fullace[ii,:,:]  = acedens[:,:]
-  fulltcd[ii,:,:]  = tcddens[:,:]
-  fullpres[ii,:,:] = minpres[:,:]
-  fullwind[ii,:,:] = maxwind[:,:]
-  fulltrackbias[ii,:,:] = trackdens[:,:] - fulldens[0,:,:]
-  fullgenbias[ii,:,:]   = gendens[:,:]   - fullgen[0,:,:]
-  fullacebias[ii,:,:]   = acedens[:,:]   - fullace[0,:,:]
-  fullpacebias[ii,:,:]  = pacedens[:,:]  - fullpace[0,:,:]
+  msdict['fulldens'][ii,:,:] = trackdens[:,:]
+  msdict['fullgen'][ii,:,:]  = gendens[:,:]
+  msdict['fullpace'][ii,:,:] = pacedens[:,:]
+  msdict['fullace'][ii,:,:]  = acedens[:,:]
+  msdict['fulltcd'][ii,:,:]  = tcddens[:,:]
+  msdict['fullpres'][ii,:,:] = minpres[:,:]
+  msdict['fullwind'][ii,:,:] = maxwind[:,:]
+  msdict['fulltrackbias'][ii,:,:] = trackdens[:,:] - msdict['fulldens'][0,:,:]
+  msdict['fullgenbias'][ii,:,:]   = gendens[:,:]   - msdict['fullgen'][0,:,:]
+  msdict['fullacebias'][ii,:,:]   = acedens[:,:]   - msdict['fullace'][0,:,:]
+  msdict['fullpacebias'][ii,:,:]  = pacedens[:,:]  - msdict['fullpace'][0,:,:]
       
   print("-------------------------------------------------------------------------")
-
-
-# OLD NETCDF
-#   ncoutfile=netcdfdir+"/"+"spatial_"+basecsv+"_"+basinstr+".nc"
-#   system("/bin/rm -f "+ncoutfile)   ; remove any pre-existing file
-#   ncdf = addfile(ncoutfile ,"c")  ; open output netCDF file
-# 
-#   fAtt               = True            ; assign file attributes
-#   fAtt@title         = "Coastal metrics spatial netcdf"
-#   fAtt@creation_date = systemfunc ("date")
-#   fileattdef( ncdf, fAtt )            ; copy file attributes
-# 
-#   do bb = 0,dimsizes(spapltvarsstr)-1
-#     print("saving "+bb)
-#     spapltvars[bb]!0="model"
-#     tmpvar = spapltvars[bb]
-#     ncdf->$spapltvarsstr(bb)$ = tmpvar(iz,:,:)
-#     delete(tmpvar)
-#   end do
-# 
-#   tmpchars=stringtochar(valid_strs)
-#   tmpchars!0="model"
-#   tmpchars!1="characters"
-#   ncdf->model_names = tmpchars
-#   delete(tmpchars)
-#   
-
-# open a netCDF file to write
-ncout = Dataset('testout.nc', 'w', format='NETCDF4')
-
-# define axis size
-ncout.createDimension('model', len(files))  # unlimited
-ncout.createDimension('lat', denslat.size)
-ncout.createDimension('lon', denslon.size)
-
-# create latitude axis
-lat = ncout.createVariable('lat', 'f', ('lat'))
-lat.standard_name = 'latitude'
-lat.long_name = 'latitude'
-lat.units = 'degrees_north'
-lat.axis = 'Y'
-
-# create longitude axis
-lon = ncout.createVariable('lon', 'f', ('lon'))
-lon.standard_name = 'longitude'
-lon.long_name = 'longitude'
-lon.units = 'degrees_east'
-lon.axis = 'X'
-
-# Write lon + lat
-lon[:] = denslon[:]
-lat[:] = denslat[:]
-
-# create variable array
-vout = ncout.createVariable('trackdens', 'f', ('model', 'lat', 'lon'))
-vout.long_name = 'Track density'
-vout.units = '1/year'
-
-# Write file
-vout[:] = fulldens[:,:,:]
-
-# close files
-ncout.close()
+  
+## Back to the main program
+write_spatial_netcdf(msdict,denslat,denslon)
