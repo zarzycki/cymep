@@ -3,6 +3,7 @@ sys.path.insert(0, './functions')
 
 import numpy as np
 import pandas as pd
+from netCDF4 import Dataset
 from getTrajectories import *
 from mask_tc import *
 from track_density import *
@@ -20,8 +21,8 @@ gridsize=8.0
 
 # Constants
 ms_to_kts = 1.94384449
-nmonths = 12
-nyears = enyr-styr+1
+pi = 3.141592653589793
+deg2rad = pi / 180.
 
 # Read in configuration file and parse columns for each case
 df=pd.read_csv(csvfilename, sep=',',header=None)
@@ -36,6 +37,8 @@ windcorrs = df.loc[ : , 5 ]
 nfiles=len(files)
 stmon=1
 enmon=12
+nyears = enyr-styr+1
+nmonths = enmon-stmon+1
 
 ## Initialize global numpy arrays
 # Init per month arrays
@@ -280,21 +283,122 @@ for ii in range(len(files)):
       lmiByYear[ii,yrix]= np.nanmean( np.where(xgyear == jj,xlatmi,0.0) )
       latgenByYear[ii,yrix]= np.nanmean( np.where(xgyear == jj,xglat,0.0) )
 
-
   avgStormsPY[ii] = np.sum(stormsByMonth[ii,:]) / nmodyears      
   avgTcdPY[ii] = np.nansum(xtcd) / nmodyears
   
-  trackdens = track_density(gridsize,0.0,xlat.flatten(),xlon.flatten(),False)
-  gendens = track_density(gridsize,0.0,xglat.flatten(),xglon.flatten(),False)
-  tcddens = track_mean(gridsize,0.0,xlat.flatten(),xlon.flatten(),xtcdpp.flatten(),False,0)
-  acedens = track_mean(gridsize,0.0,xglat.flatten(),xglon.flatten(),xace.flatten(),False,0)  
-  pacedens = track_mean(gridsize,0.0,xglat.flatten(),xglon.flatten(),xpace.flatten(),False,0)
-  minpres = track_minmax(gridsize,0.0,xlat.flatten(),xlon.flatten(),xpres.flatten(),"min",-1)
-  maxwind = track_minmax(gridsize,0.0,xlat.flatten(),xlon.flatten(),xwind.flatten(),"max",-1)
+  trackdens, denslat, denslon = track_density(gridsize,0.0,xlat.flatten(),xlon.flatten(),False)
+  trackdens = trackdens/nmodyears
+  gendens, denslat, denslon = track_density(gridsize,0.0,xglat.flatten(),xglon.flatten(),False)
+  gendens = gendens/nmodyears
+  tcddens, denslat, denslon = track_mean(gridsize,0.0,xlat.flatten(),xlon.flatten(),xtcdpp.flatten(),False,0)
+  tcddens = tcddens/nmodyears
+  acedens, denslat, denslon = track_mean(gridsize,0.0,xglat.flatten(),xglon.flatten(),xace.flatten(),False,0)  
+  acedens = acedens/nmodyears  
+  pacedens, denslat, denslon = track_mean(gridsize,0.0,xglat.flatten(),xglon.flatten(),xpace.flatten(),False,0)
+  pacedens = pacedens/nmodyears  
+  minpres, denslat, denslon = track_minmax(gridsize,0.0,xlat.flatten(),xlon.flatten(),xpres.flatten(),"min",-1)
+  maxwind, denslat, denslon = track_minmax(gridsize,0.0,xlat.flatten(),xlon.flatten(),xwind.flatten(),"max",-1)
+
+  if np.nansum(trackdens) == 0:
+    trackdens=float('NaN')
+    pacedens=float('NaN')
+    acedens=float('NaN')
+    tcddens=float('NaN')
+    gendens=float('NaN')
+    minpres=float('NaN')
+    maxwind=float('NaN')
+
+  # If ii = 0, generate master spatial arrays
+  if ii == 0:
+    print("Generating cosine weights...")
+    denslatwgt    = np.cos(deg2rad*denslat)
+    print("Generating master spatial arrays...")
+    fulldens      = np.empty((nfiles, denslat.size, denslon.size))
+    fullpres      = np.empty((nfiles, denslat.size, denslon.size))
+    fullwind      = np.empty((nfiles, denslat.size, denslon.size))
+    fullgen       = np.empty((nfiles, denslat.size, denslon.size))
+    fullace       = np.empty((nfiles, denslat.size, denslon.size))
+    fullpace      = np.empty((nfiles, denslat.size, denslon.size))
+    fulltcd       = np.empty((nfiles, denslat.size, denslon.size))
+    fulltrackbias = np.empty((nfiles, denslat.size, denslon.size))
+    fullgenbias   = np.empty((nfiles, denslat.size, denslon.size))
+    fullacebias   = np.empty((nfiles, denslat.size, denslon.size))
+    fullpacebias  = np.empty((nfiles, denslat.size, denslon.size))
   
+  # Store this model's data in the master spatial array
+  fulldens[ii,:,:] = trackdens[:,:]
+  fullgen[ii,:,:]  = gendens[:,:]
+  fullpace[ii,:,:] = pacedens[:,:]
+  fullace[ii,:,:]  = acedens[:,:]
+  fulltcd[ii,:,:]  = tcddens[:,:]
+  fullpres[ii,:,:] = minpres[:,:]
+  fullwind[ii,:,:] = maxwind[:,:]
+  fulltrackbias[ii,:,:] = trackdens[:,:] - fulldens[0,:,:]
+  fullgenbias[ii,:,:]   = gendens[:,:]   - fullgen[0,:,:]
+  fullacebias[ii,:,:]   = acedens[:,:]   - fullace[0,:,:]
+  fullpacebias[ii,:,:]  = pacedens[:,:]  - fullpace[0,:,:]
+      
   print("-------------------------------------------------------------------------")
 
 
+# OLD NETCDF
+#   ncoutfile=netcdfdir+"/"+"spatial_"+basecsv+"_"+basinstr+".nc"
+#   system("/bin/rm -f "+ncoutfile)   ; remove any pre-existing file
+#   ncdf = addfile(ncoutfile ,"c")  ; open output netCDF file
+# 
+#   fAtt               = True            ; assign file attributes
+#   fAtt@title         = "Coastal metrics spatial netcdf"
+#   fAtt@creation_date = systemfunc ("date")
+#   fileattdef( ncdf, fAtt )            ; copy file attributes
+# 
+#   do bb = 0,dimsizes(spapltvarsstr)-1
+#     print("saving "+bb)
+#     spapltvars[bb]!0="model"
+#     tmpvar = spapltvars[bb]
+#     ncdf->$spapltvarsstr(bb)$ = tmpvar(iz,:,:)
+#     delete(tmpvar)
+#   end do
+# 
+#   tmpchars=stringtochar(valid_strs)
+#   tmpchars!0="model"
+#   tmpchars!1="characters"
+#   ncdf->model_names = tmpchars
+#   delete(tmpchars)
+#   
 
+# open a netCDF file to write
+ncout = Dataset('testout.nc', 'w', format='NETCDF4')
 
-print(avgStormsPY)
+# define axis size
+ncout.createDimension('model', len(files))  # unlimited
+ncout.createDimension('lat', denslat.size)
+ncout.createDimension('lon', denslon.size)
+
+# create latitude axis
+lat = ncout.createVariable('lat', 'f', ('lat'))
+lat.standard_name = 'latitude'
+lat.long_name = 'latitude'
+lat.units = 'degrees_north'
+lat.axis = 'Y'
+
+# create longitude axis
+lon = ncout.createVariable('lon', 'f', ('lon'))
+lon.standard_name = 'longitude'
+lon.long_name = 'longitude'
+lon.units = 'degrees_east'
+lon.axis = 'X'
+
+# Write lon + lat
+lon[:] = denslon[:]
+lat[:] = denslat[:]
+
+# create variable array
+vout = ncout.createVariable('trackdens', 'f', ('model', 'lat', 'lon'))
+vout.long_name = 'Track density'
+vout.units = '1/year'
+
+# Write file
+vout[:] = fulldens[:,:,:]
+
+# close files
+ncout.close()
