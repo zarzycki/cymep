@@ -1,13 +1,13 @@
 import numpy as np
 from netCDF4 import Dataset
 
-def write_spatial_netcdf(vardict,latin,lonin):
+def write_spatial_netcdf(vardict,modelsin,latin,lonin):
 
   # open a netCDF file to write
   ncout = Dataset('testout.nc', 'w', format='NETCDF4')
 
   # define axis size
-  ncout.createDimension('model', 4)  # unlimited
+  ncout.createDimension('model', len(modelsin))  # unlimited
   ncout.createDimension('lat', latin.size)
   ncout.createDimension('lon', lonin.size)
 
