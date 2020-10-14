@@ -31,3 +31,39 @@ def maskTC(lat,lon):
     basin = 0
 
   return basin
+  
+
+
+def getbasinmaskstr(gridchoice):
+
+  if hasattr(gridchoice, "__len__"):
+    if gridchoice[0] == 1:
+      basinstr="NHEMI"
+    else:
+      basinstr="SHEMI"
+  else:
+    if gridchoice < 0:
+      basinstr="GLOB"
+    else:
+      if gridchoice == 1:
+        basinstr="NATL"
+      elif gridchoice == 2:
+        basinstr="EPAC"
+      elif gridchoice == 3:
+        basinstr="CPAC"
+      elif gridchoice == 4:
+        basinstr="WPAC"
+      elif gridchoice == 5:
+        basinstr="NIO"
+      elif gridchoice == 6:
+        basinstr="SIO"
+      elif gridchoice == 7:
+        basinstr="SPAC"
+      elif gridchoice == 8:
+        basinstr="SATL"
+      elif gridchoice == 9:
+        basinstr="FLA"
+      else:
+        basinstr="NONE"
+
+  return basinstr

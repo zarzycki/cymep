@@ -10,6 +10,10 @@ from mask_tc import *
 from track_density import *
 from write_spatial import *
 import scipy.stats
+import subprocess
+import re
+from pattern_cor import *
+
 
 def write_dict_csv(vardict,modelsin):
   # create variable array
@@ -19,10 +23,29 @@ def write_dict_csv(vardict,modelsin):
     csvfilename = csvdir+"/"+str(ii)+".csv"
     if vardict[ii].shape == modelsin.shape:
       tmp = np.concatenate((np.expand_dims(modelsin, axis=1),np.expand_dims(vardict[ii], axis=1)), axis=1)
-      np.savetxt(csvfilename, tmp, delimiter=",", fmt="%s")
     else:
       tmp = np.concatenate((np.expand_dims(modelsin, axis=1), vardict[ii]), axis=1)
-      np.savetxt(csvfilename, tmp, delimiter=",", fmt="%s")
+    np.savetxt(csvfilename, tmp, delimiter=",", fmt="%s")
+
+def write_single_csv(vardict,modelsin,csvdir,csvname):
+  # create variable array
+  os.makedirs(os.path.dirname(csvdir), exist_ok=True)
+  csvfilename = csvdir+"/"+csvname
+  
+  # Concat models to first axis
+  firstdict=list(vardict.keys())[0]
+  headerstr="Model,"+firstdict
+  if vardict[firstdict].shape == modelsin.shape:
+    tmp = np.concatenate((np.expand_dims(modelsin, axis=1),np.expand_dims(vardict[firstdict], axis=1)), axis=1)
+  else:
+    tmp = np.concatenate((np.expand_dims(modelsin, axis=1), vardict[firstdict]), axis=1)
+  
+  for ii in vardict:
+    if ii != firstdict:
+      tmp = np.concatenate((tmp, np.expand_dims(vardict[ii], axis=1)), axis=1)
+      headerstr=headerstr+","+ii
+      
+  np.savetxt(csvfilename, tmp, delimiter=",", fmt="%s", header=headerstr, comments="")
 
 
 # User settings
@@ -44,7 +67,7 @@ pi = 3.141592653589793
 deg2rad = pi / 180.
 
 # Read in configuration file and parse columns for each case
-# Ignore commented lines
+# Ignore commented lines starting with !
 df=pd.read_csv(csvfilename, sep=',', comment='!', header=None)
 files = df.loc[ : , 0 ]
 strs = df.loc[ : , 1 ]
@@ -58,45 +81,40 @@ nfiles=len(files)
 nyears = enyr-styr+1
 nmonths = enmon-stmon+1
 
-## Initialize global numpy arrays
-# Init per month arrays
-pydict = {}
-pydict['stormsByYear']  = np.empty((nfiles, nyears))
-pydict['aceByYear']     = np.empty((nfiles, nyears))
-pydict['paceByYear']    = np.empty((nfiles, nyears))
-pydict['tcdByYear']     = np.empty((nfiles, nyears))
-pydict['lmiByYear']     = np.empty((nfiles, nyears))
-pydict['latgenByYear']  = np.empty((nfiles, nyears))
+## Initialize global numpy array/dicts
 
 # Init per month arrays
+pydict = {}
+pyvars = ['stormsByYear','aceByYear','paceByYear','tcdByYear','lmiByYear','latgenByYear']
+for x in pyvars:
+  pydict[x] = np.empty((nfiles, nyears))
+      
+# Init per month arrays
 pmdict = {}
-pmdict['stormsByMonth'] = np.empty((nfiles, nmonths))
-pmdict['aceByMonth']    = np.empty((nfiles, nmonths))
-pmdict['paceByMonth']   = np.empty((nfiles, nmonths))
-pmdict['tcdByMonth']    = np.empty((nfiles, nmonths))
-pmdict['lmiByMonth']    = np.empty((nfiles, nmonths))
+pmvars = ['pm_count','pm_tcd','pm_ace','pm_pace','pm_lmi']
+for x in pmvars:
+  pmdict[x] = np.empty((nfiles, nmonths))
 
 # Init per year arrays
 aydict = {}
-aydict['avgStormsPY']   = np.empty(nfiles)
-aydict['avgTcdPY']      = np.empty(nfiles)
-aydict['avgAcePY']      = np.empty(nfiles)
-aydict['avgPacePY']     = np.empty(nfiles)
-aydict['avgLmiPY']      = np.empty(nfiles)
+ayvars = ['uclim_count','uclim_tcd','uclim_ace','uclim_pace','uclim_lmi']
+for x in ayvars:
+  aydict[x] = np.empty(nfiles)
 
 # Init per storm arrays
 asdict = {}
-asdict['avgTcdPS']      = np.empty(nfiles)
-asdict['avgLmiPS']      = np.empty(nfiles)
-asdict['avgAcePS']      = np.empty(nfiles)
-asdict['avgPacePS']     = np.empty(nfiles)
-asdict['avgLatgenPS']   = np.empty(nfiles)
+asvars = ['utc_tcd','utc_ace','utc_pace','utc_latgen','utc_lmi']
+for x in asvars:
+  asdict[x] = np.empty(nfiles)
 
 ## Set to nan
-#stormsByMonth   = np.nan
-#aceByMonth   = np.nan
-#paceByMonth = np.nan
-#tcdByMonth  = np.nan
+#pm_count   = np.nan
+#pm_ace   = np.nan
+#pm_pace = np.nan
+#pm_tcd  = np.nan
+
+# Get basin string
+basinstr=getbasinmaskstr(test_basin)
 
 for ii in range(len(files)):
 
@@ -260,9 +278,10 @@ for ii in range(len(files)):
       xlonmi[kk]=xlon[kk,locMI]          
       
   # Flip LMI sign in SH to report poleward values when averaging
-  abs_LMI=True
-  if abs_LMI:
+  abs_lats=True
+  if abs_lats:
     xlatmi = np.absolute(xlatmi)
+    #xglat  = np.absolute(xglat)
 
   # Calculate TC days at every valid track point
   xtcdpp = xwind
@@ -278,41 +297,49 @@ for ii in range(len(files)):
   xprestmp = np.ma.where(xprestmp < 1016.0, xprestmp, 1016.0)
   xpace = 1.0e-4 * np.nansum( (ms_to_kts*3.92*(1016.-xprestmp)**0.644)**2. , axis = 1)
 
-  # Get maximum intensity and TCD per storm
+  # Get maximum intensity and TCD
   xmpres = np.nanmin( xpres , axis=1 )
   xmwind = np.nanmax( xwind , axis=1 )
   xtcd   = np.nansum( xtcdpp, axis=1 )
+  
+  # Need to get rid of storms with no TC, ACE or PACE
+  xtcd   = np.where(xtcd  == 0,float('NaN'),xtcd)
+  xace   = np.where(xace  == 0,float('NaN'),xace)
+  xpace  = np.where(xpace == 0,float('NaN'),xpace)
 
   # Bin storms per dataset per calendar month
   for jj in range(1, 12+1):
-    pmdict['stormsByMonth'][ii,jj-1] = np.count_nonzero(xgmonth == jj)
-    pmdict['tcdByMonth'][ii,jj-1]= np.nansum( np.where(xgmonth == jj,xtcd,0.0) )
-    pmdict['aceByMonth'][ii,jj-1]= np.nansum( np.where(xgmonth == jj,xace,0.0) )
-    pmdict['paceByMonth'][ii,jj-1]= np.nansum( np.where(xgmonth == jj,xpace,0.0) )
-    pmdict['lmiByMonth'][ii,jj-1]= np.nanmean( np.where(xgmonth == jj,xlatmi,float('NaN')) )
+    pmdict['pm_count'][ii,jj-1] = np.count_nonzero(xgmonth == jj)
+    pmdict['pm_tcd'][ii,jj-1]    = np.nansum(  np.where(xgmonth == jj,xtcd,0.0) )
+    pmdict['pm_ace'][ii,jj-1]    = np.nansum(  np.where(xgmonth == jj,xace,0.0) )
+    pmdict['pm_pace'][ii,jj-1]   = np.nansum(  np.where(xgmonth == jj,xpace,0.0) )
+    pmdict['pm_lmi'][ii,jj-1]    = np.nanmean( np.where(xgmonth == jj,xlatmi,float('NaN')) )
 
   # Bin storms per dataset per calendar year
   for jj in range(styr, enyr+1):
     yrix = jj - styr   # Convert from year to zero indexing for numpy array
     if jj >= np.nanmin(xgyear) and jj <= np.nanmax(xgyear):
       pydict['stormsByYear'][ii,yrix] = np.count_nonzero(xgyear == jj)
-      pydict['tcdByYear'][ii,yrix]= np.nansum( np.where(xgyear == jj,xtcd,0.0) )
-      pydict['aceByYear'][ii,yrix]= np.nansum( np.where(xgyear == jj,xace,0.0) )
-      pydict['paceByYear'][ii,yrix]= np.nansum( np.where(xgyear == jj,xpace,0.0) )
-      pydict['lmiByYear'][ii,yrix]= np.nanmean( np.where(xgyear == jj,xlatmi,float('NaN')) )
-      pydict['latgenByYear'][ii,yrix]= np.nanmean( np.where(xgyear == jj,xglat,float('NaN')) )
+      pydict['tcdByYear'][ii,yrix]    = np.nansum(  np.where(xgyear == jj,xtcd,0.0) )
+      pydict['aceByYear'][ii,yrix]    = np.nansum(  np.where(xgyear == jj,xace,0.0) )
+      pydict['paceByYear'][ii,yrix]   = np.nansum(  np.where(xgyear == jj,xpace,0.0) )
+      pydict['lmiByYear'][ii,yrix]    = np.nanmean( np.where(xgyear == jj,xlatmi,float('NaN')) )
+      pydict['latgenByYear'][ii,yrix] = np.nanmean( np.where(xgyear == jj,np.absolute(xglat),float('NaN')) )
 
-  aydict['avgStormsPY'][ii] = np.sum(pmdict['stormsByMonth'][ii,:]) / nmodyears     
-  aydict['avgTcdPY'][ii] = np.nansum(xtcd) / nmodyears
-  aydict['avgAcePY'][ii] = np.nansum(xace) / nmodyears
-  aydict['avgPacePY'][ii] = np.nansum(xpace) / nmodyears
-  aydict['avgLmiPY'][ii] = np.nansum(xlatmi) / nmodyears
+  aydict['uclim_count'][ii] = np.sum(pmdict['pm_count'][ii,:]) / nmodyears     
+  aydict['uclim_tcd'][ii]    = np.nansum(xtcd) / nmodyears
+  aydict['uclim_ace'][ii]    = np.nansum(xace) / nmodyears
+  aydict['uclim_pace'][ii]   = np.nansum(xpace) / nmodyears
+  aydict['uclim_lmi'][ii]    = np.nanmean(pydict['lmiByYear'][ii,:])
   
-  asdict['avgTcdPS'][ii]    = np.nanmean(xtcd)
-  asdict['avgAcePS'][ii]    = np.nanmean(xace)
-  asdict['avgPacePS'][ii]   = np.nanmean(xpace)
-  asdict['avgLmiPS'][ii]    = np.nanmean(xlatmi)
-  asdict['avgLatgenPS'][ii] = np.nanmean(xglat)
+  asdict['utc_tcd'][ii]    = np.nanmean(xtcd)
+  asdict['utc_ace'][ii]    = np.nanmean(xace)
+  asdict['utc_pace'][ii]   = np.nanmean(xpace)
+  asdict['utc_lmi'][ii]    = np.nanmean(xlatmi)
+  asdict['utc_latgen'][ii] = np.nanmean(np.absolute(xglat))
+  
+  if ii == 0:
+    np.savetxt('tcd.csv', xtcd, delimiter=",")
   
   trackdens, denslat, denslon = track_density(gridsize,0.0,xlat.flatten(),xlon.flatten(),False)
   trackdens = trackdens/nmodyears
@@ -342,17 +369,9 @@ for ii in range(len(files)):
     denslatwgt    = np.cos(deg2rad*denslat)
     print("Generating master spatial arrays...")
     msdict = {}
-    msdict['fulldens'] = np.empty((nfiles, denslat.size, denslon.size))
-    msdict['fullpres'] = np.empty((nfiles, denslat.size, denslon.size))
-    msdict['fullwind'] = np.empty((nfiles, denslat.size, denslon.size))
-    msdict['fullgen'] = np.empty((nfiles, denslat.size, denslon.size))
-    msdict['fullace'] = np.empty((nfiles, denslat.size, denslon.size))
-    msdict['fullpace'] = np.empty((nfiles, denslat.size, denslon.size))
-    msdict['fulltcd'] = np.empty((nfiles, denslat.size, denslon.size))
-    msdict['fulltrackbias'] = np.empty((nfiles, denslat.size, denslon.size))
-    msdict['fullgenbias'] = np.empty((nfiles, denslat.size, denslon.size))    
-    msdict['fullacebias'] = np.empty((nfiles, denslat.size, denslon.size))
-    msdict['fullpacebias'] = np.empty((nfiles, denslat.size, denslon.size))   
+    msvars = ['fulldens','fullpres','fullwind','fullgen','fullace','fullpace','fulltcd','fulltrackbias','fullgenbias','fullacebias','fullpacebias']
+    for x in msvars:
+      msdict[x] = np.empty((nfiles, denslat.size, denslon.size))
           
   # Store this model's data in the master spatial array
   msdict['fulldens'][ii,:,:] = trackdens[:,:]
@@ -369,23 +388,59 @@ for ii in range(len(files)):
       
   print("-------------------------------------------------------------------------")
   
-## Back to the main program
-for jj in pmdict:
-  print(jj)
-  for ii in range(len(files)):
-    tmp=scipy.stats.spearmanr(pmdict[jj][0,:], pmdict[jj][ii,:])
-    print(tmp)
-    
-## Back to the main program
-for jj in pmdict:
-  print(jj)
-  for ii in range(len(files)):
-    tmp=scipy.stats.pearsonr(pmdict[jj][0,:], pmdict[jj][ii,:])
-    print(tmp)
+  
+### Back to the main program
 
-### Write data to files for saving
+# Spatial correlation calculations
+
+## Initialize dict
+rxydict={}
+rxyvars = ["rxy_track","rxy_gen","rxy_u10","rxy_slp","rxy_ace","rxy_pace"]
+for x in rxyvars:
+  rxydict[x] = np.empty(nfiles)
+
+for ii in range(nfiles):
+  rxydict['rxy_track'][ii] = pattern_cor(msdict['fulldens'][0,:,:], msdict['fulldens'][ii,:,:], denslatwgt, 0)
+  rxydict['rxy_gen'][ii]   = pattern_cor(msdict['fullgen'][0,:,:],  msdict['fullgen'][ii,:,:],  denslatwgt, 0)
+  rxydict['rxy_u10'][ii]   = pattern_cor(msdict['fullwind'][0,:,:], msdict['fullwind'][ii,:,:], denslatwgt, 0)
+  rxydict['rxy_slp'][ii]   = pattern_cor(msdict['fullpres'][0,:,:], msdict['fullpres'][ii,:,:], denslatwgt, 0)
+  rxydict['rxy_ace'][ii]   = pattern_cor(msdict['fullace'][0,:,:],  msdict['fullace'][ii,:,:],  denslatwgt, 0)
+  rxydict['rxy_pace'][ii]  = pattern_cor(msdict['fullpace'][0,:,:], msdict['fullpace'][ii,:,:], denslatwgt, 0)
+
+# Temporal correlation calculations
+# Spearman Rank
+rsdict = {}
+for jj in pmdict:
+  repStr=re.sub("pm_", "rs_", jj)
+  rsdict[repStr] = np.empty(nfiles)
+  for ii in range(len(files)):
+    tmpx = pmdict[jj][0,:]
+    tmpy = pmdict[jj][ii,:]
+    nas = np.logical_or(np.isnan(tmpx), np.isnan(tmpy))
+    rsdict[repStr][ii], tmp = scipy.stats.spearmanr(tmpx[~nas],tmpy[~nas])
+
+# Pearson
+rpdict = {}
+for jj in pmdict:
+  repStr=re.sub("pm_", "rp_", jj)
+  rpdict[repStr] = np.empty(nfiles)
+  for ii in range(len(files)):
+    tmpx = pmdict[jj][0,:]
+    tmpy = pmdict[jj][ii,:]
+    # Find nans
+    nas = np.logical_or(np.isnan(tmpx), np.isnan(tmpy))
+    rpdict[repStr][ii], tmp =scipy.stats.pearsonr(tmpx[~nas],tmpy[~nas])
+
+# Write out primary stats files
+write_single_csv(rxydict,strs,'./csv-files/','metrics_'+os.path.splitext(csvfilename)[0]+'_'+basinstr+'_spatial_corr.csv')
+write_single_csv(rsdict,strs,'./csv-files/','metrics_'+os.path.splitext(csvfilename)[0]+'_'+basinstr+'_temporal_scorr.csv')
+write_single_csv(rpdict,strs,'./csv-files/','metrics_'+os.path.splitext(csvfilename)[0]+'_'+basinstr+'_temporal_pcorr.csv')
+write_single_csv(aydict,strs,'./csv-files/','metrics_'+os.path.splitext(csvfilename)[0]+'_'+basinstr+'_climo_mean.csv')
+write_single_csv(asdict,strs,'./csv-files/','metrics_'+os.path.splitext(csvfilename)[0]+'_'+basinstr+'_storm_mean.csv')
+
+# Write out other variables for later processing
 write_spatial_netcdf(msdict,strs,denslat,denslon)
-write_dict_csv(pydict,strs)
-write_dict_csv(pmdict,strs)
-write_dict_csv(aydict,strs)
-write_dict_csv(asdict,strs)
+#write_dict_csv(pydict,strs)
+#write_dict_csv(pmdict,strs)
+
+#subprocess.call(["ls", "-l"])
