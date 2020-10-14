@@ -27,3 +27,13 @@ denslatwgt = np.cos(deg2rad*lats)
 for ii in range(nmods):
   tmp = pattern_cor(trackdens[0,:,:],trackdens[ii,:,:],denslatwgt,0)
   print(tmp)
+  
+for ii in range(nmods):
+  #print("avg "+str(np.nanmean(trackdens[0,:,:]))+" "+str(np.nanmean(trackdens[ii,:,:])))
+  tmp = wgt_arearmse2(trackdens[0,:,:],trackdens[ii,:,:],denslatwgt,0)
+  print(tmp)
+  
+for ii in range(nmods):
+  #print("avg "+str(np.nanmean(trackdens[0,:,:]))+" "+str(np.nanmean(trackdens[ii,:,:])))
+  ratio = taylor_stats(trackdens[ii,:,:],trackdens[0,:,:],denslatwgt,0)
+  print(ratio)
