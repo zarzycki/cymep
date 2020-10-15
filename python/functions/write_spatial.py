@@ -1,15 +1,25 @@
 import numpy as np
-from netCDF4 import Dataset
+import netCDF4 as nc
 
 def write_spatial_netcdf(vardict,modelsin,latin,lonin):
-
+  
+  # Convert modelsin from pandas to list
+  modelsin=modelsin.tolist()
+  
+  # Set up dimensions
+  nmodels=len(modelsin)
+  nlats=latin.size
+  nlons=lonin.size
+  nchar=16
+  
   # open a netCDF file to write
-  ncout = Dataset('testout.nc', 'w', format='NETCDF4')
+  ncout = nc.Dataset('testout.nc', 'w', format='NETCDF4')
 
   # define axis size
-  ncout.createDimension('model', len(modelsin))  # unlimited
-  ncout.createDimension('lat', latin.size)
-  ncout.createDimension('lon', lonin.size)
+  ncout.createDimension('model', nmodels)  # unlimited
+  ncout.createDimension('lat', nlats)
+  ncout.createDimension('lon', nlons)
+  ncout.createDimension('characters', nchar)
 
   # create latitude axis
   lat = ncout.createVariable('lat', 'f', ('lat'))
@@ -36,6 +46,10 @@ def write_spatial_netcdf(vardict,modelsin,latin,lonin):
     vout.units = '1/year'
     vout[:] = vardict[ii][:,:,:]
 
+  # Write model names to char
+  model_names = ncout.createVariable('model_names', 'c', ('model', 'characters'))
+  model_names[:] = nc.stringtochar(np.array(modelsin).astype('S16'))
+  
   # close files
   ncout.close()
   

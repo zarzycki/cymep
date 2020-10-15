@@ -1,17 +1,18 @@
 import sys
 sys.path.insert(0, './functions')
 
+import os
+import subprocess
+import re
 import numpy as np
 import pandas as pd
-import os
+import scipy.stats as sps
 from netCDF4 import Dataset
+
 from getTrajectories import *
 from mask_tc import *
 from track_density import *
 from write_spatial import *
-import scipy.stats
-import subprocess
-import re
 from pattern_cor import *
 
 
@@ -411,25 +412,28 @@ for ii in range(nfiles):
 # Spearman Rank
 rsdict = {}
 for jj in pmdict:
+  # Swap per month strings with corr prefix and init dict key
   repStr=re.sub("pm_", "rs_", jj)
   rsdict[repStr] = np.empty(nfiles)
   for ii in range(len(files)):
+    # Create tmp vars and find nans
     tmpx = pmdict[jj][0,:]
     tmpy = pmdict[jj][ii,:]
     nas = np.logical_or(np.isnan(tmpx), np.isnan(tmpy))
-    rsdict[repStr][ii], tmp = scipy.stats.spearmanr(tmpx[~nas],tmpy[~nas])
+    rsdict[repStr][ii], tmp = sps.spearmanr(tmpx[~nas],tmpy[~nas])
 
 # Pearson
 rpdict = {}
 for jj in pmdict:
+  # Swap per month strings with corr prefix and init dict key
   repStr=re.sub("pm_", "rp_", jj)
   rpdict[repStr] = np.empty(nfiles)
   for ii in range(len(files)):
+    # Create tmp vars and find nans
     tmpx = pmdict[jj][0,:]
     tmpy = pmdict[jj][ii,:]
-    # Find nans
     nas = np.logical_or(np.isnan(tmpx), np.isnan(tmpy))
-    rpdict[repStr][ii], tmp =scipy.stats.pearsonr(tmpx[~nas],tmpy[~nas])
+    rpdict[repStr][ii], tmp =sps.pearsonr(tmpx[~nas],tmpy[~nas])
 
 # Write out primary stats files
 write_single_csv(rxydict,strs,'./csv-files/','metrics_'+os.path.splitext(csvfilename)[0]+'_'+basinstr+'_spatial_corr.csv')
