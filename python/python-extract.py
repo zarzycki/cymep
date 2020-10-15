@@ -1,7 +1,4 @@
 import sys
-sys.path.insert(0, './functions')
-
-import os
 import subprocess
 import re
 import numpy as np
@@ -9,45 +6,12 @@ import pandas as pd
 import scipy.stats as sps
 from netCDF4 import Dataset
 
+sys.path.insert(0, './functions')
 from getTrajectories import *
 from mask_tc import *
 from track_density import *
 from write_spatial import *
 from pattern_cor import *
-
-
-def write_dict_csv(vardict,modelsin):
-  # create variable array
-  csvdir="./csv-files/"
-  os.makedirs(os.path.dirname(csvdir), exist_ok=True)
-  for ii in vardict:
-    csvfilename = csvdir+"/"+str(ii)+".csv"
-    if vardict[ii].shape == modelsin.shape:
-      tmp = np.concatenate((np.expand_dims(modelsin, axis=1),np.expand_dims(vardict[ii], axis=1)), axis=1)
-    else:
-      tmp = np.concatenate((np.expand_dims(modelsin, axis=1), vardict[ii]), axis=1)
-    np.savetxt(csvfilename, tmp, delimiter=",", fmt="%s")
-
-def write_single_csv(vardict,modelsin,csvdir,csvname):
-  # create variable array
-  os.makedirs(os.path.dirname(csvdir), exist_ok=True)
-  csvfilename = csvdir+"/"+csvname
-  
-  # Concat models to first axis
-  firstdict=list(vardict.keys())[0]
-  headerstr="Model,"+firstdict
-  if vardict[firstdict].shape == modelsin.shape:
-    tmp = np.concatenate((np.expand_dims(modelsin, axis=1),np.expand_dims(vardict[firstdict], axis=1)), axis=1)
-  else:
-    tmp = np.concatenate((np.expand_dims(modelsin, axis=1), vardict[firstdict]), axis=1)
-  
-  for ii in vardict:
-    if ii != firstdict:
-      tmp = np.concatenate((tmp, np.expand_dims(vardict[ii], axis=1)), axis=1)
-      headerstr=headerstr+","+ii
-      
-  np.savetxt(csvfilename, tmp, delimiter=",", fmt="%s", header=headerstr, comments="")
-
 
 # User settings
 do_special_filter_obs = True
@@ -419,7 +383,7 @@ for jj in pmdict:
     nas = np.logical_or(np.isnan(tmpx), np.isnan(tmpy))
     rsdict[repStr][ii], tmp = sps.spearmanr(tmpx[~nas],tmpy[~nas])
 
-# Pearson
+# Pearson correlation
 rpdict = {}
 for jj in pmdict:
   # Swap per month strings with corr prefix and init dict key
@@ -439,9 +403,14 @@ write_single_csv(rpdict,strs,'./csv-files/','metrics_'+os.path.splitext(csvfilen
 write_single_csv(aydict,strs,'./csv-files/','metrics_'+os.path.splitext(csvfilename)[0]+'_'+basinstr+'_climo_mean.csv')
 write_single_csv(asdict,strs,'./csv-files/','metrics_'+os.path.splitext(csvfilename)[0]+'_'+basinstr+'_storm_mean.csv')
 
-# Write out other variables for later processing
-write_spatial_netcdf(msdict,pmdict,pydict,strs,nyears,nmonths,denslat,denslon)
-#write_dict_csv(pydict,strs)
-#write_dict_csv(pmdict,strs)
+# Package a series of global package inputs for storage as NetCDF attributes
+globaldict={}
+globaldictvars = ["styr","enyr","stmon","enmon","basinstr","do_special_filter_obs","do_fill_missing_pw","csvfilename","truncate_years","do_defineMIbypres","gridsize"]
+for x in globaldictvars:
+  globaldict[x] = globals()[x]
+
+# Write NetCDF file
+write_spatial_netcdf(msdict,pmdict,pydict,strs,nyears,nmonths,denslat,denslon,globaldict)
+
 
 #subprocess.call(["ls", "-l"])
