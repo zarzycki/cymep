@@ -1,7 +1,9 @@
 import numpy as np
 import netCDF4 as nc
+from datetime import datetime
+import os
 
-def write_spatial_netcdf(spatialdict,permondict,peryrdict,modelsin,nyears,nmonths,latin,lonin):
+def write_spatial_netcdf(spatialdict,permondict,peryrdict,modelsin,nyears,nmonths,latin,lonin,globaldict):
   
   # Convert modelsin from pandas to list
   modelsin=modelsin.tolist()
@@ -12,8 +14,12 @@ def write_spatial_netcdf(spatialdict,permondict,peryrdict,modelsin,nyears,nmonth
   nlons=lonin.size
   nchar=16
   
+  netcdfdir="./netcdf/"
+  os.makedirs(os.path.dirname(netcdfdir), exist_ok=True)
+  netcdfile=netcdfdir+"/netcdf_"+globaldict['basinstr']+"_"+os.path.splitext(globaldict['csvfilename'])[0]
+  
   # open a netCDF file to write
-  ncout = nc.Dataset('testout.nc', 'w', format='NETCDF4')
+  ncout = nc.Dataset(netcdfile+".nc", 'w', format='NETCDF4')
 
   # define axis size
   ncout.createDimension('model', nmodels)  # unlimited
@@ -63,5 +69,54 @@ def write_spatial_netcdf(spatialdict,permondict,peryrdict,modelsin,nyears,nmonth
   model_names = ncout.createVariable('model_names', 'c', ('model', 'characters'))
   model_names[:] = nc.stringtochar(np.array(modelsin).astype('S16'))
   
+  #today = datetime.today()
+  ncout.description = "Coastal metrics processed data"
+  ncout.history = "Created " + datetime.today().strftime('%Y-%m-%d-%H:%M:%S')
+  for ii in globaldict:
+    ncout.setncattr(ii, str(globaldict[ii]))
+  
   # close files
   ncout.close()
+  
+
+
+
+
+
+def write_dict_csv(vardict,modelsin):
+  # create variable array
+  csvdir="./csv-files/"
+  os.makedirs(os.path.dirname(csvdir), exist_ok=True)
+  for ii in vardict:
+    csvfilename = csvdir+"/"+str(ii)+".csv"
+    if vardict[ii].shape == modelsin.shape:
+      tmp = np.concatenate((np.expand_dims(modelsin, axis=1),np.expand_dims(vardict[ii], axis=1)), axis=1)
+    else:
+      tmp = np.concatenate((np.expand_dims(modelsin, axis=1), vardict[ii]), axis=1)
+    np.savetxt(csvfilename, tmp, delimiter=",", fmt="%s")
+
+
+
+
+
+
+def write_single_csv(vardict,modelsin,csvdir,csvname):
+  # create variable array
+  os.makedirs(os.path.dirname(csvdir), exist_ok=True)
+  csvfilename = csvdir+"/"+csvname
+  
+  # Concat models to first axis
+  firstdict=list(vardict.keys())[0]
+  headerstr="Model,"+firstdict
+  if vardict[firstdict].shape == modelsin.shape:
+    tmp = np.concatenate((np.expand_dims(modelsin, axis=1),np.expand_dims(vardict[firstdict], axis=1)), axis=1)
+  else:
+    tmp = np.concatenate((np.expand_dims(modelsin, axis=1), vardict[firstdict]), axis=1)
+  
+  for ii in vardict:
+    if ii != firstdict:
+      tmp = np.concatenate((tmp, np.expand_dims(vardict[ii], axis=1)), axis=1)
+      headerstr=headerstr+","+ii
+      
+  np.savetxt(csvfilename, tmp, delimiter=",", fmt="%s", header=headerstr, comments="")
+
