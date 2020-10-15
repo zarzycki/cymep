@@ -86,7 +86,7 @@ nmonths = enmon-stmon+1
 
 # Init per month arrays
 pydict = {}
-pyvars = ['stormsByYear','aceByYear','paceByYear','tcdByYear','lmiByYear','latgenByYear']
+pyvars = ['py_count','py_tcd','py_ace','py_pace','py_latgen','py_lmi']
 for x in pyvars:
   pydict[x] = np.empty((nfiles, nyears))
       
@@ -310,37 +310,34 @@ for ii in range(len(files)):
 
   # Bin storms per dataset per calendar month
   for jj in range(1, 12+1):
-    pmdict['pm_count'][ii,jj-1] = np.count_nonzero(xgmonth == jj)
-    pmdict['pm_tcd'][ii,jj-1]    = np.nansum(  np.where(xgmonth == jj,xtcd,0.0) )
-    pmdict['pm_ace'][ii,jj-1]    = np.nansum(  np.where(xgmonth == jj,xace,0.0) )
-    pmdict['pm_pace'][ii,jj-1]   = np.nansum(  np.where(xgmonth == jj,xpace,0.0) )
+    pmdict['pm_count'][ii,jj-1]  = np.count_nonzero(xgmonth == jj) / nmodyears
+    pmdict['pm_tcd'][ii,jj-1]    = np.nansum(  np.where(xgmonth == jj,xtcd,0.0) ) / nmodyears
+    pmdict['pm_ace'][ii,jj-1]    = np.nansum(  np.where(xgmonth == jj,xace,0.0) ) / nmodyears
+    pmdict['pm_pace'][ii,jj-1]   = np.nansum(  np.where(xgmonth == jj,xpace,0.0) ) / nmodyears
     pmdict['pm_lmi'][ii,jj-1]    = np.nanmean( np.where(xgmonth == jj,xlatmi,float('NaN')) )
 
   # Bin storms per dataset per calendar year
   for jj in range(styr, enyr+1):
     yrix = jj - styr   # Convert from year to zero indexing for numpy array
     if jj >= np.nanmin(xgyear) and jj <= np.nanmax(xgyear):
-      pydict['stormsByYear'][ii,yrix] = np.count_nonzero(xgyear == jj)
-      pydict['tcdByYear'][ii,yrix]    = np.nansum(  np.where(xgyear == jj,xtcd,0.0) )
-      pydict['aceByYear'][ii,yrix]    = np.nansum(  np.where(xgyear == jj,xace,0.0) )
-      pydict['paceByYear'][ii,yrix]   = np.nansum(  np.where(xgyear == jj,xpace,0.0) )
-      pydict['lmiByYear'][ii,yrix]    = np.nanmean( np.where(xgyear == jj,xlatmi,float('NaN')) )
-      pydict['latgenByYear'][ii,yrix] = np.nanmean( np.where(xgyear == jj,np.absolute(xglat),float('NaN')) )
+      pydict['py_count'][ii,yrix] = np.count_nonzero(xgyear == jj)
+      pydict['py_tcd'][ii,yrix]    = np.nansum(  np.where(xgyear == jj,xtcd,0.0) )
+      pydict['py_ace'][ii,yrix]    = np.nansum(  np.where(xgyear == jj,xace,0.0) )
+      pydict['py_pace'][ii,yrix]   = np.nansum(  np.where(xgyear == jj,xpace,0.0) )
+      pydict['py_lmi'][ii,yrix]    = np.nanmean( np.where(xgyear == jj,xlatmi,float('NaN')) )
+      pydict['py_latgen'][ii,yrix] = np.nanmean( np.where(xgyear == jj,np.absolute(xglat),float('NaN')) )
 
   aydict['uclim_count'][ii] = np.sum(pmdict['pm_count'][ii,:]) / nmodyears     
   aydict['uclim_tcd'][ii]    = np.nansum(xtcd) / nmodyears
   aydict['uclim_ace'][ii]    = np.nansum(xace) / nmodyears
   aydict['uclim_pace'][ii]   = np.nansum(xpace) / nmodyears
-  aydict['uclim_lmi'][ii]    = np.nanmean(pydict['lmiByYear'][ii,:])
+  aydict['uclim_lmi'][ii]    = np.nanmean(pydict['py_lmi'][ii,:])
   
   asdict['utc_tcd'][ii]    = np.nanmean(xtcd)
   asdict['utc_ace'][ii]    = np.nanmean(xace)
   asdict['utc_pace'][ii]   = np.nanmean(xpace)
   asdict['utc_lmi'][ii]    = np.nanmean(xlatmi)
   asdict['utc_latgen'][ii] = np.nanmean(np.absolute(xglat))
-  
-  if ii == 0:
-    np.savetxt('tcd.csv', xtcd, delimiter=",")
   
   trackdens, denslat, denslon = track_density(gridsize,0.0,xlat.flatten(),xlon.flatten(),False)
   trackdens = trackdens/nmodyears
@@ -443,7 +440,7 @@ write_single_csv(aydict,strs,'./csv-files/','metrics_'+os.path.splitext(csvfilen
 write_single_csv(asdict,strs,'./csv-files/','metrics_'+os.path.splitext(csvfilename)[0]+'_'+basinstr+'_storm_mean.csv')
 
 # Write out other variables for later processing
-write_spatial_netcdf(msdict,strs,denslat,denslon)
+write_spatial_netcdf(msdict,pmdict,pydict,strs,nyears,nmonths,denslat,denslon)
 #write_dict_csv(pydict,strs)
 #write_dict_csv(pmdict,strs)
 

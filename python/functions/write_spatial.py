@@ -1,7 +1,7 @@
 import numpy as np
 import netCDF4 as nc
 
-def write_spatial_netcdf(vardict,modelsin,latin,lonin):
+def write_spatial_netcdf(spatialdict,permondict,peryrdict,modelsin,nyears,nmonths,latin,lonin):
   
   # Convert modelsin from pandas to list
   modelsin=modelsin.tolist()
@@ -20,6 +20,8 @@ def write_spatial_netcdf(vardict,modelsin,latin,lonin):
   ncout.createDimension('lat', nlats)
   ncout.createDimension('lon', nlons)
   ncout.createDimension('characters', nchar)
+  ncout.createDimension('months', nmonths)
+  ncout.createDimension('years', nyears)
 
   # create latitude axis
   lat = ncout.createVariable('lat', 'f', ('lat'))
@@ -39,12 +41,23 @@ def write_spatial_netcdf(vardict,modelsin,latin,lonin):
   lon[:] = lonin[:]
   lat[:] = latin[:]
 
-  # create variable array
-  for ii in vardict:
+  # create variable arrays
+  # Do spatial variables
+  for ii in spatialdict:
     vout = ncout.createVariable(ii, 'f', ('model', 'lat', 'lon'))
-    vout.long_name = 'density'
-    vout.units = '1/year'
-    vout[:] = vardict[ii][:,:,:]
+   # vout.long_name = 'density'
+   # vout.units = '1/year'
+    vout[:] = spatialdict[ii][:,:,:]
+    
+  # create variable array
+  for ii in permondict:
+    vout = ncout.createVariable(ii, 'f', ('model', 'months'))
+    vout[:] = permondict[ii][:,:]
+    
+  # create variable array
+  for ii in peryrdict:
+    vout = ncout.createVariable(ii, 'f', ('model', 'years'))
+    vout[:] = peryrdict[ii][:,:]
 
   # Write model names to char
   model_names = ncout.createVariable('model_names', 'c', ('model', 'characters'))
@@ -52,28 +65,3 @@ def write_spatial_netcdf(vardict,modelsin,latin,lonin):
   
   # close files
   ncout.close()
-  
-# OLD NETCDF
-#   ncoutfile=netcdfdir+"/"+"spatial_"+basecsv+"_"+basinstr+".nc"
-#   system("/bin/rm -f "+ncoutfile)   ; remove any pre-existing file
-#   ncdf = addfile(ncoutfile ,"c")  ; open output netCDF file
-# 
-#   fAtt               = True            ; assign file attributes
-#   fAtt@title         = "Coastal metrics spatial netcdf"
-#   fAtt@creation_date = systemfunc ("date")
-#   fileattdef( ncdf, fAtt )            ; copy file attributes
-# 
-#   do bb = 0,dimsizes(spapltvarsstr)-1
-#     print("saving "+bb)
-#     spapltvars[bb]!0="model"
-#     tmpvar = spapltvars[bb]
-#     ncdf->$spapltvarsstr(bb)$ = tmpvar(iz,:,:)
-#     delete(tmpvar)
-#   end do
-# 
-#   tmpchars=stringtochar(valid_strs)
-#   tmpchars!0="model"
-#   tmpchars!1="characters"
-#   ncdf->model_names = tmpchars
-#   delete(tmpchars)
-#   
