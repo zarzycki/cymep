@@ -256,11 +256,23 @@ for ii in range(len(files)):
   xace  = 1.0e-4 * np.nansum( (ms_to_kts*xwind)**2.0 , axis=1)
 
   # Calculate storm-accumulated PACE
+  calcPolyFitPACE=True
   xprestmp = xpres
   xprestmp = np.ma.array(xprestmp, mask=np.isnan(xprestmp)) 
   np.warnings.filterwarnings('ignore')
-  xprestmp = np.ma.where(xprestmp < 1016.0, xprestmp, 1016.0)
-  xpace = 1.0e-4 * np.nansum( (ms_to_kts*3.92*(1016.-xprestmp)**0.644)**2. , axis = 1)
+  if calcPolyFitPACE:
+    if ii == 0:
+      polyn = 2
+      xprestmp = np.ma.where(xprestmp < 1010.0, xprestmp, 1010.0)
+      xprestmp = 1010.-xprestmp
+      idx = np.isfinite(xprestmp) & np.isfinite(xwind)
+      quad_a = np.polyfit(xprestmp[idx].flatten(), xwind[idx].flatten() , polyn)
+      print(quad_a)
+    xwindtmp = quad_a[2] + quad_a[1]*(1010.-xpres) + quad_a[0]*((1010.-xpres)**2)
+    xpace = 1.0e-4 * np.nansum( (ms_to_kts*xwindtmp)**2.0 , axis = 1)
+  else:
+    xprestmp = np.ma.where(xprestmp < 1010.0, xprestmp, 1010.0)
+    xpace = 1.0e-4 * np.nansum( (ms_to_kts*2.3*(1010.-xprestmp)**0.76)**2. , axis = 1)
 
   # Get maximum intensity and TCD
   xmpres = np.nanmin( xpres , axis=1 )
@@ -271,7 +283,7 @@ for ii in range(len(files)):
   xtcd   = np.where(xtcd  == 0,float('NaN'),xtcd)
   xace   = np.where(xace  == 0,float('NaN'),xace)
   xpace  = np.where(xpace == 0,float('NaN'),xpace)
-
+  
   # Bin storms per dataset per calendar month
   for jj in range(1, 12+1):
     pmdict['pm_count'][ii,jj-1]  = np.count_nonzero(xgmonth == jj) / nmodyears
@@ -291,7 +303,7 @@ for ii in range(len(files)):
       pydict['py_lmi'][ii,yrix]    = np.nanmean( np.where(xgyear == jj,xlatmi,float('NaN')) )
       pydict['py_latgen'][ii,yrix] = np.nanmean( np.where(xgyear == jj,np.absolute(xglat),float('NaN')) )
 
-  aydict['uclim_count'][ii] = np.sum(pmdict['pm_count'][ii,:]) / nmodyears     
+  aydict['uclim_count'][ii]  = np.nansum(pmdict['pm_count'][ii,:])  
   aydict['uclim_tcd'][ii]    = np.nansum(xtcd) / nmodyears
   aydict['uclim_ace'][ii]    = np.nansum(xace) / nmodyears
   aydict['uclim_pace'][ii]   = np.nansum(xpace) / nmodyears
@@ -396,6 +408,23 @@ for jj in pmdict:
     nas = np.logical_or(np.isnan(tmpx), np.isnan(tmpy))
     rpdict[repStr][ii], tmp =sps.pearsonr(tmpx[~nas],tmpy[~nas])
 
+# Taylor stats
+taydict={}
+tayvars = ["tay_pc","tay_ratio","tay_bias","tay_xmean","tay_ymean","tay_xvar","tay_yvar","tay_rmse"]
+for x in tayvars:
+  taydict[x] = np.empty(nfiles)
+
+# Calculate Taylor stats and put into taylor dict
+for ii in range(nfiles):
+  ratio = taylor_stats(msdict['fulldens'][0,:,:], msdict['fulldens'][ii,:,:], denslatwgt,0)
+  for ix, x in enumerate(tayvars):
+    taydict[x][ii] = ratio[ix]
+
+# Calculate special bias for Taylor diagrams
+taydict["tay_bias2"]=np.empty(nfiles)
+for ii in range(nfiles):
+  taydict["tay_bias2"][ii] = 100. * ( (aydict['uclim_count'][ii] - aydict['uclim_count'][0]) / aydict['uclim_count'][0] )
+
 # Write out primary stats files
 write_single_csv(rxydict,strs,'./csv-files/','metrics_'+os.path.splitext(csvfilename)[0]+'_'+basinstr+'_spatial_corr.csv')
 write_single_csv(rsdict,strs,'./csv-files/','metrics_'+os.path.splitext(csvfilename)[0]+'_'+basinstr+'_temporal_scorr.csv')
@@ -410,7 +439,7 @@ for x in globaldictvars:
   globaldict[x] = globals()[x]
 
 # Write NetCDF file
-write_spatial_netcdf(msdict,pmdict,pydict,strs,nyears,nmonths,denslat,denslon,globaldict)
+write_spatial_netcdf(msdict,pmdict,pydict,taydict,strs,nyears,nmonths,denslat,denslon,globaldict)
 
 
 #subprocess.call(["ls", "-l"])
