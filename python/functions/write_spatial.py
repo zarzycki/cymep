@@ -3,7 +3,9 @@ import netCDF4 as nc
 from datetime import datetime
 import os
 
-def write_spatial_netcdf(spatialdict,permondict,peryrdict,modelsin,nyears,nmonths,latin,lonin,globaldict):
+def write_spatial_netcdf(spatialdict,permondict,peryrdict,taydict,modelsin,nyears,nmonths,latin,lonin,globaldict):
+  
+  print(taydict)
   
   # Convert modelsin from pandas to list
   modelsin=modelsin.tolist()
@@ -64,6 +66,11 @@ def write_spatial_netcdf(spatialdict,permondict,peryrdict,modelsin,nyears,nmonth
   for ii in peryrdict:
     vout = ncout.createVariable(ii, 'f', ('model', 'years'))
     vout[:] = peryrdict[ii][:,:]
+    
+  # create variable array
+  for ii in taydict:
+    vout = ncout.createVariable(ii, 'f', ('model'))
+    vout[:] = taydict[ii][:]
 
   # Write model names to char
   model_names = ncout.createVariable('model_names', 'c', ('model', 'characters'))
@@ -83,6 +90,7 @@ def write_spatial_netcdf(spatialdict,permondict,peryrdict,modelsin,nyears,nmonth
 
 
 
+
 def write_dict_csv(vardict,modelsin):
   # create variable array
   csvdir="./csv-files/"
@@ -94,6 +102,7 @@ def write_dict_csv(vardict,modelsin):
     else:
       tmp = np.concatenate((np.expand_dims(modelsin, axis=1), vardict[ii]), axis=1)
     np.savetxt(csvfilename, tmp, delimiter=",", fmt="%s")
+
 
 
 
