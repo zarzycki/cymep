@@ -4,9 +4,7 @@ from datetime import datetime
 import os
 
 def write_spatial_netcdf(spatialdict,permondict,peryrdict,taydict,modelsin,nyears,nmonths,latin,lonin,globaldict):
-  
-  print(taydict)
-  
+    
   # Convert modelsin from pandas to list
   modelsin=modelsin.tolist()
   
@@ -16,7 +14,7 @@ def write_spatial_netcdf(spatialdict,permondict,peryrdict,taydict,modelsin,nyear
   nlons=lonin.size
   nchar=16
   
-  netcdfdir="./netcdf/"
+  netcdfdir="./netcdf-files/"
   os.makedirs(os.path.dirname(netcdfdir), exist_ok=True)
   netcdfile=netcdfdir+"/netcdf_"+globaldict['basinstr']+"_"+os.path.splitext(globaldict['csvfilename'])[0]
   
