@@ -1,14 +1,16 @@
+f = addfile(ncfile,"r")
 
 out_type="pdf"
+out_dir="./fig/spatial/"
+system("mkdir -p "+out_dir)
 
-f = addfile("testout.nc","r")
-
-basinstr="GLOB"
-filename="tmp"
-basin=-1
-
+basinstr=tostring(f@basinstr)
 models = chartostring(f->model_names)
-print(models)
+fullfilename=tostring(f@csvfilename)
+
+; split CSV file extension off
+namesplit = get_file_suffix(fullfilename,0)
+filename = namesplit@fBase
 
 
   lettercount=0
@@ -23,9 +25,8 @@ print(models)
   ; ==================== do spatial plotting ===========================
 
   do bb = 0,dimsizes(spapltvarsstr)-1
-    thisDir="./"
-    system("mkdir -p "+thisDir)
-    wks = gsn_open_wks(out_type,thisDir+"/"+tostring(spapltvarsstr(bb))+"."+basinstr+"_"+filename)
+
+    wks = gsn_open_wks(out_type,out_dir+"/"+tostring(spapltvarsstr(bb))+"."+basinstr+"_"+filename)
 
 
     toPlot=f->$spapltvars(bb)$
@@ -60,7 +61,7 @@ print(models)
     res@cnLineLabelsOn  = False
 
     res@gsnCenterString       = ""
-    if (basin .eq. 1) then
+    if (basinstr .eq. "NATL") then
       res@mpMinLatF             = 5.
       res@mpMaxLatF             = 55.
       res@mpMinLonF             = 260.
