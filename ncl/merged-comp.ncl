@@ -12,8 +12,8 @@ begin
 ; General options
 out_type = "pdf" ; output format type for graphical products. Generally either "png" or "pdf"
 gridsize = 8.0   ; size of lat/lon "aggregation" grid in reg lat-lon degrees
-basin=1        ; negative for no basin filtering, (/1,2,3,4,5/) for NH or (/6,7,8/) for SH
-filename="tau_configs.csv"
+basin=-1        ; negative for no basin filtering, (/1,2,3,4,5/) for NH or (/6,7,8/) for SH
+filename="rean2_configs.csv"
 
 ; This is used for years that overlap for interannual correlation
 ; Generally only used for comparing reanalysis or other nudged product to observations
@@ -30,7 +30,7 @@ plot_tables_only=False
 ;======================= Dirs ================================
 ; (only modify if you need to change dir structure in repo)
 
-trajDir=""
+trajDir="./trajs/"
 csvdir="./csv-files/"
 netcdfdir="./netcdf-files/"
 pathtoconfiglists="./config-lists/"
@@ -229,13 +229,13 @@ if (.not.plot_tables_only) then
       ; for example, ibtracs includes tropical depressions, eliminate these to get WMO
       ; tropical storms > 17 m/s.
       if (zz.eq.0 .and. do_special_filter_obs) then
-
         windthreshold=17.5
         xlon=where(xwind.gt.windthreshold,xlon,xlon@_FillValue)
         xlat=where(xwind.gt.windthreshold,xlat,xlat@_FillValue)
         xpres=where(xwind.gt.windthreshold,xpres,xpres@_FillValue)
         xwind=where(xwind.gt.windthreshold,xwind,xwind@_FillValue)
-
+        xyear=where(xwind.gt.windthreshold,xyear,xyear@_FillValue)
+        xmonth=where(xwind.gt.windthreshold,xmonth,xmonth@_FillValue)
         ;xlon=where(xpres.lt.850.,xlon@_FillValue,xlon)
         ;xlat=where(xpres.lt.850.,xlat@_FillValue,xlat)
         ;xpres=where(xpres.lt.850.,xpres@_FillValue,xpres)
@@ -782,6 +782,9 @@ if (.not.plot_tables_only) then
 
     taylorVals=taylor_stats(tmptest,tmprefr,denslatwgt,1)
   
+    print("Taylor vals returned from NCL function")
+    print(taylorVals(0)+" "+taylorVals(1)+" "+taylorVals(2)+" "+taylorVals(3)+" "+taylorVals(4)+" "+taylorVals(5)+" "+taylorVals(6)+" "+taylorVals(7))
+
     if (mm .ne. 0) then
       taylor_cco(0,qq-1)=taylorVals(0)
       taylor_rat(0,qq-1)=taylorVals(1)
