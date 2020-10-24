@@ -1,3 +1,4 @@
+netcdf_*nc
 python/trajs/
 __pycache__/
 ncl/trajs/traj*
