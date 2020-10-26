@@ -408,7 +408,7 @@ for jj in pmdict:
     nas = np.logical_or(np.isnan(tmpx), np.isnan(tmpy))
     rpdict[repStr][ii], tmp =sps.pearsonr(tmpx[~nas],tmpy[~nas])
 
-# Taylor stats
+# Generate Taylor dict
 taydict={}
 tayvars = ["tay_pc","tay_ratio","tay_bias","tay_xmean","tay_ymean","tay_xvar","tay_yvar","tay_rmse"]
 for x in tayvars:
