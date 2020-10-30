@@ -253,7 +253,8 @@ for ii in range(len(files)):
   xtcdpp = np.where(~np.isnan(xtcdpp),0.25,0)
 
   # Calculate storm-accumulated ACE
-  xace  = 1.0e-4 * np.nansum( (ms_to_kts*xwind)**2.0 , axis=1)
+  xacepp = 1.0e-4 * (ms_to_kts*xwind)**2.0
+  xace   = np.nansum( xacepp , axis=1 )
 
   # Calculate storm-accumulated PACE
   calcPolyFitPACE=True
@@ -269,11 +270,13 @@ for ii in range(len(files)):
       quad_a = np.polyfit(xprestmp[idx].flatten(), xwind[idx].flatten() , polyn)
       print(quad_a)
     xwindtmp = quad_a[2] + quad_a[1]*(1010.-xpres) + quad_a[0]*((1010.-xpres)**2)
-    xpace = 1.0e-4 * np.nansum( (ms_to_kts*xwindtmp)**2.0 , axis = 1)
+    xpacepp = 1.0e-4 * (ms_to_kts*xwindtmp)**2.0
+    xpace   = np.nansum( xpacepp , axis = 1)
   else:
     xprestmp = np.ma.where(xprestmp < 1010.0, xprestmp, 1010.0)
-    xpace = 1.0e-4 * np.nansum( (ms_to_kts*2.3*(1010.-xprestmp)**0.76)**2. , axis = 1)
-
+    xpacepp = 1.0e-4 * (ms_to_kts*2.3*(1010.-xprestmp)**0.76)**2.
+    xpace   = np.nansum( xpacepp , axis = 1)
+    
   # Get maximum intensity and TCD
   xmpres = np.nanmin( xpres , axis=1 )
   xmwind = np.nanmax( xwind , axis=1 )
@@ -321,9 +324,9 @@ for ii in range(len(files)):
   gendens = gendens/nmodyears
   tcddens, denslat, denslon = track_mean(gridsize,0.0,xlat.flatten(),xlon.flatten(),xtcdpp.flatten(),False,0)
   tcddens = tcddens/nmodyears
-  acedens, denslat, denslon = track_mean(gridsize,0.0,xglat.flatten(),xglon.flatten(),xace.flatten(),False,0)  
+  acedens, denslat, denslon = track_mean(gridsize,0.0,xlat.flatten(),xlon.flatten(),xacepp.flatten(),False,0)  
   acedens = acedens/nmodyears  
-  pacedens, denslat, denslon = track_mean(gridsize,0.0,xglat.flatten(),xglon.flatten(),xpace.flatten(),False,0)
+  pacedens, denslat, denslon = track_mean(gridsize,0.0,xlat.flatten(),xlon.flatten(),xpacepp.flatten(),False,0)
   pacedens = pacedens/nmodyears  
   minpres, denslat, denslon = track_minmax(gridsize,0.0,xlat.flatten(),xlon.flatten(),xpres.flatten(),"min",-1)
   maxwind, denslat, denslon = track_minmax(gridsize,0.0,xlat.flatten(),xlon.flatten(),xwind.flatten(),"max",-1)
