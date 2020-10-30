@@ -25,6 +25,9 @@ enmon=12
 truncate_years = False
 do_defineMIbypres = False
 gridsize=8.0
+THRESHOLD_ACE_WIND=17.5      # wind speed (in m/s) to threshold ACE. Negative means off.
+
+
 
 # Constants
 ms_to_kts = 1.94384449
@@ -251,7 +254,11 @@ for ii in range(len(files)):
   xtcdpp = np.where(~np.isnan(xtcdpp),0.25,0)
 
   # Calculate storm-accumulated ACE
-  xacepp = 1.0e-4 * (ms_to_kts*xwind)**2.0
+  tmp = xwind
+  if THRESHOLD_ACE_WIND > 0:
+    print("Thresholding ACE to only TCs > "+str(THRESHOLD_ACE_WIND)+" m/s")
+    tmp = np.where(xwind < THRESHOLD_ACE_WIND,0.0,xwind)
+  xacepp = 1.0e-4 * (ms_to_kts*tmp)**2.0
   xace   = np.nansum( xacepp , axis=1 )
 
   # Calculate storm-accumulated PACE
