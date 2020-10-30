@@ -17,7 +17,7 @@ from pattern_cor import *
 do_special_filter_obs = True
 do_fill_missing_pw = True
 test_basin = -1
-csvfilename = 'rean2_configs.csv'
+csvfilename = 'rean_configs.csv'
 styr=1980
 enyr=2014
 stmon=1
@@ -33,7 +33,7 @@ deg2rad = pi / 180.
 
 # Read in configuration file and parse columns for each case
 # Ignore commented lines starting with !
-df=pd.read_csv(csvfilename, sep=',', comment='!', header=None)
+df=pd.read_csv("./config-lists/"+csvfilename, sep=',', comment='!', header=None)
 files = df.loc[ : , 0 ]
 strs = df.loc[ : , 1 ]
 isUnstructStr = df.loc[ : , 2 ]
@@ -416,8 +416,9 @@ for x in tayvars:
 
 # Calculate Taylor stats and put into taylor dict
 for ii in range(nfiles):
-  ratio = taylor_stats(msdict['fulldens'][0,:,:], msdict['fulldens'][ii,:,:], denslatwgt,0)
+  ratio = taylor_stats(msdict['fulldens'][ii,:,:], msdict['fulldens'][0,:,:], denslatwgt,0)
   for ix, x in enumerate(tayvars):
+    #print(x+" "+str(ratio[ix]))
     taydict[x][ii] = ratio[ix]
 
 # Calculate special bias for Taylor diagrams
