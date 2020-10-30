@@ -27,8 +27,36 @@ fullfilename=tostring(f@csvfilename)
 
 namesplit = get_file_suffix(fullfilename,0)
 basecsvname = namesplit@fBase
+print(basecsvname)
 
-plot_title=""
+; Mostly special settings for JAMC paper
+if (isStrSubset(basecsvname, "rean_" )) then
+  DESCSTR="Reanalysis"
+elseif (isStrSubset(basecsvname, "hyp_" )) then
+  DESCSTR="Domain sens."
+elseif (isStrSubset(basecsvname, "sens_" )) then
+  DESCSTR="Physics sens."
+else
+  DESCSTR=basecsvname
+end if
+
+if (basinstr .eq. "GLOB") then
+  BASINTXT="global"
+else
+  BASINTXT=basinstr
+end if
+
+if ( csvtype .eq. "spatial_corr" ) then
+  plot_title=DESCSTR+" spatial RMSE ("+BASINTXT+")"
+elseif ( csvtype .eq. "climo_mean" ) then
+  plot_title=DESCSTR+" climatological bias ("+BASINTXT+")"
+elseif ( csvtype .eq. "storm_mean" ) then
+  plot_title=DESCSTR+" storm mean bias ("+BASINTXT+")"
+elseif ( csvtype .eq. "temporal_scorr" ) then
+  plot_title=DESCSTR+" seasonal correlation ("+BASINTXT+")"
+else
+  plot_title=""
+end if
 
   ;plot_bias=False
   ;relative_performance=False

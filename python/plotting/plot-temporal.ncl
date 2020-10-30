@@ -36,7 +36,7 @@ do mm = 0,dimsizes(linepltvarsstr)-1
   else        
     print("Interannual plots!")
     linefilelabstr="interann"
-  end if   
+  end if
 
   wks   = gsn_open_wks("pdf",out_dir+"/"+linefilelabstr+"_"+tostring(linepltvarsstr(mm))+"."+basinstr+"_"+filename)
 
