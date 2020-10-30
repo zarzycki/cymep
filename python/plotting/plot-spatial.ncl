@@ -13,13 +13,21 @@ namesplit = get_file_suffix(fullfilename,0)
 filename = namesplit@fBase
 
 
-  lettercount=0
+
+
   spapltvarsstr=(/"trackdens","minpres","maxwind","gendens","pacedens","acedens","tcddens", "trackbias","genbias","acebias","pacebias"/)
   spapltvars=(/"fulldens", "fullpres", "fullwind", "fullgen", "fullpace","fullace","fulltcd", "fulltrackbias" , "fullgenbias", "fullacebias", "fullpacebias" /)
-  ;spapltmincontour=(/0. ,870. , 0., 0., 0., 0., 0.,-20.,-1.5,-5.,-5./); use this for global
-  ;spapltmaxcontour=(/30.,1000.,80., 2., 6., 6., 5., 20., 1.5, 5., 5./)    
-  spapltmincontour=(/0. ,870. ,0. ,0. ,0. ,0., 0.,-10.,-1.0,-5.,-5./)  ; use this for NATL
-  spapltmaxcontour=(/15.,1000.,80.,1. ,5. ,5., 3., 10., 1.0, 5., 5./)    
+  
+  print(basinstr+"")
+  if (basinstr .eq. "NATL") then
+    spapltmincontour=(/0. ,900. ,0. ,0. ,0. ,0., 0.,-10.,-1.0,-5.,-5./)  ; use this for NATL
+    spapltmaxcontour=(/15.,1000.,80.,1. ,5. ,5., 3., 10., 1.0, 5., 5./)    
+  else
+    ; use these settings for global or generic basin default
+    spapltmincontour=(/0. , 900.,20., 0., 0., 0., 0.,-20.,-1.5,-5.,-5./) ; use this for global
+    spapltmaxcontour=(/40.,1000.,80., 3., 8., 8., 10., 20., 1.5, 5., 5./)
+  end if
+
   letterstr=(/"a.","b.","c.","d.","e.","f.","g.","h.","i.","j.","k.","l."/)
 
   ; ==================== do spatial plotting ===========================
@@ -48,8 +56,9 @@ filename = namesplit@fBase
       ncontlev=20
     else
       toPlot = where(toPlot.gt.0.,toPlot,toPlot@_FillValue)
-      colorMap1="WhiteBlueGreenYellowRed"
-      ncontlev = 10
+      colorMap1 = read_colormap_file("./plotting/colormaps/inferno.rgb")
+      colorMap1 = colorMap1(::-1,:)
+      ncontlev = 20
     end if
     res                       = True     ; plot mods desired
     res@gsnDraw = False
@@ -90,7 +99,7 @@ filename = namesplit@fBase
     ;resP@txString           = "Annual TC track density, all storms"
     resP@amJust           = "TopLeft"
     resP@gsnPanelFigureStringsFontHeightF = 0.015
-    ;resP@gsnPanelFigureStrings="valid_strs"
+    resP@gsnPanelFigureStrings=models
 
     resP@gsnPanelLabelBar    = True                ; add common colorbar
     resP@lbLabelFontHeightF  = 0.012               ; make labels smaller
