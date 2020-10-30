@@ -1,4 +1,4 @@
-# Coastal metrics package
+# CyMeP (Cyclone Metrics Package)
 
 ### General workflow
 1. Add TempestExtremes ASCII trajectories to ./traj/
@@ -8,18 +8,40 @@
 
 ### 1. Add trajectory files to ./traj/ folder.
 
-Currently these files must be in "Tempest" ASCII format:
+Currently these files must be in "Tempest" ASCII format (a derivative of the old "GFDL" format, for those who understand what that means!):
 
 ```
 start   31      1980    1       6       6
         482     303     120.500000      -14.250000      9.987638e+04    1.464815e+01    0.000000e+00    1980    1       6       6
         476     301     119.000000      -14.750000      9.981100e+04    1.398848e+01    0.000000e+00    1980    1       6       12
         476     300     119.000000      -15.000000      9.953694e+04    1.369575e+01    0.000000e+00    1980    1       6       18
+       
+        ...
 ```
 
 where each trajectory has a header line beginning with `start` followed by the number of points in the trajectory (ex: 31) and the start date of the trajectory in YYYY MM DD HH.
 
-Each subsequent line (31 lines) contains a point along the trajectory.
+Each subsequent line (31 lines) contains a point along the trajectory. Currently, this is hardcoded such that the columns are defined thusly:
+
+
+| index | label | description  |
+| --- | --- | ---  |
+| 1 | ix | i-index (currently ignored)  |
+| 2 | jx | j-index (currently ignored) |
+| 3 | lon | longitude (degrees east)  |
+| 4 | lat | longitude (degrees north)  |
+| 5 | slp | sea level pressure (Pa)  |
+| 6 | wind | wind speed (m/s) |
+| 7 | phis | surface geopotential (m2/s2)  |
+| 8 | yyyy | year integer |
+| 9 | mm | month integer  |
+| 10 | dd | day integer  |
+| 11 | hh | hour integer (GMT)  |
+
+There are two folders within the package that may be helpful:
+
+1. An example of generating a TempestExtremes trajectory file from reanalysis is found in XXXXXX. This script reads in XXXX data and generates a track file on NCAR Cheyenne.
+2. Sample scripts for creating alternative formats can be found in XXXXX. For example, one could use `ibtracs_to_tempest.ncl` to generate a text-based file compatibile with the software package from an IBTrACS NetCDF file.
 
 ### 2. Create a CSV file describing model configurations
 
@@ -37,6 +59,7 @@ trajectories.txt.ERA5,ERA5,False,1,39,1.0
 ```
 
 Using the first line as an example...
+
 | Variable | Description |
 | --- | --- |
 | ibtracs-1980-2019-GLOB.v4.txt | Trajectory file name in traj dir |
@@ -46,7 +69,7 @@ Using the first line as an example...
 | 40 | Number of years per ensemble member in trajectory file |
 | 1.0 | Wind speed correction factor |
 
-**NOTE**: The first line will be defined as the reference, so this should always be either observations or some sort of model/configuration control.
+**NOTE**: The first line will be defined as the reference, so this should *always* be either observations or some sort of model/configuration control.
 
 **NOTE**: The wind speed correction factor is a multiplier on the "wind" variable in the trajectory file to normalized from lowest model level to some reference height (e.g., lowest model level to 10m winds for TCs).
 
