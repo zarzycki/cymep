@@ -53,31 +53,29 @@ pydict = {}
 pyvars = ['py_count','py_tcd','py_ace','py_pace','py_latgen','py_lmi']
 for x in pyvars:
   pydict[x] = np.empty((nfiles, nyears))
+  pydict[x][:] = np.nan
       
 # Init per month arrays
 pmdict = {}
 pmvars = ['pm_count','pm_tcd','pm_ace','pm_pace','pm_lmi']
 for x in pmvars:
   pmdict[x] = np.empty((nfiles, nmonths))
-
+  pmdict[x][:] = np.nan
+  
 # Init per year arrays
 aydict = {}
 ayvars = ['uclim_count','uclim_tcd','uclim_ace','uclim_pace','uclim_lmi']
 for x in ayvars:
   aydict[x] = np.empty(nfiles)
-
+  aydict[x][:] = np.nan
+  
 # Init per storm arrays
 asdict = {}
 asvars = ['utc_tcd','utc_ace','utc_pace','utc_latgen','utc_lmi']
 for x in asvars:
   asdict[x] = np.empty(nfiles)
-
-## Set to nan
-#pm_count   = np.nan
-#pm_ace   = np.nan
-#pm_pace = np.nan
-#pm_tcd  = np.nan
-
+  asdict[x][:] = np.nan
+  
 # Get basin string
 basinstr=getbasinmaskstr(test_basin)
 
@@ -96,10 +94,10 @@ for ii in range(len(files)):
   # Determine the number of model years available in our dataset
   if truncate_years:
     #print("Truncating years from "+yearspermember(zz)+" to "+nyears)
-    nmodyears =ensmembers[ii] * nyears
+    nmodyears = ensmembers[ii] * nyears
   else:
     #print("Using years per member of "+yearspermember(zz))
-    nmodyears =ensmembers[ii] * yearspermember[ii]
+    nmodyears = ensmembers[ii] * yearspermember[ii]
 
   # Extract trajectories from tempest file and assign to arrays
   nstorms, ntimes, traj_data = getTrajectories(trajfile,nVars,headerStr,isUnstruc)
@@ -299,10 +297,10 @@ for ii in range(len(files)):
   for jj in range(styr, enyr+1):
     yrix = jj - styr   # Convert from year to zero indexing for numpy array
     if jj >= np.nanmin(xgyear) and jj <= np.nanmax(xgyear):
-      pydict['py_count'][ii,yrix] = np.count_nonzero(xgyear == jj)
-      pydict['py_tcd'][ii,yrix]    = np.nansum(  np.where(xgyear == jj,xtcd,0.0) )
-      pydict['py_ace'][ii,yrix]    = np.nansum(  np.where(xgyear == jj,xace,0.0) )
-      pydict['py_pace'][ii,yrix]   = np.nansum(  np.where(xgyear == jj,xpace,0.0) )
+      pydict['py_count'][ii,yrix]  = np.count_nonzero(xgyear == jj) / ensmembers[ii]
+      pydict['py_tcd'][ii,yrix]    = np.nansum(  np.where(xgyear == jj,xtcd,0.0) ) / ensmembers[ii]
+      pydict['py_ace'][ii,yrix]    = np.nansum(  np.where(xgyear == jj,xace,0.0) ) / ensmembers[ii]
+      pydict['py_pace'][ii,yrix]   = np.nansum(  np.where(xgyear == jj,xpace,0.0) ) / ensmembers[ii]
       pydict['py_lmi'][ii,yrix]    = np.nanmean( np.where(xgyear == jj,xlatmi,float('NaN')) )
       pydict['py_latgen'][ii,yrix] = np.nanmean( np.where(xgyear == jj,np.absolute(xglat),float('NaN')) )
 
@@ -368,6 +366,12 @@ for ii in range(len(files)):
   
 ### Back to the main program
 
+#for zz in pydict:
+#  print(pydict[zz])
+#  pydict[zz] = np.where( pydict[zz] <= 0.     , 0. , pydict[zz] )
+#  pydict[zz] = np.where( np.isnan(pydict[zz]) , 0. , pydict[zz] )
+#  pydict[zz] = np.where( np.isinf(pydict[zz]) , 0. , pydict[zz] )
+  
 # Spatial correlation calculations
 
 ## Initialize dict

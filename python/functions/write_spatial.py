@@ -50,25 +50,25 @@ def write_spatial_netcdf(spatialdict,permondict,peryrdict,taydict,modelsin,nyear
   # create variable arrays
   # Do spatial variables
   for ii in spatialdict:
-    vout = ncout.createVariable(ii, 'f', ('model', 'lat', 'lon'))
+    vout = ncout.createVariable(ii, 'f', ('model', 'lat', 'lon'), fill_value=1e+20)
    # vout.long_name = 'density'
    # vout.units = '1/year'
-    vout[:] = spatialdict[ii][:,:,:]
-    
+    vout[:] = np.ma.masked_invalid(spatialdict[ii][:,:,:])
+
   # create variable array
   for ii in permondict:
-    vout = ncout.createVariable(ii, 'f', ('model', 'months'))
-    vout[:] = permondict[ii][:,:]
+    vout = ncout.createVariable(ii, 'f', ('model', 'months'), fill_value=1e+20)
+    vout[:] = np.ma.masked_invalid(permondict[ii][:,:])
     
   # create variable array
   for ii in peryrdict:
-    vout = ncout.createVariable(ii, 'f', ('model', 'years'))
-    vout[:] = peryrdict[ii][:,:]
+    vout = ncout.createVariable(ii, 'f', ('model', 'years'), fill_value=1e+20)
+    vout[:] = np.ma.masked_invalid(peryrdict[ii][:,:])
     
   # create variable array
   for ii in taydict:
-    vout = ncout.createVariable(ii, 'f', ('model'))
-    vout[:] = taydict[ii][:]
+    vout = ncout.createVariable(ii, 'f', ('model'), fill_value=1e+20)
+    vout[:] = np.ma.masked_invalid(taydict[ii][:])
 
   # Write model names to char
   model_names = ncout.createVariable('model_names', 'c', ('model', 'characters'))
