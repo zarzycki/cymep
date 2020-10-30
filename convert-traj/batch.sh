@@ -8,5 +8,5 @@ BASEDIR=~/Downloads/HRMIP/
 ALLFILES=`find ${BASEDIR} -name "*-?H_*nc"`
 echo $ALLFILES
 for f in $ALLFILES; do
-  ncl convert-to-tempest.ncl 'fname="'$f'"'
+  ncl highresmip-to-tempest.ncl 'fname="'$f'"'
 done
