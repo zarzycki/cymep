@@ -112,18 +112,38 @@ def write_single_csv(vardict,modelsin,csvdir,csvname):
   os.makedirs(os.path.dirname(csvdir), exist_ok=True)
   csvfilename = csvdir+"/"+csvname
   
-  # Concat models to first axis
-  firstdict=list(vardict.keys())[0]
-  headerstr="Model,"+firstdict
-  if vardict[firstdict].shape == modelsin.shape:
-    tmp = np.concatenate((np.expand_dims(modelsin, axis=1),np.expand_dims(vardict[firstdict], axis=1)), axis=1)
-  else:
-    tmp = np.concatenate((np.expand_dims(modelsin, axis=1), vardict[firstdict]), axis=1)
-  
-  for ii in vardict:
-    if ii != firstdict:
-      tmp = np.concatenate((tmp, np.expand_dims(vardict[ii], axis=1)), axis=1)
+  # If a single line CSV with one model
+  if np.isscalar(modelsin):
+    tmp = np.empty((1,len(vardict)))
+    headerstr="Model"
+    iterix = 0
+    for ii in vardict:
       headerstr=headerstr+","+ii
-      
+      tmp[0,iterix]=vardict[ii]
+      iterix += 1
+    
+    # Create a dummy numpy string array of "labels" with the control name to append as column #1
+    labels = np.empty((1,1),dtype="<U10")
+    labels[:] = modelsin
+    # Stack labels and numpy dict arrays horizontally as non-header data
+    tmp = np.hstack((labels, tmp))
+  
+  # Else, the more common outcome; 2-D arrays
+  else:
+    # Concat models to first axis
+    firstdict=list(vardict.keys())[0]
+    headerstr="Model,"+firstdict
+  
+    if vardict[firstdict].shape == modelsin.shape:
+      tmp = np.concatenate((np.expand_dims(modelsin, axis=1),np.expand_dims(vardict[firstdict], axis=1)), axis=1)
+    else:
+      tmp = np.concatenate((np.expand_dims(modelsin, axis=1), vardict[firstdict]), axis=1)
+  
+    for ii in vardict:
+      if ii != firstdict:
+        tmp = np.concatenate((tmp, np.expand_dims(vardict[ii], axis=1)), axis=1)
+        headerstr=headerstr+","+ii
+  
+  # Write header + data array
   np.savetxt(csvfilename, tmp, delimiter=",", fmt="%s", header=headerstr, comments="")
 

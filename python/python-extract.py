@@ -25,7 +25,7 @@ enmon=12
 truncate_years = False
 do_defineMIbypres = False
 gridsize=8.0
-THRESHOLD_ACE_WIND=17.5      # wind speed (in m/s) to threshold ACE. Negative means off.
+THRESHOLD_ACE_WIND=-1.      # wind speed (in m/s) to threshold ACE. Negative means off.
 
 
 
@@ -310,7 +310,17 @@ for ii in range(len(files)):
       pydict['py_pace'][ii,yrix]   = np.nansum(  np.where(xgyear == jj,xpace,0.0) ) / ensmembers[ii]
       pydict['py_lmi'][ii,yrix]    = np.nanmean( np.where(xgyear == jj,xlatmi,float('NaN')) )
       pydict['py_latgen'][ii,yrix] = np.nanmean( np.where(xgyear == jj,np.absolute(xglat),float('NaN')) )
-
+      
+  # Calculate control interannual standard deviations
+  if ii == 0:
+    stdydict={}
+    stdydict['sdy_count'] = np.nanstd(pydict['py_count'][ii,:])
+    stdydict['sdy_tcd'] = np.nanstd(pydict['py_tcd'][ii,:])
+    stdydict['sdy_ace'] = np.nanstd(pydict['py_ace'][ii,:])
+    stdydict['sdy_pace'] = np.nanstd(pydict['py_pace'][ii,:])
+    stdydict['sdy_lmi'] = np.nanstd(pydict['py_lmi'][ii,:])
+    stdydict['sdy_latgen'] = np.nanstd(pydict['py_latgen'][ii,:])
+    
   aydict['uclim_count'][ii]  = np.nansum(pmdict['pm_count'][ii,:])  
   aydict['uclim_tcd'][ii]    = np.nansum(xtcd) / nmodyears
   aydict['uclim_ace'][ii]    = np.nansum(xace) / nmodyears
@@ -446,6 +456,7 @@ write_single_csv(rsdict,strs,'./csv-files/','metrics_'+os.path.splitext(csvfilen
 write_single_csv(rpdict,strs,'./csv-files/','metrics_'+os.path.splitext(csvfilename)[0]+'_'+basinstr+'_temporal_pcorr.csv')
 write_single_csv(aydict,strs,'./csv-files/','metrics_'+os.path.splitext(csvfilename)[0]+'_'+basinstr+'_climo_mean.csv')
 write_single_csv(asdict,strs,'./csv-files/','metrics_'+os.path.splitext(csvfilename)[0]+'_'+basinstr+'_storm_mean.csv')
+write_single_csv(stdydict,strs[0],'./csv-files/','means_'+os.path.splitext(csvfilename)[0]+'_'+basinstr+'_climo_mean.csv')
 
 # Package a series of global package inputs for storage as NetCDF attributes
 globaldict={}
