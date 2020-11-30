@@ -25,6 +25,8 @@ system("mkdir -p "+out_dir)
 basinstr=tostring(f@basinstr)
 fullfilename=tostring(f@csvfilename)
 
+gridsize=tofloat(f@gridsize)
+
 namesplit = get_file_suffix(fullfilename,0)
 basecsvname = namesplit@fBase
 print(basecsvname)
@@ -47,7 +49,7 @@ else
 end if
 
 if ( csvtype .eq. "spatial_corr" ) then
-  plot_title=DESCSTR+" spatial RMSE ("+BASINTXT+")"
+  plot_title=DESCSTR+" spatial correlation ("+BASINTXT+")"
 elseif ( csvtype .eq. "climo_mean" ) then
   plot_title=DESCSTR+" climatological bias ("+BASINTXT+")"
 elseif ( csvtype .eq. "storm_mean" ) then
@@ -114,7 +116,7 @@ end if
     ; 
     header(jj) = str_sub_str(header(jj),"rxy","r~B~xy")
     header(jj) = str_sub_str(header(jj),"rp","r~B~p")
-    header(jj) = str_sub_str(header(jj),"rs","r~B~s")
+    header(jj) = str_sub_str(header(jj),"rs","~F33~r"+"~F21~~B~s")
     header(jj) = str_sub_str(header(jj),"rmsexy","rmse~B~xy")
     header(jj) = str_sub_str(header(jj),"utc","u~B~tc")
     header(jj) = str_sub_str(header(jj),"uclim","u~B~clim")
@@ -344,7 +346,12 @@ end if
     print("Going to do standard deviations")
     lines := asciiread(filename,-1,"string")
     stdevs := str_split(lines(1),delim)
-    colorstd=True
+    if ( any(tofloat(stdevs) .eq. 0) .or. any(ismissing(tofloat(stdevs))) ) then
+      print("cannot do standard dev coloring since at least one std = 0")
+      colorstd=False
+    else
+      colorstd=True
+    end if
   else
     colorstd=False
   end if
@@ -475,6 +482,11 @@ print(""+(total_width/2.))
     txres@txJust="CenterCenter"
     gsn_text_ndc(wks,labelstrings(2),total_width/2.,top_of_label_text,txres)
   end if
+
+  txres@txJust="CenterCenter"
+  txres@txFontHeightF=0.014
+  txres@txFontColor="gray40"
+  gsn_text_ndc(wks,gridsize+"~S~o~N~ x "+gridsize+"~S~o~N~",namelabwidth/2.,TOPOFTABLE-forcedheight/2.,txres)
 
 
   titres=True
