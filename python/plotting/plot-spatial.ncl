@@ -108,8 +108,14 @@ filename = namesplit@fBase
       gsn_panel(wks,plot,(/4,1/),resP)
     else if (nfiles .gt. 4 .and. nfiles .le. 8) then
       gsn_panel(wks,plot,(/4,2/),resP)
-    else
+    else if (nfiles .gt. 8 .and. nfiles .le. 12) then
       gsn_panel(wks,plot,(/4,3/),resP)
+    else if (nfiles .gt. 12 .and. nfiles .le. 16) then
+      gsn_panel(wks,plot,(/4,4/),resP)    
+    else
+      gsn_panel(wks,plot,(/4,5/),resP)
+    end if
+    end if
     end if
     end if
 
