@@ -27,7 +27,8 @@ linepltvars=(/ "pm_count", "pm_tcd", "pm_ace", "pm_pace", "py_count", "py_tcd", 
 lineunitsstr=(/"number","days","10~S~-4~N~ kn~S~2~N~","10~S~-4~N~ kn~S~2~N~","number","days","10~S~-4~N~ kn~S~2~N~","10~S~-4~N~ kn~S~2~N~"/)
 
 do mm = 0,dimsizes(linepltvarsstr)-1
-
+  DOPLOT=True
+  
   toPlot=f->$linepltvars(mm)$
 
   if (isStrSubset(linepltvars(mm),"pm_")) then
@@ -37,53 +38,59 @@ do mm = 0,dimsizes(linepltvarsstr)-1
     print("Interannual plots!")
     linefilelabstr="interann"
   end if
+  
+  plot_dims = dimsizes(toPlot)
+  if (plot_dims(1) .le. 1) then
+    print("ONLY 1 MONTH/YEAR, CANNOT PLOT LINE PLOT")
+    DOPLOT=False
+  end if
 
-  wks   = gsn_open_wks("pdf",out_dir+"/"+linefilelabstr+"_"+tostring(linepltvarsstr(mm))+"."+basinstr+"_"+filename)
+  if (DOPLOT) then
+    wks   = gsn_open_wks("pdf",out_dir+"/"+linefilelabstr+"_"+tostring(linepltvarsstr(mm))+"."+basinstr+"_"+filename)
 
-  ; draw xy curves
-  res                   = True                      ; plot mods desired
-  res@gsnDraw=False
-  res@gsnFrame=False
-  res@xyDashPatterns = linedashes ; have to use full dash set since missing data may be included
-  ;res@xyMonoLineThickness=True
-  res@xyLineThicknessF = 3.0
-  res@trYMinF=0.0
-  res@xyLineColors      = linecolors ; we have to use linecolors here since missing data included
-  res@tiYAxisString = linepltvarsstr(mm)+" ("+lineunitsstr(mm)+")"
+    ; draw xy curves
+    res                   = True                      ; plot mods desired
+    res@gsnDraw=False
+    res@gsnFrame=False
+    res@xyDashPatterns = linedashes ; have to use full dash set since missing data may be included
+    ;res@xyMonoLineThickness=True
+    res@xyLineThicknessF = 3.0
+    res@trYMinF=0.0
+    res@xyLineColors      = linecolors ; we have to use linecolors here since missing data included
+    res@tiYAxisString = linepltvarsstr(mm)+" ("+lineunitsstr(mm)+")"
 
-  if (isStrSubset(linepltvarsstr(mm),"Month")) then  
-    res@tiMainString = linepltvarsstr(mm)+" seasonal cycle"
-    res@tiXAxisString = "Month"
-    res@trXMinF = 1
-    res@trXMaxF = 12
-    plot = gsn_csm_xy (wks,monArr,toPlot,res) ; create plot
-  else                                    
-    res@tiMainString = linepltvarsstr(mm)+" interannual cycle"     
-    res@tiXAxisString = "Year"
-    res@trXMinF = styr
-    res@trXMaxF = enyr
-    plot = gsn_csm_xy (wks,yearArr,toPlot,res) ; create plot
-  end if   
+    if (isStrSubset(linepltvarsstr(mm),"Month")) then  
+      res@tiMainString = linepltvarsstr(mm)+" seasonal cycle"
+      res@tiXAxisString = "Month"
+      res@trXMinF = 1
+      res@trXMaxF = 12
+      plot = gsn_csm_xy (wks,monArr,toPlot,res) ; create plot
+    else                                    
+      res@tiMainString = linepltvarsstr(mm)+" interannual cycle"     
+      res@tiXAxisString = "Year"
+      res@trXMinF = styr
+      res@trXMaxF = enyr
+      plot = gsn_csm_xy (wks,yearArr,toPlot,res) ; create plot
+    end if   
 
-  ; Build legend
-  textres=True
-  lineres=True
-  textres@lgLabels=models   ; use only valid_strs here since we don't want missing data in legend, only uncommented files
-  lineres@lgLineColors=linecolors(0:dimsizes(models)-1)
-  lineres@lgDashIndexes=linedashes(0:dimsizes(models)-1)
-  lineres@lgLineThicknesses=res@xyLineThicknessF
+    ; Build legend
+    textres=True
+    lineres=True
+    textres@lgLabels=models   ; use only valid_strs here since we don't want missing data in legend, only uncommented files
+    lineres@lgLineColors=linecolors(0:dimsizes(models)-1)
+    lineres@lgDashIndexes=linedashes(0:dimsizes(models)-1)
+    lineres@lgLineThicknesses=res@xyLineThicknessF
 
-  plot = simple_legend(wks,plot,res,lineres,textres)
+    plot = simple_legend(wks,plot,res,lineres,textres)
 
-  draw(plot)
-  frame(wks)
+    ;cleanup
+    draw(plot)
+    frame(wks)
+    delete(res)
+    delete(lineres)
+    delete(textres)
+  end if
 
-  ;cleanup
-  delete(plot)
-  delete(wks)
-  delete(res)
-  delete(lineres)
-  delete(textres)
   delete(toPlot)
 
 end do
