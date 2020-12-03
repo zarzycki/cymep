@@ -12,8 +12,8 @@ begin
 ; General options
 out_type = "pdf" ; output format type for graphical products. Generally either "png" or "pdf"
 gridsize = 8.0   ; size of lat/lon "aggregation" grid in reg lat-lon degrees
-basin=-1        ; negative for no basin filtering, (/1,2,3,4,5/) for NH or (/6,7,8/) for SH
-filename="rean2_configs.csv"
+basin=1        ; negative for no basin filtering, (/1,2,3,4,5/) for NH or (/6,7,8/) for SH
+filename="tau_configs.csv"
 
 ; This is used for years that overlap for interannual correlation
 ; Generally only used for comparing reanalysis or other nudged product to observations
@@ -30,7 +30,7 @@ plot_tables_only=False
 ;======================= Dirs ================================
 ; (only modify if you need to change dir structure in repo)
 
-trajDir="./trajs/"
+trajDir=""
 csvdir="./csv-files/"
 netcdfdir="./netcdf-files/"
 pathtoconfiglists="./config-lists/"
