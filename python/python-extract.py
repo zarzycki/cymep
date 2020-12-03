@@ -1,5 +1,4 @@
 import sys
-import subprocess
 import re
 import numpy as np
 import pandas as pd
@@ -13,21 +12,19 @@ from track_density import *
 from write_spatial import *
 from pattern_cor import *
 
-# User settings
+##### User settings
 do_special_filter_obs = True
 do_fill_missing_pw = True
-test_basin = -1
-csvfilename = 'rean_configs.csv'
-styr=1980
-enyr=2014
+test_basin = 1
+csvfilename = 'nudge_configs.csv'
+styr=2005
+enyr=2005
 stmon=1
 enmon=12
-truncate_years = False
+truncate_years = True
 do_defineMIbypres = False
 gridsize=8.0
 THRESHOLD_ACE_WIND=-1.      # wind speed (in m/s) to threshold ACE. Negative means off.
-
-
 
 # Constants
 ms_to_kts = 1.94384449
@@ -267,6 +264,7 @@ for ii in range(len(files)):
   xprestmp = np.ma.array(xprestmp, mask=np.isnan(xprestmp)) 
   np.warnings.filterwarnings('ignore')
   if calcPolyFitPACE:
+    # Here, we calculate a quadratic P/W fit based off of the "control"
     if ii == 0:
       polyn = 2
       xprestmp = np.ma.where(xprestmp < 1010.0, xprestmp, 1010.0)
@@ -278,6 +276,7 @@ for ii in range(len(files)):
     xpacepp = 1.0e-4 * (ms_to_kts*xwindtmp)**2.0
     xpace   = np.nansum( xpacepp , axis = 1)
   else:
+    # Here, we apply a predetermined PW relationship from Holland
     xprestmp = np.ma.where(xprestmp < 1010.0, xprestmp, 1010.0)
     xpacepp = 1.0e-4 * (ms_to_kts*2.3*(1010.-xprestmp)**0.76)**2.
     xpace   = np.nansum( xpacepp , axis = 1)
@@ -320,19 +319,22 @@ for ii in range(len(files)):
     stdydict['sdy_pace'] = np.nanstd(pydict['py_pace'][ii,:])
     stdydict['sdy_lmi'] = np.nanstd(pydict['py_lmi'][ii,:])
     stdydict['sdy_latgen'] = np.nanstd(pydict['py_latgen'][ii,:])
-    
+  
+  # Calculate annual averages  
   aydict['uclim_count'][ii]  = np.nansum(pmdict['pm_count'][ii,:])  
   aydict['uclim_tcd'][ii]    = np.nansum(xtcd) / nmodyears
   aydict['uclim_ace'][ii]    = np.nansum(xace) / nmodyears
   aydict['uclim_pace'][ii]   = np.nansum(xpace) / nmodyears
   aydict['uclim_lmi'][ii]    = np.nanmean(pydict['py_lmi'][ii,:])
   
+  # Calculate storm averages  
   asdict['utc_tcd'][ii]    = np.nanmean(xtcd)
   asdict['utc_ace'][ii]    = np.nanmean(xace)
   asdict['utc_pace'][ii]   = np.nanmean(xpace)
   asdict['utc_lmi'][ii]    = np.nanmean(xlatmi)
   asdict['utc_latgen'][ii] = np.nanmean(np.absolute(xglat))
   
+  # Calculate spatial densities, integrals, and min/maxes
   trackdens, denslat, denslon = track_density(gridsize,0.0,xlat.flatten(),xlon.flatten(),False)
   trackdens = trackdens/nmodyears
   gendens, denslat, denslon = track_density(gridsize,0.0,xglat.flatten(),xglon.flatten(),False)
@@ -346,6 +348,7 @@ for ii in range(len(files)):
   minpres, denslat, denslon = track_minmax(gridsize,0.0,xlat.flatten(),xlon.flatten(),xpres.flatten(),"min",-1)
   maxwind, denslat, denslon = track_minmax(gridsize,0.0,xlat.flatten(),xlon.flatten(),xwind.flatten(),"max",-1)
 
+  # If there are no storms tracked in this particular dataset, set everything to NaN
   if np.nansum(trackdens) == 0:
     trackdens=float('NaN')
     pacedens=float('NaN')
@@ -466,6 +469,3 @@ for x in globaldictvars:
 
 # Write NetCDF file
 write_spatial_netcdf(msdict,pmdict,pydict,taydict,strs,nyears,nmonths,denslat,denslon,globaldict)
-
-
-#subprocess.call(["ls", "-l"])
