@@ -1,8 +1,3 @@
-;=================== Description ==================================
-; This script reads in Tempeset
-; tracking code and plots a track density
-;==================================================================
-
 load "./functions/mask_tc.ncl"
 load "./functions/getTrajectoriesGeneric.ncl"
 
@@ -12,16 +7,28 @@ begin
 
 out_type = "pdf"
 prescut = 99999.0   ; only storms with pres LOWER than this are included. set to 99999.0 for all storms
-;basin=(/1,2,3,4/)
-;basin=1
+basin=-1    ; if basin is negative, do global search. if basin = scalar, single basin. if basin = (/1,2,3,4/) then NHs
 SEARCHRADIUS=2.0
+file_A="trajs/ibtracs-1980-2019-GLOB.v4.txt"
+file_B="trajs/hiresmip/trajectories.txt.TC-ALL_TempExt_ERA5_Reanalysis_r1i1p1f1_gr_19790101-20181231.nc"
+styr=1980
+enyr=2018
+print_hr=False        ; should diagnostics be framed as hits/false alarms (True) or just matches (False)?
+do_old_method=False   ; also do point-by-point method as in Zarzycki and Ullrich 2017
 
 ;======================= Constants ================================
+
 ms_to_kts = 1.94384449
+
+;======================= Internal logic ================================
+
+dq       = str_get_dq()
+date_cmd = "date +" + dq + "%a %b %d %H:%M:%S %Z %Y" + dq
+
+nyears=enyr-styr+1
 
 ;======================= Masking ================================
 
-basin=-1
 if (any(basin.gt.0)) then
   if (dimsizes(basin) .eq. 1) then
     basinstr=getbasinmaskstr(basin)
@@ -34,21 +41,9 @@ else
   basinstr="GLOB"
 end if
 
+;======================= MODEL A (REF) ================================
 
-;======================= Masking ================================
-
-dq       = str_get_dq()
-date_cmd = "date +" + dq + "%a %b %d %H:%M:%S %Z %Y" + dq
-
-styr=1980
-enyr=2019
-nyears=enyr-styr+1
-
-;thefile:="trajs/ibtracs-1980-2019-GLOB.v4.txt"
-thefile:="trajs/trajectories.txt.ERA5"
-
-;thefile:="dev/ibtracs-1998-2008-GLOB.txt"
-;thefile:="dev/test.txt"
+thefile:=file_A
 
 ncols := -1 ; number of columns in non-header rows of trajectory file
 maxLines := -1  ; set to -1 for auto-detection
@@ -72,17 +67,9 @@ xdims=dimsizes(xlon)
 xnstorms=xdims(0)
 xntimes=xdims(1)
 
-; =====
+;======================= MODEL B (EXP) ================================
 
-;thefile:="dev/trajectories.txt.JRA"
-;thefile:="trajs/trajectories.txt.TC-ALL_TRACK_ERA5_Reanalysis_r1i1p1f1_gr_19790101-20181231.nc"
-;thefile:="e3sm/trajectories.txt.ERA5.T400.DEFAULT"
-;thefile:="trajs/trajectories.txt.ERA5"
-thefile:="trajs/ERA5_TC_tracks_hightopo.txt"
-;thefile:="trajs/trajectories.txt.CFSR.ALL.RELAX"
-;thefile:="trajs/traj_et_acfsr_avg"
-;thefile:="trajs/trajectories.CFSR.CPS2.orig"
-;thefile:="trajs/trajectories.CFSR.CPSorig"
+thefile:=file_B
 
 ncols := -1 ; number of columns in non-header rows of trajectory file
 maxLines := -1  ; set to -1 for auto-detection
@@ -119,8 +106,6 @@ yntimes=ydims(1)
 
 ; cleanup
 delete(traj_data)
-
-
 
 ; if basin filtering requested, loop over all storms to filter using TC mask
 if (any(basin .gt. 0)) then
@@ -178,14 +163,8 @@ if (any(basin .gt. 0)) then
   end do
 end if
 
-
-
-
-
-
 stDateIBUnits=cd_inv_calendar(styr,1,1,0,0,0,timeunits,0)
 enDateIBUnits=cd_inv_calendar(enyr,12,31,23,0,0,timeunits,0)
-
 
 tracktime=ndtooned(ytime)
 tracklat=ndtooned(ylat)
@@ -212,96 +191,93 @@ print(num(.not.ismissing(tracktime)))
 ; THIS IS THE OLD ZARZYCKI AND ULLRICH CODE
 ; FALSE ALARM POINT BY POINT
 
-if (0 .eq. 1) then
+if do_old_method then
 
-wcStrtFAPBP = systemfunc(date_cmd)
+  wcStrtFAPBP = systemfunc(date_cmd)
 
-FAarr=new(dimsizes(tracktime),"integer")
-FAarr=where(ismissing(tracktime),FAarr@_FillValue,1)
-jndices = ind(.not.ismissing(onedtime))
+  FAarr=new(dimsizes(tracktime),"integer")
+  FAarr=where(ismissing(tracktime),FAarr@_FillValue,1)
+  jndices = ind(.not.ismissing(onedtime))
 
-do j = 0,dimsizes(jndices)-1
-  jx = jndices(j)
-  obslat = onedlat(jx)
-  obslon = onedlon(jx)
-  indices = ind(tracktime .eq. onedtime(jx))
-  if(.not.all(ismissing(indices))) then 
-    do i = 0,dimsizes(indices)-1
-      ix = indices(i)
-      tklat = tracklat(ix)
-      tklon = tracklon(ix)
-      if(gc_latlon(obslat,obslon,tklat,tklon,2,2) .le. SEARCHRADIUS)
-        FAarr(ix)=FAarr@_FillValue
-      end if
-    end do
+  do j = 0,dimsizes(jndices)-1
+    jx = jndices(j)
+    obslat = onedlat(jx)
+    obslon = onedlon(jx)
+    indices = ind(tracktime .eq. onedtime(jx))
+    if(.not.all(ismissing(indices))) then 
+      do i = 0,dimsizes(indices)-1
+        ix = indices(i)
+        tklat = tracklat(ix)
+        tklon = tracklon(ix)
+        if(gc_latlon(obslat,obslon,tklat,tklon,2,2) .le. SEARCHRADIUS)
+          FAarr(ix)=FAarr@_FillValue
+        end if
+      end do
+    end if
+    delete(indices)
+  end do
+  delete(jndices)
+
+  numTracked = num(.not.ismissing(tracktime))
+  if(all(ismissing(FAarr))) then
+  FAR = 0
+  else
+  FAR = tofloat(sum(FAarr)/tofloat(numTracked))
   end if
-  delete(indices)
-end do
-delete(jndices)
+  print("=======================================================")
+  print("FAR: "+FAR)
 
-numTracked = num(.not.ismissing(tracktime))
-if(all(ismissing(FAarr))) then
-FAR = 0
-else
-FAR = tofloat(sum(FAarr)/tofloat(numTracked))
-end if
-print("=======================================================")
-print("FAR: "+FAR)
+  wallClockElapseTime(wcStrtFAPBP, "Point by point false alarm", 0)
 
-wallClockElapseTime(wcStrtFAPBP, "Point by point false alarm", 0)
+  ; HR point by point
 
+  wcStrtHRPBP = systemfunc(date_cmd)
 
-
-
-; HR point by point
-
-wcStrtHRPBP = systemfunc(date_cmd)
-
-ibcutwindArr = (/0.0,17.0,33.0,51.0/) ;MUST BE INCREASING!
-do b = 0,dimsizes(ibcutwindArr)-1
-ibcutwind=ibcutwindArr(b)
-if (ibcutwind .gt. 0) then
-  onedlat = where(onedwind.lt.ibcutwind,onedlat@_FillValue,onedlat)
-  onedlon = where(onedwind.lt.ibcutwind,onedlon@_FillValue,onedlon)
-  onedtime = where(onedwind.lt.ibcutwind,onedtime@_FillValue,onedtime)
-end if
-
-hit = 0
-tcfound=False
-jndices = ind(.not.ismissing(onedtime))
-do j = 0,dimsizes(jndices)-1
-  jx = jndices(j)
-  obslat = onedlat(jx)
-  obslon = onedlon(jx)
-  indices = ind(tracktime .eq. onedtime(jx))
-  if(.not.all(ismissing(indices))) then 
-    do i = 0,dimsizes(indices)-1
-      ix = indices(i)
-      tklat = tracklat(ix)
-      tklon = tracklon(ix)
-      if(gc_latlon(obslat,obslon,tklat,tklon,2,2) .le. SEARCHRADIUS)
-        hit = hit+1
-        tcfound=True
-        ;print("+++++"+onedname(jx)+" "+obslat+" "+obslon+" "+tklat+" "+tklon+" "+trackyear(ix)+" "+trackmonth(ix)+" "+trackday(ix)+" "+trackhour(ix))
-        break ; Need to break out of this loop in case we double count storms close by
-      end if
-    end do
+  ibcutwindArr = (/0.0,17.0,33.0,51.0/) ;MUST BE INCREASING!
+  do b = 0,dimsizes(ibcutwindArr)-1
+  ibcutwind=ibcutwindArr(b)
+  if (ibcutwind .gt. 0) then
+    onedlat = where(onedwind.lt.ibcutwind,onedlat@_FillValue,onedlat)
+    onedlon = where(onedwind.lt.ibcutwind,onedlon@_FillValue,onedlon)
+    onedtime = where(onedwind.lt.ibcutwind,onedtime@_FillValue,onedtime)
   end if
-  delete(indices)
-  if (tcfound .eq. False) then
-    ;print("-----"+onedname(jx)+" "+obslat+" "+obslon+" "+trackyear(ix)+" "+trackmonth(ix)+" "+trackday(ix)+" "+trackhour(ix))
-  end if
-  ; Reset tcFound to false
+
+  hit = 0
   tcfound=False
-end do
-delete(jndices)
-numObs = num(.not.ismissing(onedtime))
-numTracked = num(.not.ismissing(tracktime))
-HRarray = hit/tofloat(numObs)
-print("windcut: "+ibcutwind+"    HR: "+HRarray)
-end do
+  jndices = ind(.not.ismissing(onedtime))
+  do j = 0,dimsizes(jndices)-1
+    jx = jndices(j)
+    obslat = onedlat(jx)
+    obslon = onedlon(jx)
+    indices = ind(tracktime .eq. onedtime(jx))
+    if(.not.all(ismissing(indices))) then 
+      do i = 0,dimsizes(indices)-1
+        ix = indices(i)
+        tklat = tracklat(ix)
+        tklon = tracklon(ix)
+        if(gc_latlon(obslat,obslon,tklat,tklon,2,2) .le. SEARCHRADIUS)
+          hit = hit+1
+          tcfound=True
+          ;print("+++++"+onedname(jx)+" "+obslat+" "+obslon+" "+tklat+" "+tklon+" "+trackyear(ix)+" "+trackmonth(ix)+" "+trackday(ix)+" "+trackhour(ix))
+          break ; Need to break out of this loop in case we double count storms close by
+        end if
+      end do
+    end if
+    delete(indices)
+    if (tcfound .eq. False) then
+      ;print("-----"+onedname(jx)+" "+obslat+" "+obslon+" "+trackyear(ix)+" "+trackmonth(ix)+" "+trackday(ix)+" "+trackhour(ix))
+    end if
+    ; Reset tcFound to false
+    tcfound=False
+  end do
+  delete(jndices)
+  numObs = num(.not.ismissing(onedtime))
+  numTracked = num(.not.ismissing(tracktime))
+  HRarray = hit/tofloat(numObs)
+  print("windcut: "+ibcutwind+"    HR: "+HRarray)
+  end do
 
-wallClockElapseTime(wcStrtHRPBP, "Point by point hit rate", 0)
+  wallClockElapseTime(wcStrtHRPBP, "Point by point hit rate", 0)
 
 end if
 
@@ -387,7 +363,11 @@ do cc = 0,dimsizes(windHRlevs)-1
   nummisses(cc)=tofloat(num(xhitRateArray.eq.False))
 end do
 
-print("wind thresh: "+windHRlevs+"   numhits: "+numhits+"   nummisses: "+nummisses)
+if (print_hr) then
+  print("wind thresh: "+windHRlevs+"   numhits: "+numhits+"   nummisses: "+nummisses)
+else
+  print("wind thresh: "+windHRlevs+"   num in A + B "+numhits+"   num in A NOT B: "+nummisses)
+end if
 
 
 wallClockElapseTime(wcStrtHR, "Storm hit rate", 0)
@@ -456,8 +436,11 @@ end do
 
 numalarms=tofloat(num(yFalseAlarmArray.eq.True))
 nummatches=tofloat(num(yFalseAlarmArray.eq.False))
-print("num alarms: "+numalarms+"   nummatches: "+nummatches)
-
+if (print_hr) then
+  print("num alarms: "+numalarms+"   nummatches: "+nummatches)
+else
+  print("num in B NOT A: "+numalarms)
+end if
 
 wallClockElapseTime(wcStrtFA, "Storm false alarm", 0)
 
