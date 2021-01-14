@@ -13,18 +13,19 @@ from write_spatial import *
 from pattern_cor import *
 
 ##### User settings
-do_special_filter_obs = True
-do_fill_missing_pw = True
+do_special_filter_obs = False
+do_fill_missing_pw = False
 test_basin = 1
-csvfilename = 'nudge_configs.csv'
-styr=2005
-enyr=2005
+csvfilename = 'tau_seed_configs.csv'
+styr=1980
+enyr=2018
 stmon=1
 enmon=12
-truncate_years = True
+truncate_years = False
 do_defineMIbypres = False
 gridsize=8.0
-THRESHOLD_ACE_WIND=-1.      # wind speed (in m/s) to threshold ACE. Negative means off.
+THRESHOLD_ACE_WIND=-1.0      # wind speed (in m/s) to threshold ACE. Negative means off.
+THRESHOLD_PACE_PRES=-100.    # slp (in hPa) to threshold PACE. Negative means off.
 
 # Constants
 ms_to_kts = 1.94384449
@@ -254,14 +255,20 @@ for ii in range(len(files)):
   tmp = xwind
   if THRESHOLD_ACE_WIND > 0:
     print("Thresholding ACE to only TCs > "+str(THRESHOLD_ACE_WIND)+" m/s")
-    tmp = np.where(xwind < THRESHOLD_ACE_WIND,0.0,xwind)
+    tmp = np.where(xwind < THRESHOLD_ACE_WIND,float('NaN'),xwind)
   xacepp = 1.0e-4 * (ms_to_kts*tmp)**2.0
   xace   = np.nansum( xacepp , axis=1 )
 
   # Calculate storm-accumulated PACE
   calcPolyFitPACE=True
   xprestmp = xpres
-  xprestmp = np.ma.array(xprestmp, mask=np.isnan(xprestmp)) 
+  
+  # Threshold PACE if requested
+  if THRESHOLD_PACE_PRES > 0:
+    print("Thresholding PACE to only TCs < "+str(THRESHOLD_PACE_PRES)+" hPa")
+    xprestmp = np.where(xprestmp > THRESHOLD_PACE_PRES,float('NaN'),xprestmp)
+    
+  xprestmp = np.ma.array(xprestmp, mask=np.isnan(xprestmp))
   np.warnings.filterwarnings('ignore')
   if calcPolyFitPACE:
     # Here, we calculate a quadratic P/W fit based off of the "control"
@@ -274,12 +281,13 @@ for ii in range(len(files)):
       print(quad_a)
     xwindtmp = quad_a[2] + quad_a[1]*(1010.-xpres) + quad_a[0]*((1010.-xpres)**2)
     xpacepp = 1.0e-4 * (ms_to_kts*xwindtmp)**2.0
-    xpace   = np.nansum( xpacepp , axis = 1)
   else:
     # Here, we apply a predetermined PW relationship from Holland
     xprestmp = np.ma.where(xprestmp < 1010.0, xprestmp, 1010.0)
     xpacepp = 1.0e-4 * (ms_to_kts*2.3*(1010.-xprestmp)**0.76)**2.
-    xpace   = np.nansum( xpacepp , axis = 1)
+  
+  # Calculate PACE from xpacepp
+  xpace   = np.nansum( xpacepp , axis = 1)
     
   # Get maximum intensity and TCD
   xmpres = np.nanmin( xpres , axis=1 )
