@@ -12,20 +12,24 @@ from track_density import *
 from write_spatial import *
 from pattern_cor import *
 
+#----------------------------------------------------------------------------------------
 ##### User settings
-do_special_filter_obs = False
-do_fill_missing_pw = False
-test_basin = 1
+
+basin = 1
 csvfilename = 'tau_seed_configs.csv'
+gridsize=8.0
 styr=1980
 enyr=2018
 stmon=1
 enmon=12
 truncate_years = False
-do_defineMIbypres = False
-gridsize=8.0
 THRESHOLD_ACE_WIND=-1.0      # wind speed (in m/s) to threshold ACE. Negative means off.
 THRESHOLD_PACE_PRES=-100.    # slp (in hPa) to threshold PACE. Negative means off.
+do_special_filter_obs = False
+do_fill_missing_pw = False
+do_defineMIbypres = False
+
+#----------------------------------------------------------------------------------------
 
 # Constants
 ms_to_kts = 1.94384449
@@ -78,7 +82,7 @@ for x in asvars:
   asdict[x][:] = np.nan
   
 # Get basin string
-basinstr=getbasinmaskstr(test_basin)
+basinstr=getbasinmaskstr(basin)
 
 for ii in range(len(files)):
 
@@ -101,6 +105,7 @@ for ii in range(len(files)):
     nmodyears = ensmembers[ii] * yearspermember[ii]
 
   # Extract trajectories from tempest file and assign to arrays
+  # USER_MODIFY
   nstorms, ntimes, traj_data = getTrajectories(trajfile,nVars,headerStr,isUnstruc)
   xlon   = traj_data[2,:,:]
   xlat   = traj_data[3,:,:]
@@ -186,10 +191,10 @@ for ii in range(len(files)):
   ####### MASKING
 
   # Mask TCs for particular basin based on genesis location
-  if test_basin > 0:
+  if basin > 0:
     for kk, zz in enumerate(range(nstorms)):
       basin = maskTC(xglat[kk],xglon[kk])
-      if basin != test_basin:
+      if basin != basin:
         xlon[kk,:]   = float('NaN')
         xlat[kk,:]   = float('NaN')
         xpres[kk,:]  = float('NaN')
