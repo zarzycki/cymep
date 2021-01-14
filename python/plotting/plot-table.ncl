@@ -38,6 +38,8 @@ elseif (isStrSubset(basecsvname, "hyp_" )) then
   DESCSTR="Domain sens."
 elseif (isStrSubset(basecsvname, "sens_" )) then
   DESCSTR="Physics sens."
+elseif (isStrSubset(basecsvname, "strict_" )) then
+  DESCSTR="Rean. (Alt. TE)"
 else
   DESCSTR=basecsvname
 end if
