@@ -15,18 +15,18 @@ from pattern_cor import *
 #----------------------------------------------------------------------------------------
 ##### User settings
 
-basin = 1
-csvfilename = 'tau_seed_configs.csv'
-gridsize=8.0
-styr=1980
-enyr=2018
-stmon=1
-enmon=12
+basin = -1
+csvfilename = 'rean_configs.csv'
+gridsize = 8.0
+styr = 1980
+enyr = 2018
+stmon = 1
+enmon = 12
 truncate_years = False
-THRESHOLD_ACE_WIND=-1.0      # wind speed (in m/s) to threshold ACE. Negative means off.
-THRESHOLD_PACE_PRES=-100.    # slp (in hPa) to threshold PACE. Negative means off.
-do_special_filter_obs = False
-do_fill_missing_pw = False
+THRESHOLD_ACE_WIND = -1.0      # wind speed (in m/s) to threshold ACE. Negative means off.
+THRESHOLD_PACE_PRES = -100.    # slp (in hPa) to threshold PACE. Negative means off.
+do_special_filter_obs = True
+do_fill_missing_pw = True
 do_defineMIbypres = False
 
 #----------------------------------------------------------------------------------------
