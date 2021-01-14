@@ -7,6 +7,21 @@
 4. Run cymep.py
 5. Run graphics-cymep.sh
 
+### 0. Install dependencies
+
+The actual statistics package is all written in Python3 and requires several libraries. The easiest way to install relevant things is via `conda install`. `pip` or the full Anaconda package may also be an option. Required Python packages are:
+
+```
+sys
+re
+numpy
+pandas
+scipy
+netCDF4
+```
+
+Also required for graphic generation (`graphics-cymep`) is NCL. NCL can either be installed from [source or binary](https://www.ncl.ucar.edu/Download/) or via [conda](https://www.ncl.ucar.edu/Download/conda.shtml). The latter is preferred.
+
 ### 1. Add trajectory files to ./traj/ folder.
 
 Currently these files must be in "Tempest" ASCII format (a derivative of the old "GFDL" format, for those who understand what that means!):
@@ -95,28 +110,23 @@ Using the first line as an example...
 
 ### 4. Run cymep.py
 
-First you need to ensure you have the following prerequisite Python packages. These come generally come standard with full packages like anaconda or can be installed with `conda install` or `pip install`.
-
-```
-sys
-re
-numpy
-pandas
-scipy
-netCDF4
-```
-
 Finally, run cymep.
 
 ```
 $> python cymep.py
 ```
 
+This will produce two sets of files. One, a handful of CSV files in `./csv-files/`. Two, a NetCDF file in `./netcdf-files/`.
+
+NOTE: Eventually, the `csv-files` folder will become obsolete and all output from the suite will be packaged via NetCDF.
+
 ### 5. Run graphics-cymep.sh
 
 ```
-$> graphics-cymep.sh netcdf_files/netcdf_GLOB_rean_configs.nc
+$> ./graphics-cymep.sh netcdf-files/netcdf_GLOB_rean_configs.nc
 ```
+
+This will produce a suite of figures in various subfolders within `./fig/`
 
 
 
