@@ -2,9 +2,10 @@
 
 ### General workflow
 1. Add TempestExtremes ASCII trajectories to ./traj/
-2. Create a csv file in ./config-lists/
-3. Edit merged-comp.ncl
-4. Run merged-comp.ncl
+2. Create a configuration .csv file in ./config-lists/
+3. Edit cymep.py
+4. Run cymep.py
+5. Run graphics-cymep.sh
 
 ### 1. Add trajectory files to ./traj/ folder.
 
@@ -41,11 +42,11 @@ Each subsequent line (31 lines) contains a point along the trajectory. Currently
 There are two folders within the package that may be helpful:
 
 1. An example of generating a TempestExtremes trajectory file from reanalysis is found in XXXXXX. This script reads in XXXX data and generates a track file on NCAR Cheyenne.
-2. Sample scripts for creating alternative formats can be found in XXXXX. For example, one could use `ibtracs_to_tempest.ncl` to generate a text-based file compatibile with the software package from an IBTrACS NetCDF file.
+2. Sample scripts for creating alternative formats can be found in `./convert-traj/`. For example, one could use `ibtracs_to_tempest.ncl` to generate a text-based file compatibile with the software package from an IBTrACS NetCDF file.
 
 ### 2. Create a CSV file describing model configurations
 
-Example:
+Example for `rean_configs.csv`
 
 ```
 ibtracs-1980-2019-GLOB.v4.txt,OBS,False,1,40,1.0
@@ -73,7 +74,7 @@ Using the first line as an example...
 
 **NOTE**: The wind speed correction factor is a multiplier on the "wind" variable in the trajectory file to normalized from lowest model level to some reference height (e.g., lowest model level to 10m winds for TCs).
 
-### 3. Edit merged-comp.ncl
+### 3. Edit cymep.py
 
 | Variable | Description |
 | --- | --- |
@@ -83,17 +84,39 @@ Using the first line as an example...
 | filename | The name of the file stored in `config_files` that contains the list of files to be analyzed |
 | styr | Start year for overlapping interannual correlation analysis |
 | enyr | End year for overlapping interannual correlation analysis |
+| truncate_years | If `True` then filter out years external to styr and enyr. If `False` keep all data |
 | do_defineMIbypres | Define maximum intensity location by PSL instead of wind? (default: False = wind) |
 | do_fill_missing_pw | Fill missing data with observed pressure-wind curve? (False leaves data as missing) |
 | do_special_filter_obs | Do we have special observational filtering? (if true, code modifications needed) |
-| plot_tables_only | Only plot tables from existing CSV output? (bypass the analysis portion of the code)|
+| THRESHOLD_ACE_WIND | Select threshold wind (in m/s) for ACE calculations (negative value means no threshold) |
+| THRESHOLD_PACE_PRES | Select threshold SLP (in hPa) for PACE calculations (negative value means no threshold) |
 
-**NOTE**: if you have a non-TempestExtremes-TC configuration, you need to modify the array extraction found by grepping for `USER_MODIFY` in `merged-comp.ncl`
+**NOTE**: if you have a non-TempestExtremes-TC configuration, you need to modify the array extraction found by grepping for `USER_MODIFY` in `cymep.py`
 
-### 4. Run merged-comp.ncl
+### 4. Run cymep.py
 
-`ncl merged-comp.ncl`
+First you need to ensure you have the following prerequisite Python packages. These come generally come standard with full packages like anaconda or can be installed with `conda install` or `pip install`.
 
+```
+sys
+re
+numpy
+pandas
+scipy
+netCDF4
+```
+
+Finally, run cymep.
+
+```
+$> python cymep.py
+```
+
+### 5. Run graphics-cymep.sh
+
+```
+$> graphics-cymep.sh netcdf_files/netcdf_GLOB_rean_configs.nc
+```
 
 
 

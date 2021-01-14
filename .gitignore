@@ -1,5 +1,6 @@
+python/trajs/hiresmip
+seeds.txt.*
 netcdf_*nc
-python/trajs/
 __pycache__/
 ncl/trajs/traj*
 spatial_*.nc
@@ -17,6 +18,7 @@ projects/snowstorms/RoS/data/
 CPC_gauge_precip_1985-2017.nc
 *_to_CPC_conserve.nc
 *mpi.out.*
+trajectories.CFSR.*
 traj.txt.*
 trajectories.txt.*
 LF.*
