@@ -15,7 +15,7 @@ from pattern_cor import *
 #----------------------------------------------------------------------------------------
 ##### User settings
 
-basin = 1
+basin = -1
 csvfilename = 'ana_configs.csv'
 gridsize = 8.0
 styr = 1950
@@ -133,20 +133,24 @@ for ii in range(len(files)):
     aaa=2.3
     bbb=1010.
     ccc=0.76
+    #del xpres
+    #del xwind
+    #xpres = np.array([980.,-1,-1])
+    #xwind = np.array([-1.,30.50281984,-1])
     # first, when xpres is missing but xwind exists, try to fill in xpres
     numfixes_1 = np.count_nonzero((xpres < 0.0) & (xwind > 0.0))
-    #xpres = 980.
-    #xwind = -1.
-    xpres    = np.where(((xpres < 0.0) & (xwind > 0.0)),-1*((xwind/aaa)**(1./ccc)-bbb),xpres)
+    #xpres    = np.where(((xpres < 0.0) & (xwind > 0.0)),-1*((xwind/aaa)**(1./ccc)-bbb),xpres)
+    xpres    = np.where(((xpres < 0.0) & (xwind > 0.0)),-1*(np.sign(xwind/aaa)*(np.abs(xwind/aaa))**(1./ccc)-bbb),xpres)
     # next, when xwind is missing but xpres exists, try to fill in xwind
     numfixes_2 = np.count_nonzero((xwind < 0.0) & (xpres > 0.0))
-    xwind    = np.where(((xwind < 0.0) & (xpres > 0.0)),aaa*(bbb - xpres)**ccc,xwind)
+    #xwind    = np.where(((xwind < 0.0) & (xpres > 0.0)),aaa*(bbb - xpres)**ccc,xwind)
+    xwind    = np.where(((xwind < 0.0) & (xpres > 0.0)),aaa*np.sign(bbb - xpres)*(np.abs(bbb - xpres))**ccc,xwind)
     # now if still missing assume TD
     numfixes_3 = np.count_nonzero((xpres < 0.0))
     xpres    = np.where((xpres < 0.0),1008.,xpres)
     xwind    = np.where((xwind < 0.0),15.,xwind)
     print("Num fills for PW " + str(numfixes_1) + " " + str(numfixes_2) + " " + str(numfixes_3))
-        
+    
   # Filter observational records
   # if "control" record and do_special_filter_obs = true, we can apply specific
   # criteria here to match objective tracks better
