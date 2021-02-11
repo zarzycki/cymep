@@ -15,10 +15,10 @@ from pattern_cor import *
 #----------------------------------------------------------------------------------------
 ##### User settings
 
-basin = -1
-csvfilename = 'rean_configs.csv'
+basin = 1
+csvfilename = 'ana_configs.csv'
 gridsize = 8.0
-styr = 1980
+styr = 1950
 enyr = 2018
 stmon = 1
 enmon = 12
@@ -193,8 +193,8 @@ for ii in range(len(files)):
   # Mask TCs for particular basin based on genesis location
   if basin > 0:
     for kk, zz in enumerate(range(nstorms)):
-      basin = maskTC(xglat[kk],xglon[kk])
-      if basin != basin:
+      test_basin = maskTC(xglat[kk],xglon[kk])
+      if test_basin != basin:
         xlon[kk,:]   = float('NaN')
         xlat[kk,:]   = float('NaN')
         xpres[kk,:]  = float('NaN')
