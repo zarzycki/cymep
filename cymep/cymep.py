@@ -15,8 +15,8 @@ from pattern_cor import *
 #----------------------------------------------------------------------------------------
 ##### User settings
 
-basin = -1
-csvfilename = 'rean_configs.csv'
+basin = 1
+csvfilename = 'sens_configs.csv'
 gridsize = 8.0
 styr = 1980
 enyr = 2020

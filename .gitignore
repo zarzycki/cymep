@@ -1,3 +1,5 @@
+jamc/
+dev/
 python/trajs/hiresmip
 seeds.txt.*
 netcdf_*nc

@@ -7,9 +7,9 @@ load "../functions/mask_tc.ncl"
 ;========================================================
 begin
 
-trajdir="../trajs/"
+trajdir="../../python/trajs/"
 ;=================== Get traj data ================================
-filename = "../config-lists/rean_configs.csv"
+filename = "../../python/config-lists/highresmip_configs.csv"
 lines = asciiread(filename,-1,"string")
 delim = ","
 files  =           str_get_field(lines,1,delim)
@@ -30,7 +30,15 @@ do yy = 0,nfiles-1
 ;===========================================================================================
 filebase=files(yy)
 if (str_get_cols(filebase,0,0).ne."!") then
-thefile=trajdir+"/"+filebase
+
+; some logic to handle leading /
+if (str_get_cols(filebase,0,0).ne."/") then
+  thefile=trajdir+"/"+filebase
+else
+  thefile=filebase
+  filebase=systemfunc("basename "+thefile)
+end if
+print(filebase+"")
 
 
 ncols = -1 ; number of columns in non-header rows of trajectory file
@@ -44,7 +52,7 @@ plot_gen=False
 
 maskBasins=True
 basin = 1
-tcMask = mask_tc(0,-999,-999,1.0,360)
+tcMask = mask_tc_allbasin(0,-999,-999,1.0,360)
 
 npossLF=3
 

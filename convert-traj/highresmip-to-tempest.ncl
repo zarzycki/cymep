@@ -3,7 +3,7 @@ begin
 DURTHRESH=0
 print_names=False
 print_to_screen=False
-gridfile=""
+;gridfile=""
 
 ;fname  = "~/Desktop/TC-NH_TRACK_CNRM-CM6-1-HR_highresSST-present_r1i1p1f2_gr_19500101-20141231.nc"
 f = addfile(fname,"r")
@@ -161,8 +161,8 @@ do ii = 0,ibstormcount-1
           if (gridfile .ne. "") then
             if (.not. isdefined("gridlat")) then
               gridf=addfile(gridfile,"r")
-              gridlat=gridf->latitude
-              gridlon=gridf->longitude
+              gridlat=gridf->lat
+              gridlon=gridf->lon
             end if
             thisLat=minind(abs(gridlat-iblat(ii,jj)))
             thisLon=minind(abs(gridlon-iblon(ii,jj)))
@@ -180,9 +180,12 @@ do ii = 0,ibstormcount-1
 
           ; There is a potential bug here, where either the calendar converts to missing
           ; or it converts such that the hour is off by one
-          thisdate=cd_calendar(ibtime(ii,jj),0)
+          
+          ; this should be cd_calendar, but we get errors. trying ut_calendar_fix
+          thisdate=ut_calendar_fix(ibtime(ii,jj),0)
           if (any(ismissing(thisdate))) then
             print("MISSING! "+ibtime(ii,jj)+" at "+ii+" "+jj)
+            exit
             totalerrors=totalerrors+1
           else if (mod(thisdate(0,3),6) .ne. 0) then
             print("ERROR! "+ibtime(ii,jj)+" at "+ii+" "+jj+"    thinks hour equal "+thisdate(0,3))
