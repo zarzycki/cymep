@@ -16,16 +16,16 @@ from pattern_cor import *
 ##### User settings
 
 basin = -1
-csvfilename = 'ana_configs.csv'
+csvfilename = 'rean_configs.csv'
 gridsize = 8.0
-styr = 1950
-enyr = 2018
+styr = 1980
+enyr = 2020
 stmon = 1
 enmon = 12
 truncate_years = False
 THRESHOLD_ACE_WIND = -1.0      # wind speed (in m/s) to threshold ACE. Negative means off.
 THRESHOLD_PACE_PRES = -100.    # slp (in hPa) to threshold PACE. Negative means off.
-do_special_filter_obs = True
+do_special_filter_obs = True   # Special "if" block for first line (control)
 do_fill_missing_pw = True
 do_defineMIbypres = False
 
@@ -35,6 +35,8 @@ do_defineMIbypres = False
 ms_to_kts = 1.94384449
 pi = 3.141592653589793
 deg2rad = pi / 180.
+
+#----------------------------------------------------------------------------------------
 
 # Read in configuration file and parse columns for each case
 # Ignore commented lines starting with !
@@ -82,14 +84,18 @@ for x in asvars:
   asdict[x][:] = np.nan
   
 # Get basin string
-basinstr=getbasinmaskstr(basin)
+strbasin=getbasinmaskstr(basin)
 
 for ii in range(len(files)):
 
   print("-------------------------------------------------------------------------")
   print(files[ii])
 
-  trajfile='trajs/'+files[ii]
+  if files[ii][0] == '/':
+    print("First character is /, using absolute path")
+    trajfile=files[ii]
+  else:
+    trajfile='trajs/'+files[ii]
   isUnstruc=isUnstructStr[ii]
   nVars=-1
   headerStr='start'
@@ -471,16 +477,16 @@ for ii in range(nfiles):
   taydict["tay_bias2"][ii] = 100. * ( (aydict['uclim_count'][ii] - aydict['uclim_count'][0]) / aydict['uclim_count'][0] )
 
 # Write out primary stats files
-write_single_csv(rxydict,strs,'./csv-files/','metrics_'+os.path.splitext(csvfilename)[0]+'_'+basinstr+'_spatial_corr.csv')
-write_single_csv(rsdict,strs,'./csv-files/','metrics_'+os.path.splitext(csvfilename)[0]+'_'+basinstr+'_temporal_scorr.csv')
-write_single_csv(rpdict,strs,'./csv-files/','metrics_'+os.path.splitext(csvfilename)[0]+'_'+basinstr+'_temporal_pcorr.csv')
-write_single_csv(aydict,strs,'./csv-files/','metrics_'+os.path.splitext(csvfilename)[0]+'_'+basinstr+'_climo_mean.csv')
-write_single_csv(asdict,strs,'./csv-files/','metrics_'+os.path.splitext(csvfilename)[0]+'_'+basinstr+'_storm_mean.csv')
-write_single_csv(stdydict,strs[0],'./csv-files/','means_'+os.path.splitext(csvfilename)[0]+'_'+basinstr+'_climo_mean.csv')
+write_single_csv(rxydict,strs,'./csv-files/','metrics_'+os.path.splitext(csvfilename)[0]+'_'+strbasin+'_spatial_corr.csv')
+write_single_csv(rsdict,strs,'./csv-files/','metrics_'+os.path.splitext(csvfilename)[0]+'_'+strbasin+'_temporal_scorr.csv')
+write_single_csv(rpdict,strs,'./csv-files/','metrics_'+os.path.splitext(csvfilename)[0]+'_'+strbasin+'_temporal_pcorr.csv')
+write_single_csv(aydict,strs,'./csv-files/','metrics_'+os.path.splitext(csvfilename)[0]+'_'+strbasin+'_climo_mean.csv')
+write_single_csv(asdict,strs,'./csv-files/','metrics_'+os.path.splitext(csvfilename)[0]+'_'+strbasin+'_storm_mean.csv')
+write_single_csv(stdydict,strs[0],'./csv-files/','means_'+os.path.splitext(csvfilename)[0]+'_'+strbasin+'_climo_mean.csv')
 
 # Package a series of global package inputs for storage as NetCDF attributes
 globaldict={}
-globaldictvars = ["styr","enyr","stmon","enmon","basinstr","do_special_filter_obs","do_fill_missing_pw","csvfilename","truncate_years","do_defineMIbypres","gridsize"]
+globaldictvars = ["styr","enyr","stmon","enmon","strbasin","do_special_filter_obs","do_fill_missing_pw","csvfilename","truncate_years","do_defineMIbypres","gridsize"]
 for x in globaldictvars:
   globaldict[x] = globals()[x]
 
