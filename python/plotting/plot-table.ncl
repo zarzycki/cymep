@@ -22,7 +22,7 @@ out_type="pdf"
 out_dir="./fig/tables/"
 system("mkdir -p "+out_dir)
   
-basinstr=tostring(f@basinstr)
+strbasin=tostring(f@strbasin)
 fullfilename=tostring(f@csvfilename)
 
 gridsize=tofloat(f@gridsize)
@@ -44,10 +44,10 @@ else
   DESCSTR=basecsvname
 end if
 
-if (basinstr .eq. "GLOB") then
+if (strbasin .eq. "GLOB") then
   BASINTXT="global"
 else
-  BASINTXT=basinstr
+  BASINTXT=strbasin
 end if
 
 if ( csvtype .eq. "spatial_corr" ) then
@@ -67,7 +67,7 @@ end if
   ;invert_stoplight=False
   ;calc_deltas=False
   filepath = "./csv-files/"
-  csvfilename="metrics_"+basecsvname+"_"+basinstr+"_"+csvtype+".csv"
+  csvfilename="metrics_"+basecsvname+"_"+strbasin+"_"+csvtype+".csv"
   filename = filepath+"/"+csvfilename
 
   ;write_units=True

@@ -6,7 +6,7 @@ system("mkdir -p "+out_dir)
 
 models = chartostring(f->model_names)
 
-basinstr=tostring(f@basinstr)
+strbasin=tostring(f@strbasin)
 filename=tostring(f@csvfilename)
 
 stmon=toint(f@stmon)
@@ -46,7 +46,7 @@ do mm = 0,dimsizes(linepltvarsstr)-1
   end if
 
   if (DOPLOT) then
-    wks   = gsn_open_wks("pdf",out_dir+"/"+linefilelabstr+"_"+tostring(linepltvarsstr(mm))+"."+basinstr+"_"+filename)
+    wks   = gsn_open_wks("pdf",out_dir+"/"+linefilelabstr+"_"+tostring(linepltvarsstr(mm))+"."+strbasin+"_"+filename)
 
     ; draw xy curves
     res                   = True                      ; plot mods desired

@@ -16,7 +16,7 @@ def write_spatial_netcdf(spatialdict,permondict,peryrdict,taydict,modelsin,nyear
   
   netcdfdir="./netcdf-files/"
   os.makedirs(os.path.dirname(netcdfdir), exist_ok=True)
-  netcdfile=netcdfdir+"/netcdf_"+globaldict['basinstr']+"_"+os.path.splitext(globaldict['csvfilename'])[0]
+  netcdfile=netcdfdir+"/netcdf_"+globaldict['strbasin']+"_"+os.path.splitext(globaldict['csvfilename'])[0]
   
   # open a netCDF file to write
   ncout = nc.Dataset(netcdfile+".nc", 'w', format='NETCDF4')
