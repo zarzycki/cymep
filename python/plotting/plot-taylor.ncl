@@ -765,7 +765,7 @@ out_type="pdf"
 out_dir="./fig/taylor/"
 system("mkdir -p "+out_dir)
 
-basinstr=tostring(f@basinstr)
+strbasin=tostring(f@strbasin)
 models = chartostring(f->model_names)
 fullfilename=tostring(f@csvfilename)
 
@@ -789,7 +789,7 @@ taylor_models = models(1:nmodels-1)
 
 ; plot Taylor diagram
 
-wks   = gsn_open_wks(out_type,out_dir+"/taylor_"+filename+"_"+basinstr)
+wks   = gsn_open_wks(out_type,out_dir+"/taylor_"+filename+"_"+strbasin)
 res   = True
 res@txFontHeightF = 0.02
 res@txMarkerLabelHeight = 0.025

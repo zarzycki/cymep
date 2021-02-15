@@ -38,32 +38,32 @@ def getbasinmaskstr(gridchoice):
 
   if hasattr(gridchoice, "__len__"):
     if gridchoice[0] == 1:
-      basinstr="NHEMI"
+      strbasin="NHEMI"
     else:
-      basinstr="SHEMI"
+      strbasin="SHEMI"
   else:
     if gridchoice < 0:
-      basinstr="GLOB"
+      strbasin="GLOB"
     else:
       if gridchoice == 1:
-        basinstr="NATL"
+        strbasin="NATL"
       elif gridchoice == 2:
-        basinstr="EPAC"
+        strbasin="EPAC"
       elif gridchoice == 3:
-        basinstr="CPAC"
+        strbasin="CPAC"
       elif gridchoice == 4:
-        basinstr="WPAC"
+        strbasin="WPAC"
       elif gridchoice == 5:
-        basinstr="NIO"
+        strbasin="NIO"
       elif gridchoice == 6:
-        basinstr="SIO"
+        strbasin="SIO"
       elif gridchoice == 7:
-        basinstr="SPAC"
+        strbasin="SPAC"
       elif gridchoice == 8:
-        basinstr="SATL"
+        strbasin="SATL"
       elif gridchoice == 9:
-        basinstr="FLA"
+        strbasin="FLA"
       else:
-        basinstr="NONE"
+        strbasin="NONE"
 
-  return basinstr
+  return strbasin

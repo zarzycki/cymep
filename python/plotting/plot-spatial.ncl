@@ -4,7 +4,7 @@ out_type="pdf"
 out_dir="./fig/spatial/"
 system("mkdir -p "+out_dir)
 
-basinstr=tostring(f@basinstr)
+strbasin=tostring(f@strbasin)
 models = chartostring(f->model_names)
 fullfilename=tostring(f@csvfilename)
 
@@ -18,8 +18,8 @@ filename = namesplit@fBase
   spapltvarsstr=(/"trackdens","minpres","maxwind","gendens","pacedens","acedens","tcddens", "trackbias","genbias","acebias","pacebias"/)
   spapltvars=(/"fulldens", "fullpres", "fullwind", "fullgen", "fullpace","fullace","fulltcd", "fulltrackbias" , "fullgenbias", "fullacebias", "fullpacebias" /)
   
-  print(basinstr+"")
-  if (basinstr .eq. "NATL") then
+  print(strbasin+"")
+  if (strbasin .eq. "NATL") then
     spapltmincontour=(/0. ,900. ,0. ,0. ,0. ,0., 0.,-10.,-1.0,-5.,-5./)  ; use this for NATL
     spapltmaxcontour=(/15.,1000.,80.,1. ,5. ,5., 3., 10., 1.0, 5., 5./)    
   else
@@ -34,7 +34,7 @@ filename = namesplit@fBase
 
   do bb = 0,dimsizes(spapltvarsstr)-1
 
-    wks = gsn_open_wks(out_type,out_dir+"/"+tostring(spapltvarsstr(bb))+"."+basinstr+"_"+filename)
+    wks = gsn_open_wks(out_type,out_dir+"/"+tostring(spapltvarsstr(bb))+"."+strbasin+"_"+filename)
 
 
     toPlot=f->$spapltvars(bb)$
@@ -70,7 +70,7 @@ filename = namesplit@fBase
     res@cnLineLabelsOn  = False
 
     res@gsnCenterString       = ""
-    if (basinstr .eq. "NATL") then
+    if (strbasin .eq. "NATL") then
       res@mpMinLatF             = 5.
       res@mpMaxLatF             = 55.
       res@mpMinLonF             = 260.
