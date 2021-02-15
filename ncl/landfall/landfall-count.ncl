@@ -3,7 +3,7 @@ load "../functions/read_csv.ncl"
 begin
 
 ;=================== Get traj data ================================
-filename = "../config-lists/rean_configs.csv"
+filename = "../../python/config-lists/highresmip_configs.csv"
 lines = asciiread(filename,-1,"string")
 delim = ","
 files  =           str_get_field(lines,1,delim)
@@ -21,7 +21,8 @@ delim=","
 do ii = 0,dimsizes(files)-1
 if (str_get_cols(files(ii),0,0).ne."!") then
 
-  thisFile="./landfall_txt/LF."+files(ii)
+  filebase=systemfunc("basename "+files(ii))
+  thisFile="./landfall_txt/LF."+filebase
 
   nyears=ensmembers(ii)*yearspermember(ii)
   file1=read_CSV_f(thisFile)
@@ -47,6 +48,7 @@ if (str_get_cols(files(ii),0,0).ne."!") then
   ref_seus = freq_seus
   ref_neus = freq_neus
   ref_nono = freq_nono
+  print(strs(ii)+delim+(freq_ceus)+delim+(freq_seus)+delim+(freq_neus))
   end if
 
   if (ii .gt. 0)

@@ -1,8 +1,0 @@
-ibtracs-1980-2019-GLOB.v4.txt,OBS,False,1,40,1.0,black
-trajectories.txt.ERAI,ERAI,False,1,39,1.0,goldenrod
-trajectories.txt.CR20,20CRv3,False,1,36,1.0,plum3
-trajectories.txt.MERRA,MERRA,False,1,36,0.85,green
-trajectories.txt.MERRA2,MERRA2,False,1,39,0.85,darkgreen
-trajectories.txt.JRA,JRA,False,1,39,0.98,blue
-trajectories.txt.CFSR,CFSR,False,1,39,0.883,red
-trajectories.txt.ERA5,ERA5,False,1,39,1.0,orange
