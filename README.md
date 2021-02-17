@@ -1,5 +1,7 @@
 # CyMeP (Cyclone Metrics Package)
 
+[![DOI](https://zenodo.org/badge/263738878.svg)](https://zenodo.org/badge/latestdoi/263738878)
+
 This directory (the root) is defined as `${CYMEP}`. The released version of CyMeP is stored in `${CYMEP}/cymep/`.
 
 ### General workflow
