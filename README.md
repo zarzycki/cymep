@@ -1,9 +1,11 @@
 # CyMeP (Cyclone Metrics Package)
 
+This directory (the root) is defined as `${CYMEP}`. The released version of CyMeP is stored in `${CYMEP}/cymep/`.
+
 ### General workflow
 1. Add TempestExtremes ASCII trajectories to ./traj/
 2. Create a configuration .csv file in ./config-lists/
-3. Edit cymep.py
+3. Edit user settings in cymep.py
 4. Run cymep.py
 5. Run graphics-cymep.sh
 
@@ -48,7 +50,7 @@ Each subsequent line (31 lines) contains a point along the trajectory. Currently
 | 4 | lat | longitude (degrees north)  |
 | 5 | slp | sea level pressure (Pa)  |
 | 6 | wind | wind speed (m/s) |
-| 7 | phis | surface geopotential (m2/s2)  |
+| 7 | phis | surface geopotential (m<sup>2</sup>/s<sup>2</sup>)  |
 | 8 | yyyy | year integer |
 | 9 | mm | month integer  |
 | 10 | dd | day integer  |
@@ -56,8 +58,8 @@ Each subsequent line (31 lines) contains a point along the trajectory. Currently
 
 There are two folders within the package that may be helpful:
 
-1. An example of generating a TempestExtremes trajectory file from reanalysis is found in XXXXXX. This script reads in XXXX data and generates a track file on NCAR Cheyenne.
-2. Sample scripts for creating alternative formats can be found in `./convert-traj/`. For example, one could use `ibtracs_to_tempest.ncl` to generate a text-based file compatibile with the software package from an IBTrACS NetCDF file.
+1. An example of generating a TempestExtremes trajectory file from reanalysis is found in `${CYMEP}/tempest-tc/`. This script reads in MERRA2 data and generates a track file on NCAR Cheyenne.
+2. Sample scripts for creating alternative formats can be found in `${CYMEP}/convert-traj/`. For example, one could use `ibtracs_to_tempest.ncl` to generate a text-based file compatibile with the software package from an IBTrACS NetCDF file.
 
 ### 2. Create a CSV file describing model configurations
 
@@ -93,10 +95,9 @@ Using the first line as an example...
 
 | Variable | Description |
 | --- | --- |
-| out_type | NCL output graphic format (e.g., pdf, png, eps) |
 | gridsize | Length of side of each square gridbox used for spatial analysis in degrees (e.g., 8.0) |
 | basin | Set to negative to turn off filtering, otherwise specify particular ocean basin/hemisphere based on mask functions |
-| filename | The name of the file stored in `config_files` that contains the list of files to be analyzed |
+| csvfilename | The name of the file stored in `config_files` that contains the list of files to be analyzed |
 | styr | Start year for overlapping interannual correlation analysis |
 | enyr | End year for overlapping interannual correlation analysis |
 | truncate_years | If `True` then filter out years external to styr and enyr. If `False` keep all data |
@@ -106,7 +107,7 @@ Using the first line as an example...
 | THRESHOLD_ACE_WIND | Select threshold wind (in m/s) for ACE calculations (negative value means no threshold) |
 | THRESHOLD_PACE_PRES | Select threshold SLP (in hPa) for PACE calculations (negative value means no threshold) |
 
-**NOTE**: if you have a non-TempestExtremes-TC configuration, you need to modify the array extraction found by grepping for `USER_MODIFY` in `cymep.py`
+**NOTE**: if you have a non-TempestExtremes-TC configuration, you need to modify the array extraction found by grepping for `USER_MODIFY` in `cymep.py`.
 
 ### 4. Run cymep.py
 
@@ -116,7 +117,7 @@ Finally, run cymep.
 $> python cymep.py
 ```
 
-This will produce two sets of files. One, a handful of CSV files in `./csv-files/`. Two, a NetCDF file in `./netcdf-files/`.
+This will produce two sets of files. One, a handful of CSV files in `${CYMEP}/cymep/csv-files/`. Two, a NetCDF file in `${CYMEP}/cymep/netcdf-files/`.
 
 NOTE: Eventually, the `csv-files` folder will become obsolete and all output from the suite will be packaged via NetCDF.
 
@@ -126,9 +127,4 @@ NOTE: Eventually, the `csv-files` folder will become obsolete and all output fro
 $> ./graphics-cymep.sh netcdf-files/netcdf_GLOB_rean_configs.nc
 ```
 
-This will produce a suite of figures in various subfolders within `./fig/`
-
-
-
-
-
+This will produce a suite of figures in various subfolders within `./fig/`.
