@@ -47,6 +47,7 @@ out.*
 slice-*nc
 *timesArray_*
 projects/ke/*.nc
+!jamc-paper.tar.gz
 !rean_configs.csv
 !ibtracs-1980-2019-GLOB.v4.txt
 !trajectories.txt.CFSR
