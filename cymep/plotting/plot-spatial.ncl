@@ -20,12 +20,12 @@ filename = namesplit@fBase
   
   print(strbasin+"")
   if (strbasin .eq. "NATL") then
-    spapltmincontour=(/0. ,900. ,0. ,0. ,0. ,0., 0.,-10.,-1.0,-5.,-5./)  ; use this for NATL
-    spapltmaxcontour=(/15.,1000.,80.,1. ,5. ,5., 3., 10., 1.0, 5., 5./)    
+    spapltmincontour=(/0. ,900. ,20. ,0. ,0. ,0., 0.,-10.,-1.0,-5.,-5./)  ; use this for NATL
+    spapltmaxcontour=(/15.,1000.,80.,1. ,6. ,6., 3., 10., 1.0, 5., 5./)    
   else
     ; use these settings for global or generic basin default
     spapltmincontour=(/0. , 900.,20., 0., 0., 0., 0.,-20.,-1.5,-5.,-5./) ; use this for global
-    spapltmaxcontour=(/40.,1000.,80., 3., 8., 8., 10., 20., 1.5, 5., 5./)
+    spapltmaxcontour=(/40.,1000.,80., 3., 10., 10., 10., 20., 1.5, 5., 5./)
   end if
 
   letterstr=(/"a.","b.","c.","d.","e.","f.","g.","h.","i.","j.","k.","l."/)
