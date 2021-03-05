@@ -1,0 +1,146 @@
+{
+    "fig":{
+        "tables":{
+            "temporal_scorr": {
+                "longname": "temporal rank correlation",
+                "description": "Table of rank correlations for seasonal values of storm count, TCD, ACE, PACE, and LMI."},
+            "storm_mean": {
+                "longname": "storm mean bias",
+                "description": "Table comparing storm mean bias in TCD, ACE, PACE, latgen, and LMI"},
+            "climo_mean": {
+                "longname": "climatological bias",
+                "description": "Table comparing mean bias in annually averaged storm count, TCD, ACE, PACE, and LMI"},
+            "spatial_corr": {
+                "longname": "spatial pearson correlation",
+                "description": "Table of spatial correlations for track location, TC genesis, 10-m wind speed, sea level pressure, ACE, and PACE with the reference dataset."}
+        },
+        "taylor": {
+            "taylor": {
+                "longname": "Taylor diagram",
+                "description": "A Taylor diagram showing aggregated TC statistics for the provided trajectories."}
+        },
+        "line": {
+            "interann_paceByYear": {
+                "longname": "pressure ACE interannual cycle",
+                "description": "Time series of total pressure ACE by year"},
+            "interann_aceByYear": {
+                "longname": "accumulated cyclone energy (ACE) interannual cycle",
+                "description": "Time series of accumulated cyclone energy by year"},
+            "interann_tcdByYear": {
+                "longname": "tropical cyclone days interannual cycle",
+                "description": "Time series of tropical cyclone days by year"},
+            "interann_stormsByYear": {
+                "longname": "storm count interannual cycle",
+                "description": "Time series of storm count by year"},
+            "seasonal_paceByMonth": {
+                "longname": "Seasonal cycle of pressure ACE",
+                "description": "Line plot of mean pressure ACE by month"},
+            "seasonal_aceByMonth": {
+                "longname": "Seasonal cycle of ACE",
+                "description": "Line plot of mean accumulated cyclone energy by month"},
+            "seasonal_tcdByMonth": {
+                "longname": "Seasonal cycle of tropical cyclone days",
+                "description": "Line plot of mean tropical cyclone days by month"},
+            "seasonal_stormsByMonth": {
+                "longname": "Seasonal cycle of storm count",
+                "description": "Line plot of mean storm count by month"}
+        },
+        "spatial": {
+            "pacebias": {
+                "longname": "bias in pressure ACE",
+                "description": "Spatial plots of pressure ACE bias relative to reference dataset"},
+            "acebias": {
+                "longname": "bias in accumulated cyclone energy",
+                "description": "Spatial plots of ACE bias relative to reference dataset"},
+            "genbias": {
+                "longname": "bias in genesis location",
+                "description": "Spatial plots of genesis location bias relative to reference dataset"},
+            "trackbias": {
+                "longname": "track bias",
+                "description": "Spatial plots of track bias relative to reference dataset"},
+            "tcddens": {
+                "longname": "tropical cyclone day density",
+                "description": "Spatial plots of tropical cyclone day occurence per year"},
+            "acedens": {
+                "longname": "accumulated cyclone energy density",
+                "description": "Spatial plots of ACE integrated by grid cell"},
+            "pacedens": {
+                "longname": "pressure ACE density",
+                "description": "Spatial plots of pressure ACE integrated by grid cell"},
+            "gendens": {
+                "longname": "genesis location density",
+                "description": "Spatial plots of TC genesis occurence per year"},
+            "maxwind": {
+                "longname": "maximum wind speed",
+                "description": "Spatial plots of maximum 10-m wind speed over the evaluation period"},
+            "minpres": {
+                "longname": "minimum pressure",
+                "description": "Spatial plots of minimum pressure over the evaluation period"},
+            "trackdens": {
+                "longname": "track density",
+                "description": "Spatial plots of track occurence per year"}
+        }
+    },
+    "csv-files": {
+        "means": {
+            "climo_mean": {
+                "longname": "climatological mean",
+                "description": "climatological mean statitics of reference dataset"}
+        },
+        "metrics": {
+            "storm_mean": {
+                "longname": "storm mean bias",
+                "description": "Statistics for storm mean bias table"},
+            "climo_mean": {
+                "longname": "climatological bias",
+                "description": "Statistics for climatological bias table"},
+            "temporal_pcorr": {
+                "longname": "temporal pearson correlations",
+                "description": "Statistics for temporal pearson correlation table"},
+            "temporal_scorr": {
+                "longname": "temporal spearman rank correlations",
+                "description": "Statistics for temporal spearman rank correlation table"},
+            "spatial_corr": {
+                "longname": "spatial correlation",
+                "description": "Statistics for spatial correlation table"}
+        }
+    },
+    "netcdf-files": {
+        "netcdf": {
+                "longname": "netcdf output"}
+    },
+    "statistics":{
+        "prefix": {
+            "sdy": "standard deviation of ",
+            "uclim": "climatological ",
+            "rxy": "spatial correlation of ",
+            "utc": "storm ",
+            "rp": "temporal pearson correlation of ",
+            "rs": "temporal spearman rank correlation of ",
+            "pm": "monthly ",
+            "tay": "taylor diagram ",
+            "py": "yearly "
+        },
+        "suffix": {
+            "count": "storm count",
+            "tcd": "tropical cyclone days",
+            "ace": "accumulated cyclone energy",
+            "pace": "pressure ACE",
+            "lmi": "latitude of lifetime-maximum intensity",
+            "latgen": "latitude of cyclone genesis",
+            "track": "track density",
+            "gen": "cyclone genesis",
+            "u10": "maximum 10m wind speed",
+            "slp": "minmum sea level pressure",
+            "pc": "pattern correlation",
+            "ratio": "ratio",
+            "bias": "bias",
+            "xmean": "test variable weighted areal average",
+            "ymean": "reference variable weighted areal average",
+            "xvar": "test variable weighted areal variance",
+            "yvar": "test variable weighted areal variance",
+            "rmse": "root mean square error",
+            "bias2": "relative bias"
+        }
+    }
+}
