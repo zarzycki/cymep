@@ -1,4 +1,5 @@
 import numpy as np
+import re
 
 def getTrajectories(filename,nVars,headerDelimStr,isUnstruc):
   print("Getting trajectories from TempestExtremes file...")
@@ -46,7 +47,7 @@ def getTrajectories(filename,nVars,headerDelimStr,isUnstruc):
       lineOfTraj = 0    # reset trajectory line to zero
     else:
       ptArr = line.split()
-      for jj in range(nVars-1):
+      for jj in range(nVars):
         if isUnstruc:
           prodata[jj+1,stormID,lineOfTraj]=ptArr[jj]
         else:
