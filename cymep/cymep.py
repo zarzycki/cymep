@@ -15,10 +15,10 @@ from write_spatial import *
 from pattern_cor import *
 
 #----------------------------------------------------------------------------------------
-##### User Settings
+##### User settings
 
 basin = 1
-csvfilename = 'rean_configs.csv'
+csvfilename = 'sens_configs.csv'
 gridsize = 8.0
 styr = 1980
 enyr = 2020
