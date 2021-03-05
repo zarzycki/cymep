@@ -7,9 +7,11 @@ load "../functions/mask_tc.ncl"
 ;========================================================
 begin
 
-trajdir="../../python/trajs/"
+plot_legend=False
+
+trajdir="../../cymep/trajs/"
 ;=================== Get traj data ================================
-filename = "../../python/config-lists/highresmip_configs.csv"
+filename = "../../cymep/config-lists/highresmip_configs.csv"
 lines = asciiread(filename,-1,"string")
 delim = ","
 files  =           str_get_field(lines,1,delim)
@@ -54,7 +56,7 @@ maskBasins=True
 basin = 1
 tcMask = mask_tc_allbasin(0,-999,-999,1.0,360)
 
-npossLF=3
+npossLF=10
 
 hrsbase=6
 hrsinterp=0.25
@@ -77,6 +79,14 @@ mm= traj_data(:,8,:)
 dd= traj_data(:,9,:)
 hh= traj_data(:,10,:)
 
+mn = toint(hh)
+mn = 0
+sc = mn
+
+units="days since 1970-01-01 00:00:00"
+time   = cd_inv_calendar(toint(yyyy),toint(mm),toint(dd),toint(hh),mn,sc,units,0)
+time!0 = "time"
+
 print("mean lat: "+avg(lat))
 
 ndims = dimsizes(lon)
@@ -97,6 +107,7 @@ landfall_lat=new((/2,npossLF,nstorms/),typeof(lat))
 landfall_lon=new((/2,npossLF,nstorms/),typeof(lon))
 landfall_wind=new((/2,npossLF,nstorms/),typeof(wind))
 landfall_pres=new((/2,npossLF,nstorms/),typeof(pres))
+landfall_time=new((/2,npossLF,nstorms/),typeof(time))
 
 ;===========================================================================================
 
@@ -104,6 +115,7 @@ interp_lat =interp_traj(lat,hrsbase,hrsinterp,True)
 interp_lon =interp_traj(lon,hrsbase,hrsinterp,False)
 interp_wind=interp_traj(wind,hrsbase,hrsinterp,False)
 interp_pres=interp_traj(pres,hrsbase,hrsinterp,False)
+interp_time=interp_traj(time,hrsbase,hrsinterp,False)
 
 ;===========================================================================================
 
@@ -137,6 +149,7 @@ do ii = STIX,ENIX
       landfall_lon(0,zz,ii) = interp_lon(ii,IX(zz))
       landfall_wind(0,zz,ii) = interp_wind(ii,IX(zz))
       landfall_pres(0,zz,ii) = interp_pres(ii,IX(zz))
+      landfall_time(0,zz,ii) = interp_time(ii,IX(zz))
       landfall_lat(1,zz,ii) = interp_lat(ii,1)
       landfall_lon(1,zz,ii) = interp_lon(ii,1)
     end if
@@ -227,8 +240,16 @@ res@gsnDraw    = False
 res@gsnFrame   = False
 res@gsnMaximize = True
 res@mpFillOn             = True              ; turn off gray continents
-res@mpLandFillColor = "Tan"
-res@mpOceanFillColor = "LightBlue1"
+
+;res@mpLandFillColor = "moccasin"
+;res@mpOceanFillColor = "lightcyan"
+
+res@mpLandFillColor = "grey95"
+res@mpOceanFillColor = "white"
+res@mpGeophysicalLineColor = "gray"
+res@mpNationalLineColor = "gray"
+res@mpUSStateLineColor = "gray"
+
 res@mpOutlineOn = True
 res@mpInlandWaterFillColor = res@mpOceanFillColor
 res@mpGreatCircleLinesOn = True
@@ -239,10 +260,10 @@ if (plot_gen) then
   res@mpMinLonF             = 261
   res@mpMaxLonF             = 355
 else
-  res@mpMinLatF             = 7
-  res@mpMaxLatF             = 48
+  res@mpMinLatF             = 9
+  res@mpMaxLatF             = 47
   res@mpMinLonF             = 261
-  res@mpMaxLonF             = 305
+  res@mpMaxLonF             = 302
 end if
 
 res@tmXBOn = False
@@ -260,16 +281,20 @@ res@mpGeophysicalLineThicknessF = 1.5          ; thickness of outlines
 res@mpOutlineDrawOrder="Draw"
 ;res@tfPolyDrawOrder="PostDraw"
 
-color_SE="Pink"
-color_NE="PaleGreen"
-color_CE="LightBlue"
-res@mpFillAreaSpecifiers = (/"Texas","Oklahoma","Kansas", \
-  "Florida","Alabama","Louisiana","Mississippi","Georgia","South Carolina","North Carolina","Virginia","Georgia","Tennessee","Arkansas","Kentucky", \
-  "New York","New Jersey","Connecticut","Massachusetts","Maine","New Hampshire","Rhode Island","Vermont","Pennsylvania","Maryland","Delaware","West Virginia"/) 
-res@mpSpecifiedFillColors = (/color_CE,color_CE,color_CE, \
-  color_SE,color_SE,color_SE,color_SE,color_SE,color_SE,color_SE,color_SE,color_SE,color_SE,color_SE,color_SE, \
-  color_NE,color_NE,color_NE,color_NE,color_NE,color_NE,color_NE,color_NE,color_NE,color_NE,color_NE,color_NE/)
-res@mpFillAreaSpecifiers = "Conterminous US:"+res@mpFillAreaSpecifiers
+color_NCA=False
+if (color_NCA) then
+  color_SE="Pink"
+  color_NE="PaleGreen"
+  color_CE="LightBlue"
+  res@mpFillAreaSpecifiers = (/"Texas","Oklahoma","Kansas", \
+    "Florida","Alabama","Louisiana","Mississippi","Georgia","South Carolina","North Carolina","Virginia","Georgia","Tennessee","Arkansas","Kentucky", \
+    "New York","New Jersey","Connecticut","Massachusetts","Maine","New Hampshire","Rhode Island","Vermont","Pennsylvania","Maryland","Delaware","West Virginia"/) 
+  res@mpSpecifiedFillColors = (/color_CE,color_CE,color_CE, \
+    color_SE,color_SE,color_SE,color_SE,color_SE,color_SE,color_SE,color_SE,color_SE,color_SE,color_SE,color_SE, \
+    color_NE,color_NE,color_NE,color_NE,color_NE,color_NE,color_NE,color_NE,color_NE,color_NE,color_NE,color_NE/)
+  res@mpFillAreaSpecifiers = "Conterminous US:"+res@mpFillAreaSpecifiers
+end if
+
 map = gsn_csm_map_ce(wks,res)
 
 gsn_define_colormap(wks,"rainbow+white+gray")
@@ -293,13 +318,13 @@ system("rm "+txtfilename)
 do j = 0,nstorms-1
 do i = 0,npossLF-1
 
-
-
 thisWind=landfall_wind(0,i,j)
+thisPres=landfall_pres(0,i,j)
 thisLat=landfall_lat(0,i,j)
 thisLon=landfall_lon(0,i,j)
 genLat=landfall_lat(1,i,j)
 genLon=landfall_lon(1,i,j)
+thisDate=cd_calendar(landfall_time(0,i,j),-3)
 
 if (.not.ismissing(thisWind) .and. thisWind .gt. windThresh)
 
@@ -307,38 +332,22 @@ if (.not.ismissing(thisWind) .and. thisWind .gt. windThresh)
   linethicknesses = (/0.5,1.0,1.3,1.9,2.3,2.6/)
   linethicknesses = 4.0*linethicknesses
 
-;  polyres@gsMarkerSizeF = 0.024          ; select size to avoid streaking
-;  if (thisWind .lt. 17)
-;    polyres@gsMarkerColor = (/"blue"/)
-;    lineres@gsLineColor = (/"blue"/)
-;    lineres@gsLineThicknessF = linethicknesses(0)
-;  else if (thisWind .ge. 17 .and. thisWind .lt. 33)
-;    polyres@gsMarkerColor = (/"green3"/)
-;    lineres@gsLineColor = (/"green3"/)
-;    lineres@gsLineThicknessF = linethicknesses(1)
-;  else if (thisWind .ge. 33 .and. thisWind .lt. 43)
-;    polyres@gsMarkerColor = (/"yellow2"/)
-;    lineres@gsLineColor = (/"yellow2"/)
-;    lineres@gsLineThicknessF = linethicknesses(2)
-;  else if (thisWind .ge. 43 .and. thisWind .lt. 49)
-;    polyres@gsMarkerColor = (/"orange"/)
-;    lineres@gsLineColor = (/"orange"/)
-;    lineres@gsLineThicknessF = linethicknesses(3)
-;  else if (thisWind .ge. 49 .and. thisWind .lt. 58)
-;    polyres@gsMarkerColor = (/"darkorange3"/)
-;    lineres@gsLineColor = (/"darkorange3"/)
-;    lineres@gsLineThicknessF  = linethicknesses(4)
-;  else
-;    polyres@gsMarkerColor = (/"red"/) 
-;    lineres@gsLineColor = (/"red"/)
-;    lineres@gsLineThicknessF  = linethicknesses(5)
-;  end if
-;  end if
-;  end if
-;  end if
-;  end if
+how_to_color="landfall_psl"
 
-  polyres@gsMarkerSizeF = 0.05
+if (how_to_color .eq. "landfall_psl")
+    aaa=2.3
+    bbb=1010.
+    ccc=0.76
+    print(thisWind+" "+thisPres)
+    thisWind = aaa*(bbb-min((/thisPres,bbb/)))^ccc
+    print(thisWind+"")
+    print("---")
+end if
+
+;polyres@gsMarkerSizeF = 0.035
+polyres@gsMarkerSizeF = 0.045
+
+if (how_to_color .eq. "region") then
   if (landfall_region(i,j) .eq. 1)
     polyres@gsMarkerColor = (/"blue"/)
     lineres@gsLineColor = (/"blue"/)
@@ -354,12 +363,41 @@ if (.not.ismissing(thisWind) .and. thisWind .gt. windThresh)
   end if
   end if
   end if
-  
+else if (how_to_color .eq. "landfall_wind" .or. how_to_color .eq. "landfall_psl") then
+  SSthresh_wind = (/17.,33.,43.,49.,58./)
+  if (thisWind .lt. SSthresh_wind(0))
+    polyres@gsMarkerColor = (/"green3"/)
+    lineres@gsLineColor = (/"green3"/)
+  else if (thisWind .ge. SSthresh_wind(0) .and. thisWind .lt. SSthresh_wind(1))
+    polyres@gsMarkerColor = (/"green3"/)
+    lineres@gsLineColor = (/"green3"/)
+  else if (thisWind .ge. SSthresh_wind(1) .and. thisWind .lt. SSthresh_wind(2))
+    polyres@gsMarkerColor = (/"yellow1"/)
+    lineres@gsLineColor = (/"yellow1"/)
+  else if (thisWind .ge. SSthresh_wind(2) .and. thisWind .lt. SSthresh_wind(3))
+    polyres@gsMarkerColor = (/"orange"/)
+    lineres@gsLineColor = (/"orange"/)
+  else if (thisWind .ge. SSthresh_wind(3) .and. thisWind .lt. SSthresh_wind(4))
+    polyres@gsMarkerColor = (/"darkorange3"/)
+    lineres@gsLineColor = (/"darkorange3"/)
+  else
+    polyres@gsMarkerColor = (/"red"/)
+    lineres@gsLineColor = (/"red"/)
+  end if
+  end if
+  end if
+  end if
+  end if
+else
+  exit
+end if
+end if
+
   txres               = True                            
   txres@txFontHeightF = 0.01             ; Set the font height
  
   polyresback=polyres
-  polyresback@gsMarkerSizeF=0.07
+  polyresback@gsMarkerSizeF= polyres@gsMarkerSizeF + (polyres@gsMarkerSizeF*0.5)
   polyresback@gsMarkerColor="black" 
 
   ;if (landfall_region(i,j) .eq. 3) then
@@ -379,13 +417,73 @@ if (.not.ismissing(thisWind) .and. thisWind .gt. windThresh)
   ;txres@amJust = "TopLeft"
   ;text(i,j) = gsn_add_text(wks,map,str,thisLon+0.5,thisLat-0.5,txres)
 
-  system("echo "+quote+   thisLon+delim+thisLat+delim+thisWind+delim+genLon+delim+genLat+delim+landfall_region(i,j)   +quote+" >> "+txtfilename)
+  system("echo "+quote+   thisDate+delim+thisLon+delim+thisLat+delim+thisPres+delim+thisWind+delim+genLon+delim+genLat+delim+landfall_region(i,j)   +quote+" >> "+txtfilename)
   
  
 end if
 
 end do
 end do
+
+
+
+
+if (plot_legend) then
+
+  ;******************
+  ; Plot a legend   *
+  ;******************
+
+  lgres                    = True
+
+  lgres@lgAutoManage       = False
+
+  lgres@vpWidthF           = 0.30       ; was 0.08        ; width of legend (NDC)
+  lgres@vpHeightF          = 0.24       ; was 0.08        ; height of legend (NDC)
+
+  lgres@lgPerimFill        = 0                     ; Use solid fill (0) instead of the default hollow fill
+  lgres@lgPerimFillColor   = "Background"
+
+  lgres@lgBoxMinorExtentF  = 0.2	; controls how wide the box holding the legend items (lines and markers) can be in relation to legend
+
+  lgres@lgMonoItemType        = False                 ; indicates that we wish to set the item types individually
+  lgres@lgMonoMarkerIndex     = False
+  lgres@lgMonoLineThickness   = False
+  lgres@lgMonoMarkerThickness = False
+  lgres@lgMonoMarkerSize      = False
+
+  lgres@lgLabelFontHeightF      = 0.08
+  lgres@lgLabelFontAspectF      = 1.5
+  lgres@lgLabelConstantSpacingF = 0.0
+
+  legendType = "Markers"
+  markerSize = .023
+  markerIndex = 16
+
+  lgres@lgItemCount        = 5
+  lgres@lgItemTypes        = (/legendType,legendType,legendType,legendType,legendType/)
+  lgres@lgMarkerIndexes    = (/markerIndex,markerIndex,markerIndex,markerIndex,markerIndex/)
+  lgres@lgMarkerSizes   = (/    markerSize,    markerSize,    markerSize,    markerSize,    markerSize/)
+  lgres@lgMarkerColors       = (/ "red",     "darkorange3",   "orange",  "yellow2",   "green4" /) ; colors for legend lines
+  legend_labels = (/"Cat. 4/5","Cat. 3","Cat. 2","Cat. 1","TS"/)
+
+
+
+  legend = gsn_create_legend(wks,lgres@lgItemCount,legend_labels,lgres)
+
+  amres = True
+  amres@amParallelPosF   = 0.45		    ; move legend to the right .37 formerly
+  amres@amOrthogonalPosF = 0.00       ; move the legend down
+  amres@amJust = "CenterRight"
+
+  annoid1 = gsn_add_annotation(map,legend,amres)   ; add legend to plot
+  
+end if
+  
+  
+  
+  
+  
   
 print("Drawing plot")
 
@@ -395,6 +493,7 @@ frame(wks)
 delete(map)
 delete(wks)
 delete(traj_data)
+delete([/mn,sc,time,interp_time,landfall_time/])
 delete([/dum,dum1,dum2,dum3,text/])
 delete([/lon,lat,IX,landfall_lon,landfall_lat,yyyy,mm,dd,hh,landfall_region,pres,interp_pres,wind,interp_wind,interp_lon,interp_lat,landfall_wind,landfall_pres,lonjump/])
 list_vars()
