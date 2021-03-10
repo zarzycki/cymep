@@ -2,6 +2,8 @@
 
 [![DOI](https://zenodo.org/badge/263738878.svg)](https://zenodo.org/badge/latestdoi/263738878)
 
+Zarzycki, C. M., Ullrich, P. A., and Reed, K. A. (2021). Metrics for evaluating tropical cyclones in climate data. *Journal of Applied Meteorology and Climatology*. doi: 10.1175/JAMC-D-20-0149.1. [Preprint PDF](https://colinzarzycki.com/papers/ZUR_metrics.pdf). [Supplemental PDF](https://colinzarzycki.com/papers/ZUR_metrics_SI.pdf).
+
 This directory (the root) is defined as `${CYMEP}`. The released version of CyMeP is stored in `${CYMEP}/cymep/`.
 
 ### General workflow
