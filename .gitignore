@@ -22,6 +22,7 @@ CPC_gauge_precip_1985-2017.nc
 *mpi.out.*
 trajectories.CFSR.*
 traj.txt.*
+traj.lat.*
 trajectories.txt.*
 LF.*
 *.txt
