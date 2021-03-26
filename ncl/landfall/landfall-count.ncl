@@ -3,7 +3,7 @@ load "../functions/read_csv.ncl"
 begin
 
 ;=================== Get traj data ================================
-filename = "../../python/config-lists/highresmip_configs.csv"
+filename = "../../cymep/config-lists/highresmip_configs.csv"
 lines = asciiread(filename,-1,"string")
 delim = ","
 files  =           str_get_field(lines,1,delim)

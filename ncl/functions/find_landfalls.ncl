@@ -21,7 +21,7 @@ begin
 landfallIXreturn=new(npossLF,"integer")
 
 ; load landfrac dataset
-maskfilename="../files/USGS_gtopo30_0.23x0.31_remap_c180612_PHIS_LANDFRAC.nc"
+maskfilename="../../files/USGS_gtopo30_0.23x0.31_remap_c180612_PHIS_LANDFRAC.nc"
 maskfile=addfile(maskfilename,"r")
 LANDFRAC=maskfile->LANDFRAC
 
