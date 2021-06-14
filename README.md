@@ -136,11 +136,16 @@ This will produce a suite of figures in various subfolders within `./fig/`.
 
 ### Run with CMEC driver
 
-An alternative workflow is available with [cmec-driver](https://github.com/cmecmetrics/cmec-driver). The workflow is:
+An alternative workflow is available with [cmec-driver](https://github.com/cmecmetrics/cmec-driver) and conda. The workflow is:
 1. Clone the coastal-storm-metrics repo.
-2. Install dependencies.
+2. Use conda to dependencies in an environment called "_CMEC_cymep". This can be done using the provided yml file:   
+`conda env create --file cymep.yml`
 3. From the `cmec-driver` directory, register CyMeP in the cmec library:
-`python cmec-driver.py register <path to CyMeP repository>`
+`python cmec-driver.py register <path to CyMeP repository>`  
+    - If you have not run cmec-driver before, you must also register your conda installation information:
+    `python cmec-driver.py setup -conda_source <conda source executable> -env_dir <conda env location>`  
+    For a standard anaconda or miniconda installation, this might look like:  
+    `python cmec-driver.py setup -conda_source ~/miniconda3/etc/profile.d/conda.sh -env_dir ~/miniconda3/envs/`  
 4. Add TempestExtremes ASCII trajectories to `cmec-driver/model`.
     - For testing, copy `cymep/trajs/*` to `cmec-driver/model`
 5. Create configuration csv in cmec-driver/model.
@@ -149,4 +154,4 @@ An alternative workflow is available with [cmec-driver](https://github.com/cmecm
     - For testing, use the default settings.
 7. Run CyMeP module from cmec-driver:
 `python cmec-driver.py run model/ output/ CyMeP`
-8. Open `cmec-driver/output/CyMeP/index.html` to view results.
+8. Open `/output/CyMeP/index.html` to view results.
