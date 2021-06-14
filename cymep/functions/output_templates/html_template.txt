@@ -1,0 +1,12 @@
+<html>
+<body>
+<head><title>CyMeP Results</title></head>
+<br><h1>CyMeP metrics and figures</h1>
+<br><h2>Metrics files</h2>
+<br><a href="json/$json_metric">$json_metric</a>
+<br>
+<br><h2>Plots</h2>
+<br><h3>$title</h3>
+<p><a href="fig/$folder/$plot" target="_blank" alt=$plot>$plot</a></p>
+</body>
+</html>

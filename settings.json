@@ -1,0 +1,54 @@
+{
+    "obslist": {
+        "obs_name": "IBTrACS",
+        "frequency": "6hr",
+        "version": "4",
+        "description": "TC track data from the International Best Track Archive for Climate Stewardship (IBTrACS). See website at https://www.ncdc.noaa.gov/ibtracs/"
+    },
+    "settings": {
+        "async": "none",
+        "description": "A software suite for the objective evaluation of tropical cyclones in gridded climate data",
+        "driver": "coastal-storm-metrics.sh",
+        "name": "CyMeP",
+        "long_name": "Cyclone Metrics Package",
+        "runtime": {"CyMeP": "1.0", "python3": ["numpy", "pandas", "scipy", "netCDF4"], "ncl": "6.6.2"}
+    },
+    "varlist": {
+        "slp": {
+            "name": "sea level pressure",
+            "units": "Pa",
+            "frequency": "6hr"
+        },
+        "wind": {
+            "name": "wind speed",
+            "units": "m s-1",
+            "frequency": "6hr"
+        },
+        "phis": {
+            "name": "surface geopotential",
+            "units": "m2 s-2",
+            "frequency": "6hr"
+        }
+    },
+    "coordinates": {
+        "min_time_range": "6hr",
+        "max_time_range": "6hr",
+        "min_resolution": "any",
+        "max_resolution": "any"
+    },
+    "default_parameters": {
+        "basin": -1,
+        "csvfilename": "rean_configs.csv",
+        "gridsize": 8.0,
+        "styr": 1980,
+        "enyr": 2018,
+        "stmon": 1,
+        "enmon": 12,
+        "truncate_years": false,
+        "THRESHOLD_ACE_WIND": -1.0,
+        "THRESHOLD_PACE_PRES": -100.0,
+        "do_special_filter_obs": true,
+        "do_fill_missing_pw": true,
+        "do_defineMIbypres": false
+    }
+}
