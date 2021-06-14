@@ -5,7 +5,6 @@ import pandas as pd
 import json
 import scipy.stats as sps
 from netCDF4 import Dataset
-import json
 
 sys.path.insert(0, './functions')
 from getSettings import *
