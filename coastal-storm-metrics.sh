@@ -1,5 +1,7 @@
 #!/bin/bash
 # This is the driver script for running CyMeP via cmec-driver
+source $CONDA_SOURCE
+conda activate $CONDA_ENV_ROOT/_CMEC_cymep
 
 echo "Running Cyclone Metrics Package"
 cymep_log=${CMEC_WK_DIR}/CyMeP.log.txt
