@@ -512,6 +512,8 @@ if cmec_driver:
 # Write out primary stats files
 csv_base = os.path.splitext(csvfilename)[0]+'_'+strbasin
 
+# desc is for cmec-driver 'output.json' metadata file:
+# desc = [short_name, long_name, description]
 fname = 'metrics_'+csv_base+'_spatial_corr'
 desc = ['spatial_corr','spatial correlation','Statistics for spatial correlation table']
 write_single_csv(rxydict,strs,wkdir,fname,desc,cmec_driver)

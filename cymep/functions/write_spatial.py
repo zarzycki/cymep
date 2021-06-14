@@ -132,7 +132,7 @@ def create_output_json(wkdir,modeldir):
   with open(outfilepath,"w") as outfilename:
     json.dump(out_json, outfilename, indent=2)
 
-def write_spatial_netcdf(spatialdict,permondict,peryrdict,taydict,modelsin,nyears,nmonths,latin,lonin,globaldict,wkdir,cmec=False):
+def write_spatial_netcdf(spatialdict,permondict,peryrdict,taydict,modelsin,nyears,nmonths,latin,lonin,globaldict,wkdir='.',cmec=False):
 
   # Convert modelsin from pandas to list
   modelsin=modelsin.tolist()
@@ -410,9 +410,9 @@ def write_dict_csv(vardict,modelsin):
     np.savetxt(csvfilename, tmp, delimiter=",", fmt="%s")
 
 
-def write_single_csv(vardict,modelsin,wkdir,csvname,desc,cmec=False):
+def write_single_csv(vardict,modelsin,wkdir,csvname,desc='',cmec=False):
   """Write metrics to csv file. If cmec=True, also write metrics to JSON.
-  desc is a 3-part list of strings containing 1) unique identifier,
+  The variable 'desc' is a 3-part list of strings containing 1) unique identifier,
   2) longname 3) description."""
 
   # create variable array
