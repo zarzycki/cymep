@@ -15,7 +15,6 @@ import os
 from string import Template
 import sys
 import numpy as np
-import xarray as xr
 
 def define_figures():
   """Store descriptions and longnames of the CyMeP output figures,
@@ -104,6 +103,28 @@ def define_figures():
     }
   }
   return figure_description
+
+def html_template():
+  html_template = [
+    "<html>",
+    "<body>",
+    "<head><title>CyMeP Results</title></head>",
+    "<br><h1>CyMeP metrics and figures</h1>",
+    "<p>The Cyclone Metrics Package provides a comprehensive set of ",
+    "metrics for comparing tropical cyclones in gridded climate data.</p>"
+    "<p>Reference: Zarzycki, C. M., Ullrich, P. A., and Reed, K. A. (2021). "
+    "Metrics for evaluating tropical cyclones in climate data. "
+    "Journal of Applied Meteorology and Climatology. "
+    "doi: 10.1175/JAMC-D-20-0149.1.</p>"
+    "<br><h2>Metrics files</h2>",
+    "<br><a href='json/$json_metric'>$json_metric</a>",
+    "<br>",
+    "<br><h2>Plots</h2>",
+    "<br><h3>$title</h3>",
+    "<p><a href='fig/$folder/$plot' target='_blank' alt=$plot>$plot</a></p>",
+    "</body>",
+    "</html>"]
+  return html_template
 
 def populate_filename(data_dict, filename):
   """Combine filename and description info for output.json."""
@@ -218,9 +239,7 @@ if __name__ == "__main__":
   html_list["fig"]["spatial"] = new_spatial_list
 
   # Generate html page from template
-  html_dir = os.path.join(codedir,"cymep/functions/output_templates/html_template.txt")
-  with open(html_dir, "r") as html_template:
-    html_lines = html_template.readlines()
+  html_lines = html_template()
 
   # Add links to all the output images
   html_lines = populate_html_figures(html_lines, html_list["fig"])
