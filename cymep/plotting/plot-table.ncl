@@ -283,6 +283,7 @@ end if
     ;cmap = read_colormap_file("hotcold_18lev")
     cmap = read_colormap_file("./plotting/colormaps/seaborn_bluetored2.rgb")
   else
+    ; note, used "MPL_RdYlBu" in metrics paper -- explore color-blind friendly maps?
     if (invert_stoplight) then
       cmap = read_colormap_file("./plotting/colormaps/excel_greentored.rgb")
     else
@@ -406,6 +407,14 @@ end if
         percentage = (thisVal - minVal) / denom
         percentage = max((/0.,percentage/))
         percentage = min((/1.,percentage/))
+        
+        ; this block of code allows for the normalization to be "compressed"
+        ; e.g., if you have a deep blue and deep red at opposite ends of your map
+        ; and want the scaling to only go 65% into each color range
+        ;percentage = percentage - 0.5
+        ;percentage = percentage * 0.65
+        ;percentage = percentage + 0.5
+        
         ;if (ii .eq. 1) then
         ;  FillColors(zz,ii) = floor(ncolors*(1.-percentage))+2
         ;else

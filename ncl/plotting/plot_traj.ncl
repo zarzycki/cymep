@@ -10,7 +10,7 @@ load "../functions/mask_tc.ncl"
 begin
 
 output_type="pdf"
-basin="tropics"
+basin="conus"
 cutatTS=True
 factor = 1.0
 
@@ -19,8 +19,8 @@ basinfilt = 1
 maskspacing=1.0
 tcMask = mask_tc_allbasin(0,-999,-999,maskspacing,360)
 
-thedir="../trajs/"
-thefile="ERA5_TC_tracks_hightopo.txt"
+thedir="../../cymep/trajs/"
+thefile="wrfout_d01_tracks.txt"
 ncols = -1                    ; assign number of columns
 maxLines = -1
 headerDelimStr = "start"
@@ -28,14 +28,17 @@ delimStr="tab"
 isHeader=False
 traj_data = getTrajectoriesGeneric(thedir+"/"+thefile,ncols,maxLines,headerDelimStr,delimStr,False,isHeader)
 
+trajdims = dimsizes(traj_data)
+ncols = trajdims(1)
+
 lon = traj_data(:,2,:)
 lat = traj_data(:,3,:)
 wind = traj_data(:,5,:)*factor
-pres = traj_data(:,4,:)/100.
-yyyy=  traj_data(:,7,:)
-mm= traj_data(:,8,:)
-dd= traj_data(:,9,:)
-hh= traj_data(:,10,:)
+pres = traj_data(:,4,:)
+yyyy=  traj_data(:,ncols-4,:)
+mm= traj_data(:,ncols-3,:)
+dd= traj_data(:,ncols-2,:)
+hh= traj_data(:,ncols-1,:)
 
 print("mean lat: "+avg(lat))
 
@@ -112,6 +115,12 @@ if (basin .eq. "refine")
   res@mpMinLonF             = 90
   res@mpMaxLonF             = 359
 end if
+if (basin .eq. "conus")
+  res@mpMinLatF             = 20
+  res@mpMaxLatF             = 50
+  res@mpMinLonF             = 235
+  res@mpMaxLonF             = 295
+end if
 if (basin .eq. "tropics")
   res@mpMinLatF             = -65
   res@mpMaxLatF             = 65
@@ -131,7 +140,7 @@ text = new((/nstorms/),graphic)
 
 SSthresh_wind = (/17.,33.,43.,49.,58./)
 
-color_pw=False
+color_pw=True
 if (color_pw) then
   ; NOTE, these are negative pressures
   SSthresh_wind := ((SSthresh_wind/4.4/0.514444)^(1/0.76) - 1010)
@@ -199,7 +208,7 @@ if (.not.ismissing(thisWind))
   end if
   end if
 
-print(thisWind+""+lineres@gsLineColor)
+;print(thisWind+""+lineres@gsLineColor)
 
   
   if (j .ne. 0) then
@@ -298,9 +307,13 @@ amres@amOrthogonalPosF = -0.305            ; move the legend down
 else if (basin .eq. "refine") then
 amres@amParallelPosF   = -0.46
 amres@amOrthogonalPosF = -0.18
+else if (basin .eq. "conus") then
+amres@amParallelPosF   = -0.46
+amres@amOrthogonalPosF = -0.18
 else
 amres@amParallelPosF   = -0.30		    ; move legend to the right .37 formerly
 amres@amOrthogonalPosF = .27             ; move the legend down
+end if
 end if
 end if
 end if
