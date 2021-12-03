@@ -151,7 +151,7 @@ An alternative workflow is available with [cmec-driver](https://github.com/cmecm
     - For testing, copy `cymep/trajs/*` to `cmec-driver/model`
 6. Create configuration csv in cmec-driver/model.
     - For testing, copy `cymep/config-lists/rean_configs.csv` to `cmec-driver/model/rean_configs.csv`.
-7. Edit user settings in cmec-driver/config/cmec.json.
+7. Edit user settings in ~/.cmec/cmec.json.
     - For testing, use the default settings.
 8. Run CyMeP module from the cmec-driver directory:
 `cmec-driver run model/ output/ CyMeP`
