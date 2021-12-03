@@ -136,22 +136,23 @@ This will produce a suite of figures in various subfolders within `./fig/`.
 
 ### Run with CMEC driver
 
-An alternative workflow is available with [cmec-driver](https://github.com/cmecmetrics/cmec-driver) and conda. The workflow is:
-1. Clone the coastal-storm-metrics repo.
-2. Use conda to dependencies in an environment called "_CMEC_cymep". This can be done using the provided yml file:   
+An alternative workflow is available with [cmec-driver](https://github.com/cmecmetrics/cmec-driver) and conda. This workflow uses conda to manage python environments. Follow the cmec-driver [installation instructions](https://github.com/cmecmetrics/cmec-driver#cmec-driver) to install cmec-driver in a conda environment. Then use the following workflow:
+1. Clone the coastal-storm-metrics repository.
+2. Use conda to install dependencies in an environment called "_CMEC_cymep". This can be done using the provided yml file:   
 `conda env create --file cymep.yml`
-3. From the `cmec-driver` directory, register CyMeP in the cmec library:
-`python cmec-driver.py register <path to CyMeP repository>`  
+3. Register CyMeP in the cmec library:
+`cmec-driver register <path to coastal-storm-metrics repo>`  
     - If you have not run cmec-driver before, you must also register your conda installation information:
-    `python cmec-driver.py setup -conda_source <conda source executable> -env_dir <conda env location>`  
+    `cmec-driver setup --conda_source <conda source executable> --env_dir <conda env location>`  
     For a standard anaconda or miniconda installation, this might look like:  
-    `python cmec-driver.py setup -conda_source ~/miniconda3/etc/profile.d/conda.sh -env_dir ~/miniconda3/envs/`  
-4. Add TempestExtremes ASCII trajectories to `cmec-driver/model`.
+    `cmec-driver setup --conda_source ~/miniconda3/etc/profile.d/conda.sh --env_dir ~/miniconda3/envs/`  
+4. Create a "cmec-driver" folder *outside* of the coastal-storm-metrics repo. In the cmec-driver folder, create two subfolders: "model" and "output".
+5. Add TempestExtremes ASCII trajectories to `cmec-driver/model`.
     - For testing, copy `cymep/trajs/*` to `cmec-driver/model`
-5. Create configuration csv in cmec-driver/model.
-    - For testing, copy `cymep/config-lists/rean_configs.csv` to `cmec-driver/model`.
-6. Edit user settings in cmec-driver/config/cmec.json.
+6. Create configuration csv in cmec-driver/model.
+    - For testing, copy `cymep/config-lists/rean_configs.csv` to `cmec-driver/model/rean_configs.csv`.
+7. Edit user settings in cmec-driver/config/cmec.json.
     - For testing, use the default settings.
-7. Run CyMeP module from cmec-driver:
-`python cmec-driver.py run model/ output/ CyMeP`
-8. Open `/output/CyMeP/index.html` to view results.
+8. Run CyMeP module from the cmec-driver directory:
+`cmec-driver run model/ output/ CyMeP`
+9. Open `/output/CyMeP/index.html` to view results.
