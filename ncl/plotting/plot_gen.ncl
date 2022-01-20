@@ -9,36 +9,38 @@ load "../functions/mask_tc.ncl"
 ;========================================================
 begin
 
-output_type="png"
-basin="conus"
+output_type="x11"
+basin="tropics"
 cutatTS=True
 factor = 1.0
 
 pres_thresh=950.
-basinfilt = 1
+basinfilt = -1
 maskspacing=1.0
 tcMask = mask_tc_allbasin(0,-999,-999,maskspacing,360)
 
-thedir="../../convert-traj/"
-thefile="test.txt"
+thedir="./"
+thefile="HR-E3SM.TEv2settings.tracks.txt"
 ncols = -1                    ; assign number of columns
 maxLines = -1
 headerDelimStr = "start"
 delimStr="tab"
 isHeader=False
-traj_data = getTrajectoriesGeneric(thedir+"/"+thefile,ncols,maxLines,headerDelimStr,delimStr,False,isHeader)
+traj_data = getTrajectoriesGeneric(thedir+"/"+thefile,ncols,maxLines,headerDelimStr,delimStr,True,isHeader)
 
 trajdims = dimsizes(traj_data)
 ncols = trajdims(1)
 
 lon = traj_data(:,2,:)
 lat = traj_data(:,3,:)
-wind = traj_data(:,5,:)
+wind = traj_data(:,5,:)*factor
 pres = traj_data(:,4,:)/100.
 yyyy=  traj_data(:,ncols-4,:)
 mm= traj_data(:,ncols-3,:)
 dd= traj_data(:,ncols-2,:)
 hh= traj_data(:,ncols-1,:)
+
+print(pres)
 
 print("mean lat: "+avg(lat))
 
@@ -77,6 +79,11 @@ if (1 .eq. 0) then
   end do
 end if
 
+
+lat_o = lat(:,0)
+lon_o = lon(:,0) 
+pres_m = dim_min_n_Wrap(pres,1)
+wind_m = dim_max_n_Wrap(wind,1)
 
 
 ;--------------------------------------------------------
@@ -132,9 +139,10 @@ map = gsn_csm_map_ce(wks,res)
 gsn_define_colormap(wks,"rainbow+white+gray")
   polyres               = True          ; poly marker mods desired 
   polyres@gsMarkerIndex = 1            ; choose circle as polymarker
+  polyres@gsMarkerSizeF = 0.04
   lineres = True
   
-dum = new((/nstorms,ntimes/),graphic)
+dum = new((/nstorms/),graphic)
 text = new((/nstorms/),graphic)
 
 
@@ -155,27 +163,25 @@ else if (basin .eq. "tropics") then
 else if (basin .eq. "refine") then
   linethicknesses = (/0.1,0.25,0.9,1.3,1.6,2.2/)
 else
-  linethicknesses = (/0.5,0.8,1.3,1.9,2.3,2.6/)
+  linethicknesses = (/0.5,1.0,1.3,1.9,2.3,2.6/)
 end if
 end if
 end if
-linethicknesses = 6.0*linethicknesses
+linethicknesses = 3.0*linethicknesses
 
 print(SSthresh_wind)
 
 ;nstorms=10
 do i = 0,nstorms-1
 print("storm: "+i)
-do j = 0,ntimes-1
 
 if (color_pw) then
-  thisWind=-pres(i,j)
+  thisWind=-pres_m(i)
 else
-  thisWind=wind(i,j)
+  thisWind=wind_m(i)
 end if
 
 if (.not.ismissing(thisWind))
-
 
 ;  polyres@gsMarkerSizeF = 2.0           ; select size to avoid streaking
   if (thisWind .lt. SSthresh_wind(0))
@@ -210,11 +216,10 @@ if (.not.ismissing(thisWind))
 
 ;print(thisWind+""+lineres@gsLineColor)
 
-  if (j .ne. 0) then
+  
     if(thisWind .ge. SSthresh_wind(0) .and. cutatTS) then
-      dum(i,j) = gsn_add_polyline(wks,map,(/lon(i,j),lon(i,j-1)/),(/lat(i,j),lat(i,j-1)/),lineres)
+      dum(i) = gsn_add_polymarker(wks,map,lon_o(i),lat_o(i),polyres)
     end if
-  end if
 
 ;  if (j .eq. 0) then
 ;    str=tostring(toint(mm(i,j)))+tostring(toint(dd(i,j)))
@@ -227,7 +232,6 @@ if (.not.ismissing(thisWind))
 
 end if
 
-end do
 end do
 
 
