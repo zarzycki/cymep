@@ -9,13 +9,39 @@ out_type = "pdf"
 prescut = 99999.0   ; only storms with pres LOWER than this are included. set to 99999.0 for all storms
 basin=-1    ; if basin is negative, do global search. if basin = scalar, single basin. if basin = (/1,2,3,4/) then NHs
 SEARCHRADIUS=2.0
-file_A="trajs/ibtracs-1980-2019-GLOB.v4.txt"
-file_B="trajs/hiresmip/trajectories.txt.TC-ALL_TempExt_ERA5_Reanalysis_r1i1p1f1_gr_19790101-20181231.nc"
+file_A="../cymep/trajs/ibtracs-1980-2019-GLOB.v4.txt"
+file_B="../cymep/trajs/trajectories.txt.ERA5"
 styr=1980
 enyr=2018
-print_hr=False        ; should diagnostics be framed as hits/false alarms (True) or just matches (False)?
+print_hr=True        ; should diagnostics be framed as hits/false alarms (True) or just matches (False)?
 do_old_method=False   ; also do point-by-point method as in Zarzycki and Ullrich 2017
+output_type="pdf"
+plot_misses=1 ; 0 = all TD/TS+, 1 = named TS, 2 = hurricanes, 3 = major hurricanes, negative means don't
 
+reg_filter=False
+minlat=0.
+maxlat=70.
+minlon=250.
+maxlon=310.
+
+;out_type = "pdf"
+;prescut = 99999.0   ; only storms with pres LOWER than this are included. set to 99999.0 for all storms
+;basin=1    ; if basin is negative, do global search. if basin = scalar, single basin. if basin = (/1,2,3,4/) then NHs
+;SEARCHRADIUS=2.0
+;file_A="../cymep/trajs/ibtracs-1979-2020-GLOB.v4.txt"
+;file_B="../cymep/trajs/trajectories.txt.WRF"
+;styr=1979
+;enyr=2020
+;print_hr=True        ; should diagnostics be framed as hits/false alarms (True) or just matches (False)?
+;do_old_method=False   ; also do point-by-point method as in Zarzycki and Ullrich 2017
+;output_type="pdf"
+;plot_misses=1  ; 0 = all TD/TS+, 1 = named TS, 2 = hurricanes, 3 = major hurricanes, negative means don't
+;
+;reg_filter=True
+;minlat=25.
+;maxlat=46.
+;minlon=260.
+;maxlon=289.
 ;======================= Constants ================================
 
 ms_to_kts = 1.94384449
@@ -54,10 +80,10 @@ xlon  = traj_data(:,2,:)
 xlat  = traj_data(:,3,:)
 xpres  = tofloat(traj_data(:,4,:))/100.
 xwind  = traj_data(:,5,:)*1.0
-xyear  = toint(traj_data(:,7,:))
-xmonth  = toint(traj_data(:,8,:))
-xday  = toint(traj_data(:,9,:))
-xhour  = toint(traj_data(:,10,:))
+xyear  = toint(traj_data(:,toint(traj_data@ncol)-4,:))
+xmonth  = toint(traj_data(:,toint(traj_data@ncol)-3,:))
+xday  = toint(traj_data(:,toint(traj_data@ncol)-2,:))
+xhour  = toint(traj_data(:,toint(traj_data@ncol)-1,:))
 timeunits="days since 1900-01-01 00:00"
 xzero=xhour
 xzero=0
@@ -80,10 +106,12 @@ ylon  = traj_data(:,2,:)
 ylat  = traj_data(:,3,:)
 ypres  = tofloat(traj_data(:,4,:))/100.
 ywind  = traj_data(:,5,:)*1.0
-yyear  = toint(traj_data(:,7,:))
-ymonth  = toint(traj_data(:,8,:))
-yday  = toint(traj_data(:,9,:))
-yhour  = toint(traj_data(:,10,:))
+yyear  = toint(traj_data(:,toint(traj_data@ncol)-4,:))
+ymonth  = toint(traj_data(:,toint(traj_data@ncol)-3,:))
+yday  = toint(traj_data(:,toint(traj_data@ncol)-2,:))
+yhour  = toint(traj_data(:,toint(traj_data@ncol)-1,:))
+
+ylon = where(ylon .lt. 0.0,ylon+360.,ylon)
 
 ; CMZ -- CPS modify
 ;ylon  = traj_data(:,0,:)
@@ -181,6 +209,64 @@ print(num(.not.ismissing(tracktime)))
 print(stDateIBUnits+" "+enDateIBUnits)
 tracktime=where(tracktime .ge. stDateIBUnits .and. tracktime .le. enDateIBUnits,tracktime,tracktime@_FillValue)
 onedtime=where(onedtime .ge. stDateIBUnits .and. onedtime .le. enDateIBUnits,onedtime,onedtime@_FillValue)
+
+if (reg_filter) then
+  print("doing regional RLL filter!")
+
+
+  print("lat: "+minlat+" "+maxlat)
+  print("lon: "+minlon+" "+maxlon)
+  xmask  = xlon
+  xmask  = where(xlat .ge. tofloat(minlat) .and. xlat .le. tofloat(maxlat) .and. xlon .ge. tofloat(minlon) .and. xlon .le. tofloat(maxlon), xmask, xmask@_FillValue)
+
+  xlat   = where(.not.ismissing(xmask), xlat,   xlat@_FillValue)
+  xlon   = where(.not.ismissing(xmask), xlon,   xlon@_FillValue)
+  xpres  = where(.not.ismissing(xmask), xpres,  xpres@_FillValue)
+  xwind  = where(.not.ismissing(xmask), xwind,  xwind@_FillValue)
+  ;xyear  = where(.not.ismissing(xmask), xyear,  xyear@_FillValue)
+  ;xmonth = where(.not.ismissing(xmask), xmonth, xmonth@_FillValue)
+
+  ymask  = ylon
+  ymask  = where(ylat .ge. tofloat(minlat) .and. ylat .le. tofloat(maxlat) .and. ylon .ge. tofloat(minlon) .and. ylon .le. tofloat(maxlon), ymask, ymask@_FillValue)
+
+  ylat   = where(.not.ismissing(ymask), ylat,   ylat@_FillValue)
+  ylon   = where(.not.ismissing(ymask), ylon,   ylon@_FillValue)
+  ypres  = where(.not.ismissing(ymask), ypres,  ypres@_FillValue)
+  ywind  = where(.not.ismissing(ymask), ywind,  ywind@_FillValue)
+  ;yyear  = where(.not.ismissing(ymask), yyear,  yyear@_FillValue)
+  ;ymonth = where(.not.ismissing(ymask), ymonth, ymonth@_FillValue)
+
+  
+  
+/;
+  
+
+xmask  = xlon
+xmask  = where(xlat .gt. 0 .and. xlon .gt. 250. .and. xlon .lt. 355., xmask, xmask@_FillValue)
+
+xlat   = where(.not.ismissing(xmask), xlat,   xlat@_FillValue)
+xlon   = where(.not.ismissing(xmask), xlon,   xlon@_FillValue)
+xpres  = where(.not.ismissing(xmask), xpres,  xpres@_FillValue)
+xwind  = where(.not.ismissing(xmask), xwind,  xwind@_FillValue)
+;xyear  = where(.not.ismissing(xmask), xyear,  xyear@_FillValue)
+;xmonth = where(.not.ismissing(xmask), xmonth, xmonth@_FillValue)
+
+ymask  = ylon
+ymask  = where(ylat .gt. 0 .and. ylon .gt. 250. .and. ylon .lt. 355., ymask, ymask@_FillValue)
+
+ylat   = where(.not.ismissing(ymask), ylat,   ylat@_FillValue)
+ylon   = where(.not.ismissing(ymask), ylon,   ylon@_FillValue)
+ypres  = where(.not.ismissing(ymask), ypres,  ypres@_FillValue)
+ywind  = where(.not.ismissing(ymask), ywind,  ywind@_FillValue)
+;yyear  = where(.not.ismissing(ymask), yyear,  yyear@_FillValue)
+;ymonth = where(.not.ismissing(ymask), ymonth, ymonth@_FillValue)
+
+;/
+
+
+end if
+
+
 
 ; date points after filter
 print(num(.not.ismissing(onedtime)))
@@ -301,7 +387,6 @@ xmwind=where(ismissing(xmwind),-999.,xmwind)
 xgyear=xyear(:,0)
 analyzeObsStorm=where(xgyear.ge.styr .and. xgyear.le.enyr, analyzeObsStorm, False)
 
-
 ; HIT RATE
 wcStrtHR = systemfunc(date_cmd)
 
@@ -361,6 +446,12 @@ do cc = 0,dimsizes(windHRlevs)-1
   ;end do
   numhits(cc)=tofloat(num(xhitRateArray.eq.True))
   nummisses(cc)=tofloat(num(xhitRateArray.eq.False))
+  if (plot_misses .ge. 0) then
+    if (cc .eq. plot_misses) then
+      ; We will save the 0 cut for posterity (i.e., this is ALL the misses!)
+      xhitRateArrayAll = xhitRateArray
+    end if
+  end if
 end do
 
 if (print_hr) then
@@ -396,9 +487,11 @@ ygyear=where(ismissing(ygyear),-999,ygyear)
 analyzeTrackedStorm=where(ygyear.ge.styr .and. ygyear.le.enyr, analyzeTrackedStorm, False)
 
 
+
 yFalseAlarmArray = new(ynstorms,"logical")
 do ii = 0,ynstorms-1
   if (analyzeTrackedStorm(ii)) then
+  if (.not.all(ismissing(ylon(ii,:))))
     isFA=True
     do jj = 0,yntimes-1
       ; if still flagged as potential FA and a valid ytime exists, keep looping
@@ -432,6 +525,7 @@ do ii = 0,ynstorms-1
     end do
     yFalseAlarmArray(ii) = isFA
   end if
+  end if
 end do
 
 numalarms=tofloat(num(yFalseAlarmArray.eq.True))
@@ -444,7 +538,6 @@ end if
 
 wallClockElapseTime(wcStrtFA, "Storm false alarm", 0)
 
-;HR = numhits / (numhits + nummisses)
 HR = nummatches / (nummatches + nummisses)
 print("HR "+HR)
 FARS = numalarms/(numalarms+nummatches)
@@ -455,6 +548,7 @@ print("CSI "+CSI)
 ;--------------------------------------------------------
 
 quote = inttochar(34)
+system("mkdir -p ./csv-files")
 CSVOUTFILE="./csv-files/rates.txt"
 do h = 0,dimsizes(HR)-1
   if (h .eq. 0) then
@@ -476,13 +570,14 @@ plotstride=1
 ;--------------------------------------------------------
 print("Beginning plot sequence")
 wcStrtPlot = systemfunc(date_cmd)
-wks  = gsn_open_wks("png","fig/hr/hr_traj")
+system("mkdir -p ./fig/hr")
+wks  = gsn_open_wks(output_type,"fig/hr/hr_traj")
 map = new(1,graphic)
   
 res  = True
 ;res@gsnDraw    = False
 res@gsnFrame   = False
-res@gsnMaximize = True
+;res@gsnMaximize = True
 res@mpFillOn             = True              ; turn off gray continents
 res@mpLandFillColor = "Tan"
 res@mpOceanFillColor = "LightBlue1"
@@ -490,39 +585,49 @@ res@mpOutlineOn = True
 res@mpInlandWaterFillColor = res@mpOceanFillColor
 res@mpGreatCircleLinesOn = True
  
-if (plotbasin .eq. "atlantic")  
-  res@mpMinLatF             = 5
-  res@mpMaxLatF             = 45
-  res@mpMinLonF             = 260
-  res@mpMaxLonF             = 355
-end if
-if (plotbasin .eq. "wpac")  
-  res@mpMinLatF             = 5
-  res@mpMaxLatF             = 45
-  res@mpMinLonF             = 115
-  res@mpMaxLonF             = 180
-end if
-if (plotbasin .eq. "refine")
-  res@mpMinLatF             = 3
-  res@mpMaxLatF             = 60
-  res@mpMinLonF             = 90
-  res@mpMaxLonF             = 359
-end if
-if (plotbasin .eq. "tropics")
-  res@mpMinLatF             = -65
-  res@mpMaxLatF             = 65
-  res@mpCenterLonF = 200.
+gsn_define_colormap(wks,"rainbow+white+gray")
+polyres               = True          ; poly marker mods desired 
+polyres@gsMarkerIndex = 1            ; choose circle as polymarker
+lineres = True
+
+linethicknesses = (/0.1,0.25,0.9,1.3,1.6,2.2/)
+;linethicknesses = 4.0*linethicknesses
+
+if (reg_filter) then
+  bufferdeg = 5.
+  res@mpMinLatF             = tofloat(minlat) - bufferdeg
+  res@mpMaxLatF             = tofloat(maxlat) + bufferdeg
+  res@mpMinLonF             = tofloat(minlon) - bufferdeg
+  res@mpMaxLonF             = tofloat(maxlon) + bufferdeg
+  res@mpCenterLonF = (res@mpMinLonF + res@mpMaxLonF) / 2.
+  linethicknesses = 10.0*linethicknesses
+else
+  if (plotbasin .eq. "atlantic")  
+    res@mpMinLatF             = 5
+    res@mpMaxLatF             = 45
+    res@mpMinLonF             = 260
+    res@mpMaxLonF             = 355
+  end if
+  if (plotbasin .eq. "wpac")  
+    res@mpMinLatF             = 5
+    res@mpMaxLatF             = 45
+    res@mpMinLonF             = 115
+    res@mpMaxLonF             = 180
+  end if
+  if (plotbasin .eq. "refine")
+    res@mpMinLatF             = 3
+    res@mpMaxLatF             = 60
+    res@mpMinLonF             = 90
+    res@mpMaxLonF             = 359
+  end if
+  if (plotbasin .eq. "tropics")
+    res@mpMinLatF             = -65
+    res@mpMaxLatF             = 65
+    res@mpCenterLonF = 200.
+  end if
 end if
  
 map = gsn_csm_map_ce(wks,res)
-
-gsn_define_colormap(wks,"rainbow+white+gray")
-  polyres               = True          ; poly marker mods desired 
-  polyres@gsMarkerIndex = 1            ; choose circle as polymarker
-  lineres = True
-
-linethicknesses = (/0.1,0.25,0.9,1.3,1.6,2.2/)
-linethicknesses = 4.0*linethicknesses
 
 dum = new((/ynstorms,yntimes/),graphic)
 text = new((/ynstorms/),graphic)
@@ -532,6 +637,7 @@ lineres@gsLineThicknessF = linethicknesses(1)
 linecolors=new(ynstorms,"string")
 linecolors=where(yFalseAlarmArray .eq. True,"blue","red")
 
+print("Plotting hits and false alarms")
 do i = 0,ynstorms-1
   ;print("Doing "+i+" of "+(ynstorms-1))
   if .not.ismissing(yFalseAlarmArray(i)) then
@@ -540,9 +646,34 @@ do i = 0,ynstorms-1
     ; slow? but allows for plot resizing, panels, etc.
     ;dum(i,:) = gsn_add_polyline(wks,map,ylon(i,igood),ylat(i,igood),lineres)
     ; fast, but cannot delay draw
-    gsn_polyline(wks,map,ylon(i,igood),ylat(i,igood),lineres)
+    if (.not. all(ismissing(igood))) then
+      gsn_polyline(wks,map,ylon(i,igood),ylat(i,igood),lineres)
+    end if
   end if
 end do
+
+; if we have defined plot_misses to be a positive integer, we will also plot
+; the *missed* storm tracks for that intensity class
+if (plot_misses .ge. 0) then
+  print("Also plotting misses with setting: "+plot_misses)
+  do i = 0,xnstorms-1
+    ;print("Doing "+i+" of "+(ynstorms-1))
+    if (.not.ismissing(xhitRateArrayAll(i))) then
+      if (xhitRateArrayAll(i) .eq. False) then
+        lineres@gsLineColor="green3"
+        igood := ind(.not.ismissing(xlon(i,:)))
+        ; slow? but allows for plot resizing, panels, etc.
+        ;dum(i,:) = gsn_add_polyline(wks,map,ylon(i,igood),ylat(i,igood),lineres)
+        ; fast, but cannot delay draw
+        if (.not. all(ismissing(igood))) then
+          ;print(xlon(i,igood)+" "+xlat(i,igood))
+          gsn_polyline(wks,map,xlon(i,igood),xlat(i,igood),lineres)
+        end if
+      end if
+    end if
+  end do
+end if
+
 
 frame(wks)
 
