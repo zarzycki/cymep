@@ -120,6 +120,10 @@ end do
 
 print("GETTRAJECTORIES: Done!")
 
+tdata@ncol=ncol
+tdata@nstorms=nstorms_tot
+tdata@ntimes=maxLines
+
 delete([/tdata_tmp,n1,n2,nstorms_tot,nstorm,nrows/])
 
 return(tdata)

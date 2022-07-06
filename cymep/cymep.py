@@ -17,11 +17,11 @@ from pattern_cor import *
 #----------------------------------------------------------------------------------------
 ##### User settings
 
-basin = 1
-csvfilename = 'rean_configs.csv'
+basin = 1     # -1 = global, 20 = NH, 21 = SH
+csvfilename = 'tau_configs.csv'
 gridsize = 8.0
-styr = 1980
-enyr = 2020
+styr = 1985
+enyr = 2006
 stmon = 1
 enmon = 12
 truncate_years = False
@@ -232,7 +232,10 @@ for ii in range(len(files)):
   # Mask TCs for particular basin based on genesis location
   if basin > 0:
     for kk, zz in enumerate(range(nstorms)):
-      test_basin = maskTC(xglat[kk],xglon[kk])
+      if basin == 20 or basin == 21:
+        test_basin = maskTC(xglat[kk],xglon[kk],dohemi=True)
+      else:
+        test_basin = maskTC(xglat[kk],xglon[kk])
       if test_basin != basin:
         xlon[kk,:]   = float('NaN')
         xlat[kk,:]   = float('NaN')
