@@ -37,7 +37,7 @@ start   31      1980    1       6       6
         482     303     120.500000      -14.250000      9.987638e+04    1.464815e+01    0.000000e+00    1980    1       6       6
         476     301     119.000000      -14.750000      9.981100e+04    1.398848e+01    0.000000e+00    1980    1       6       12
         476     300     119.000000      -15.000000      9.953694e+04    1.369575e+01    0.000000e+00    1980    1       6       18
-       
+
         ...
 ```
 
@@ -132,3 +132,27 @@ $> ./graphics-cymep.sh netcdf-files/netcdf_GLOB_rean_configs.nc
 ```
 
 This will produce a suite of figures in various subfolders within `./fig/`.
+
+
+### Run with CMEC driver
+
+An alternative workflow is available with [cmec-driver](https://github.com/cmecmetrics/cmec-driver) and conda. This workflow uses conda to manage python environments. Follow the cmec-driver [installation instructions](https://github.com/cmecmetrics/cmec-driver#cmec-driver) to install cmec-driver in a conda environment. Then use the following workflow:
+1. Clone the coastal-storm-metrics repository.
+2. Use conda to install dependencies in an environment called "_CMEC_cymep". This can be done using the provided yml file:   
+`conda env create --file cymep.yml`
+3. Register CyMeP in the cmec library:
+`cmec-driver register <path to coastal-storm-metrics repo>`  
+    - If you have not run cmec-driver before, you must also register your conda installation information:
+    `cmec-driver setup --conda_source <conda source executable> --env_dir <conda env location>`  
+    For a standard anaconda or miniconda installation, this might look like:  
+    `cmec-driver setup --conda_source ~/miniconda3/etc/profile.d/conda.sh --env_dir ~/miniconda3/envs/`  
+4. Create a "cmec-driver" folder *outside* of the coastal-storm-metrics repo. In the cmec-driver folder, create two subfolders: "model" and "output".
+5. Add TempestExtremes ASCII trajectories to `cmec-driver/model`.
+    - For testing, copy `cymep/trajs/*` to `cmec-driver/model`
+6. Create configuration csv in cmec-driver/model.
+    - For testing, copy `cymep/config-lists/rean_configs.csv` to `cmec-driver/model/rean_configs.csv`.
+7. Edit user settings in ~/.cmec/cmec.json.
+    - For testing, use the default settings.
+8. Run CyMeP module from the cmec-driver directory:
+`cmec-driver run model/ output/ CyMeP`
+9. Open `/output/CyMeP/index.html` to view results.

@@ -1,0 +1,10 @@
+name: _CMEC_cymep
+channels:
+  - conda-forge
+dependencies:
+  - ncl
+  - netCDF4
+  - numpy
+  - pandas
+  - python>=3.6
+  - scipy
