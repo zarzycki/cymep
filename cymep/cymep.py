@@ -15,11 +15,11 @@ from pattern_cor import *
 #----------------------------------------------------------------------------------------
 ##### User settings
 
-basin = 1     # -1 = global, 20 = NH, 21 = SH
-csvfilename = 'tau_configs.csv'
+basin = 6     # -1 = global, 20 = NH, 21 = SH
+csvfilename = 'highresmip_configs.csv'
 gridsize = 8.0
 styr = 1985
-enyr = 2006
+enyr = 2020
 stmon = 1
 enmon = 12
 truncate_years = False
@@ -61,28 +61,28 @@ pyvars = ['py_count','py_tcd','py_ace','py_pace','py_latgen','py_lmi']
 for x in pyvars:
   pydict[x] = np.empty((nfiles, nyears))
   pydict[x][:] = np.nan
-      
+
 # Init per month arrays
 pmdict = {}
 pmvars = ['pm_count','pm_tcd','pm_ace','pm_pace','pm_lmi']
 for x in pmvars:
   pmdict[x] = np.empty((nfiles, nmonths))
   pmdict[x][:] = np.nan
-  
+
 # Init per year arrays
 aydict = {}
 ayvars = ['uclim_count','uclim_tcd','uclim_ace','uclim_pace','uclim_lmi']
 for x in ayvars:
   aydict[x] = np.empty(nfiles)
   aydict[x][:] = np.nan
-  
+
 # Init per storm arrays
 asdict = {}
 asvars = ['utc_tcd','utc_ace','utc_pace','utc_latgen','utc_lmi']
 for x in asvars:
   asdict[x] = np.empty(nfiles)
   asdict[x][:] = np.nan
-  
+
 # Get basin string
 strbasin=getbasinmaskstr(basin)
 
@@ -99,9 +99,9 @@ for ii in range(len(files)):
   isUnstruc=isUnstructStr[ii]
   nVars=-1
   headerStr='start'
-  
+
   wind_factor = windcorrs[ii]
-  
+
   # Determine the number of model years available in our dataset
   if truncate_years:
     #print("Truncating years from "+yearspermember(zz)+" to "+nyears)
@@ -112,14 +112,14 @@ for ii in range(len(files)):
 
   # Extract trajectories from tempest file and assign to arrays
   # USER_MODIFY
-  nstorms, ntimes, traj_data = getTrajectories(trajfile,nVars,headerStr,isUnstruc)
+  nstorms, ntimes, ncol, traj_data = getTrajectories(trajfile,nVars,headerStr,isUnstruc)
   xlon   = traj_data[2,:,:]
   xlat   = traj_data[3,:,:]
   xpres  = traj_data[4,:,:]/100.
   xwind  = traj_data[5,:,:]*wind_factor
-  xyear  = traj_data[7,:,:]
-  xmonth = traj_data[8,:,:]
-  
+  xyear  = traj_data[ncol-4,:,:]
+  xmonth = traj_data[ncol-3,:,:]
+
   # Initialize nan'ed arrays specific to this traj file
   xglon      = np.empty(nstorms)
   xglat      = np.empty(nstorms)
@@ -133,7 +133,7 @@ for ii in range(len(files)):
   xgyear[:]  = np.nan
   xlatmi[:]  = np.nan
   xlonmi[:]  = np.nan
-  
+
   # Fill in missing values of pressure and wind
   if do_fill_missing_pw:
     aaa=2.3
@@ -156,7 +156,7 @@ for ii in range(len(files)):
     xpres    = np.where((xpres < 0.0),1008.,xpres)
     xwind    = np.where((xwind < 0.0),15.,xwind)
     print("Num fills for PW " + str(numfixes_1) + " " + str(numfixes_2) + " " + str(numfixes_3))
-    
+
   # Filter observational records
   # if "control" record and do_special_filter_obs = true, we can apply specific
   # criteria here to match objective tracks better
@@ -234,7 +234,7 @@ for ii in range(len(files)):
           maskoff = True
       if truncate_years:
         if oriyear < styr or oriyear > enyr:
-          maskoff = True   
+          maskoff = True
     if maskoff:
       xlon[kk,:]   = float('NaN')
       xlat[kk,:]   = float('NaN')
@@ -246,19 +246,19 @@ for ii in range(len(files)):
       xglat[kk]    = float('NaN')
       xgmonth[kk]  = float('NaN')
       xgyear[kk]   = float('NaN')
-          
+
   #########################################
-  
+
   # Calculate LMI
   for kk, zz in enumerate(range(nstorms)):
     if not np.isnan(xglat[kk]):
       if do_defineMIbypres:
         locMI=np.nanargmin(xpres[kk,:])
-      else:     
+      else:
         locMI=np.nanargmax(xwind[kk,:])
       xlatmi[kk]=xlat[kk,locMI]
-      xlonmi[kk]=xlon[kk,locMI]          
-      
+      xlonmi[kk]=xlon[kk,locMI]
+
   # Flip LMI sign in SH to report poleward values when averaging
   abs_lats=True
   if abs_lats:
@@ -280,12 +280,12 @@ for ii in range(len(files)):
   # Calculate storm-accumulated PACE
   calcPolyFitPACE=True
   xprestmp = xpres
-  
+
   # Threshold PACE if requested
   if THRESHOLD_PACE_PRES > 0:
     print("Thresholding PACE to only TCs < "+str(THRESHOLD_PACE_PRES)+" hPa")
     xprestmp = np.where(xprestmp > THRESHOLD_PACE_PRES,float('NaN'),xprestmp)
-    
+
   xprestmp = np.ma.array(xprestmp, mask=np.isnan(xprestmp))
   np.warnings.filterwarnings('ignore')
   if calcPolyFitPACE:
@@ -299,24 +299,25 @@ for ii in range(len(files)):
       print(quad_a)
     xwindtmp = quad_a[2] + quad_a[1]*(1010.-xpres) + quad_a[0]*((1010.-xpres)**2)
     xpacepp = 1.0e-4 * (ms_to_kts*xwindtmp)**2.0
+    print(xwindtmp," ",xwind," ",xpres)
   else:
     # Here, we apply a predetermined PW relationship from Holland
     xprestmp = np.ma.where(xprestmp < 1010.0, xprestmp, 1010.0)
     xpacepp = 1.0e-4 * (ms_to_kts*2.3*(1010.-xprestmp)**0.76)**2.
-  
+
   # Calculate PACE from xpacepp
   xpace   = np.nansum( xpacepp , axis = 1)
-    
+
   # Get maximum intensity and TCD
   xmpres = np.nanmin( xpres , axis=1 )
   xmwind = np.nanmax( xwind , axis=1 )
   xtcd   = np.nansum( xtcdpp, axis=1 )
-  
+
   # Need to get rid of storms with no TC, ACE or PACE
   xtcd   = np.where(xtcd  == 0,float('NaN'),xtcd)
   xace   = np.where(xace  == 0,float('NaN'),xace)
   xpace  = np.where(xpace == 0,float('NaN'),xpace)
-  
+
   # Bin storms per dataset per calendar month
   for jj in range(1, 12+1):
     pmdict['pm_count'][ii,jj-1]  = np.count_nonzero(xgmonth == jj) / nmodyears
@@ -335,7 +336,7 @@ for ii in range(len(files)):
       pydict['py_pace'][ii,yrix]   = np.nansum(  np.where(xgyear == jj,xpace,0.0) ) / ensmembers[ii]
       pydict['py_lmi'][ii,yrix]    = np.nanmean( np.where(xgyear == jj,xlatmi,float('NaN')) )
       pydict['py_latgen'][ii,yrix] = np.nanmean( np.where(xgyear == jj,np.absolute(xglat),float('NaN')) )
-      
+
   # Calculate control interannual standard deviations
   if ii == 0:
     stdydict={}
@@ -345,21 +346,21 @@ for ii in range(len(files)):
     stdydict['sdy_pace'] = np.nanstd(pydict['py_pace'][ii,:])
     stdydict['sdy_lmi'] = np.nanstd(pydict['py_lmi'][ii,:])
     stdydict['sdy_latgen'] = np.nanstd(pydict['py_latgen'][ii,:])
-  
-  # Calculate annual averages  
-  aydict['uclim_count'][ii]  = np.nansum(pmdict['pm_count'][ii,:])  
+
+  # Calculate annual averages
+  aydict['uclim_count'][ii]  = np.nansum(pmdict['pm_count'][ii,:])
   aydict['uclim_tcd'][ii]    = np.nansum(xtcd) / nmodyears
   aydict['uclim_ace'][ii]    = np.nansum(xace) / nmodyears
   aydict['uclim_pace'][ii]   = np.nansum(xpace) / nmodyears
   aydict['uclim_lmi'][ii]    = np.nanmean(pydict['py_lmi'][ii,:])
-  
-  # Calculate storm averages  
+
+  # Calculate storm averages
   asdict['utc_tcd'][ii]    = np.nanmean(xtcd)
   asdict['utc_ace'][ii]    = np.nanmean(xace)
   asdict['utc_pace'][ii]   = np.nanmean(xpace)
   asdict['utc_lmi'][ii]    = np.nanmean(xlatmi)
   asdict['utc_latgen'][ii] = np.nanmean(np.absolute(xglat))
-  
+
   # Calculate spatial densities, integrals, and min/maxes
   trackdens, denslat, denslon = track_density(gridsize,0.0,xlat.flatten(),xlon.flatten(),False)
   trackdens = trackdens/nmodyears
@@ -367,10 +368,10 @@ for ii in range(len(files)):
   gendens = gendens/nmodyears
   tcddens, denslat, denslon = track_mean(gridsize,0.0,xlat.flatten(),xlon.flatten(),xtcdpp.flatten(),False,0)
   tcddens = tcddens/nmodyears
-  acedens, denslat, denslon = track_mean(gridsize,0.0,xlat.flatten(),xlon.flatten(),xacepp.flatten(),False,0)  
-  acedens = acedens/nmodyears  
+  acedens, denslat, denslon = track_mean(gridsize,0.0,xlat.flatten(),xlon.flatten(),xacepp.flatten(),False,0)
+  acedens = acedens/nmodyears
   pacedens, denslat, denslon = track_mean(gridsize,0.0,xlat.flatten(),xlon.flatten(),xpacepp.flatten(),False,0)
-  pacedens = pacedens/nmodyears  
+  pacedens = pacedens/nmodyears
   minpres, denslat, denslon = track_minmax(gridsize,0.0,xlat.flatten(),xlon.flatten(),xpres.flatten(),"min",-1)
   maxwind, denslat, denslon = track_minmax(gridsize,0.0,xlat.flatten(),xlon.flatten(),xwind.flatten(),"max",-1)
 
@@ -393,7 +394,7 @@ for ii in range(len(files)):
     msvars = ['fulldens','fullpres','fullwind','fullgen','fullace','fullpace','fulltcd','fulltrackbias','fullgenbias','fullacebias','fullpacebias']
     for x in msvars:
       msdict[x] = np.empty((nfiles, denslat.size, denslon.size))
-          
+
   # Store this model's data in the master spatial array
   msdict['fulldens'][ii,:,:] = trackdens[:,:]
   msdict['fullgen'][ii,:,:]  = gendens[:,:]
@@ -406,10 +407,10 @@ for ii in range(len(files)):
   msdict['fullgenbias'][ii,:,:]   = gendens[:,:]   - msdict['fullgen'][0,:,:]
   msdict['fullacebias'][ii,:,:]   = acedens[:,:]   - msdict['fullace'][0,:,:]
   msdict['fullpacebias'][ii,:,:]  = pacedens[:,:]  - msdict['fullpace'][0,:,:]
-      
+
   print("-------------------------------------------------------------------------")
-  
-  
+
+
 ### Back to the main program
 
 #for zz in pydict:
@@ -417,7 +418,7 @@ for ii in range(len(files)):
 #  pydict[zz] = np.where( pydict[zz] <= 0.     , 0. , pydict[zz] )
 #  pydict[zz] = np.where( np.isnan(pydict[zz]) , 0. , pydict[zz] )
 #  pydict[zz] = np.where( np.isinf(pydict[zz]) , 0. , pydict[zz] )
-  
+
 # Spatial correlation calculations
 
 ## Initialize dict

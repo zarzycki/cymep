@@ -23,7 +23,7 @@ def getTrajectories(filename,nVars,headerDelimStr,isUnstruc):
       # if not a header line, and nVars = -1, find number of columns in data point
       if nVars < 0:
         nVars=len(line.split())
-  
+
   maxNumPts = max(numPts) # Maximum length of ANY trajectory
 
   print("Found %d columns" % nVars)
@@ -55,7 +55,7 @@ def getTrajectories(filename,nVars,headerDelimStr,isUnstruc):
       lineOfTraj += 1   # increment line
 
   print("... done reading data")
-  return numtraj, maxNumPts, prodata
+  return numtraj, maxNumPts, nVars, prodata
 
 
 
@@ -80,7 +80,7 @@ def getNodes(filename,nVars,isUnstruc):
       # if not a header line, and nVars = -1, find number of columns in data point
       if nVars < 0:
         nVars=len(line.split())
-  
+
   maxNumPts = max(numPts) # Maximum length of ANY trajectory
 
   print("Found %d columns" % nVars)
