@@ -10,17 +10,17 @@ load "../functions/mask_tc.ncl"
 begin
 
 output_type="x11"
-basin="tropics"
+basin="atlantic"
 cutatTS=True
 factor = 1.0
 
 pres_thresh=950.
-basinfilt = -1
+basinfilt = 1
 maskspacing=1.0
 tcMask = mask_tc_allbasin(0,-999,-999,maskspacing,360)
 
-thedir="./"
-thefile="HR-E3SM.TEv2settings.tracks.txt"
+thedir="/Users/cmz5202/Software/cymep/cymep/trajs/"
+thefile="cat_trajs.txt"
 ncols = -1                    ; assign number of columns
 maxLines = -1
 headerDelimStr = "start"
@@ -40,7 +40,8 @@ mm= traj_data(:,ncols-3,:)
 dd= traj_data(:,ncols-2,:)
 hh= traj_data(:,ncols-1,:)
 
-print(pres)
+wind = where(wind.lt.0,wind@_FillValue,wind)
+pres = where(pres.lt.0,pres@_FillValue,pres)
 
 print("mean lat: "+avg(lat))
 
@@ -58,7 +59,7 @@ if (1 .eq. 0) then
   end do
 end if
 
-if (1 .eq. 0) then
+if (0 .eq. 0) then
   do ii = 0,nstorms-1
     orilat=lat(ii,0)
     orilon=min((/lon(ii,0),359.0/))
@@ -85,7 +86,7 @@ lon_o = lon(:,0)
 pres_m = dim_min_n_Wrap(pres,1)
 wind_m = dim_max_n_Wrap(wind,1)
 
-
+dot_counter = 0
 ;--------------------------------------------------------
 print("Beginning plot sequence")
 ;wks_type@wkWidth = 2500
@@ -218,6 +219,7 @@ if (.not.ismissing(thisWind))
 
   
     if(thisWind .ge. SSthresh_wind(0) .and. cutatTS) then
+      dot_counter = dot_counter + 1
       dum(i) = gsn_add_polymarker(wks,map,lon_o(i),lat_o(i),polyres)
     end if
 
@@ -322,8 +324,9 @@ end if
 end if
 
 annoid1 = gsn_add_annotation(map,legend,amres)   ; add legend to plot
-  
+
 print("Drawing plot")
+print("Plotted "+dot_counter+" dots")
 
 resP = True
 resP@amJust           = "TopRight"
