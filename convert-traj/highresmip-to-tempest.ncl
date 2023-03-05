@@ -3,7 +3,7 @@ begin
 DURTHRESH=0
 print_names=False
 print_to_screen=False
-;gridfile=""
+gridfile=""
 
 ;fname  = "~/Desktop/TC-NH_TRACK_CNRM-CM6-1-HR_highresSST-present_r1i1p1f2_gr_19500101-20141231.nc"
 f = addfile(fname,"r")

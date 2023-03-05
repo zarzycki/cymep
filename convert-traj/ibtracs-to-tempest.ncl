@@ -1,20 +1,26 @@
 begin
 
-;gridfile="/glade/u/home/zarzycki/scratch/j1files/GPCP/2005/precip.2005_interp.nc"
-gridfile="wrf_grid.nc"
-;gridfile=""
+;gridfile="wrf_grid.nc"
+;is_grid_2D=True
+;flip_grid_180=False
+;cut_regional=True     ; if our grid is regional, we can cut TCs along the boundary ring
+;cut_regional_ring_width=8  ; what stencil at boundaries to toss? needs to be >=1
+;correct_pres_wind = True ; do we want to fill in missing P/W with K&Z 07?
+;DURTHRESH=2
 
-is_grid_2D=True
-flip_grid_180=False
-cut_regional=True     ; if our grid is regional, we can cut TCs along the boundary ring
-cut_regional_ring_width=10  ; what stencil at boundaries to toss? needs to be >=1
+gridfile="/Users/cmz5202/NetCDF/topo_files/ERA5.topo.nc"
+is_grid_2D=False
+flip_grid_180=True
+cut_regional=False     ; if our grid is regional, we can cut TCs along the boundary ring
+cut_regional_ring_width=8  ; what stencil at boundaries to toss? needs to be >=1
 correct_pres_wind = True ; do we want to fill in missing P/W with K&Z 07?
+DURTHRESH=3
 
 print_to_screen=True
 print_names=False
 
 ibstyr=1979
-ibenyr=2020
+ibenyr=2021
 
 ibdir = "./"
 ibfilename="IBTrACS.ALL.v04r00.nc"
@@ -149,7 +155,6 @@ delim="	"
 filename="./test.txt"
 system("rm -rf "+filename)
 
-DURTHRESH=0
 
 print("hi")
 do ii = 0,ibstormcount-1
@@ -215,8 +220,8 @@ do ii = 0,ibstormcount-1
             else
               if (.not. isdefined("gridlat")) then
                 gridf=addfile(gridfile,"r")
-                gridlat=gridf->latitude
-                gridlon=gridf->longitude
+                gridlat=gridf->lat
+                gridlon=gridf->lon
               end if
               latix(jj)=minind(abs(gridlat-iblat(ii,jj)))
               lonix(jj)=minind(abs(gridlon-iblon(ii,jj)))
