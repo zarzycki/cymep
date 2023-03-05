@@ -8,10 +8,14 @@ load "../functions/mask_tc.ncl"
 begin
 
 plot_legend=False
+plot_region="natl"   ;natl or glob
+plot_gen=False
+maskBasins=True
+basin = 1
 
 trajdir="../../cymep/trajs/"
 ;=================== Get traj data ================================
-filename = "../../cymep/config-lists/highresmip_configs.csv"
+filename = "../../cymep/config-lists/lf_configs.csv"
 lines = asciiread(filename,-1,"string")
 delim = ","
 files  =           str_get_field(lines,1,delim)
@@ -50,10 +54,9 @@ delimStr="tab"
 isHeader=False
 out_type="pdf"
 
-plot_gen=False
 
-maskBasins=True
-basin = 1
+
+
 tcMask = mask_tc_allbasin(0,-999,-999,1.0,360)
 
 npossLF=10
@@ -69,7 +72,7 @@ traj_data = getTrajectoriesGeneric(thefile,ncols,maxLines,headerDelimStr,delimSt
 
 wind_factor = windcorrs(yy)
 print("corr wind: "+wind_factor)
-  
+
 lon = traj_data(:,2,:)
 lat = traj_data(:,3,:)
 wind = traj_data(:,5,:)*wind_factor
@@ -134,8 +137,8 @@ if (debug) then
 end if
 
 do ii = STIX,ENIX
-  if ( .not.ismissing(interp_lat(ii,1)) .and. \ 
-    tcMask({interp_lat(ii,1)},{min((/interp_lon(ii,1),359.0/))}) .eq. basin)
+  if ( .not.ismissing(interp_lat(ii,1)) .and. \
+    (.not. maskBasins .or. tcMask({interp_lat(ii,1)},{min((/interp_lon(ii,1),359.0/))}) .eq. basin))
   print("STORM NUMBER: "+ii)
 
   latClean=strip_missing(interp_lat(ii,:))
@@ -234,7 +237,7 @@ else
   wks  = gsn_open_wks(out_type,"./landfall_img/landfall."+filebase)
 end if
 map = new(1,graphic)
-  
+
 res  = True
 res@gsnDraw    = False
 res@gsnFrame   = False
@@ -253,17 +256,23 @@ res@mpUSStateLineColor = "gray"
 res@mpOutlineOn = True
 res@mpInlandWaterFillColor = res@mpOceanFillColor
 res@mpGreatCircleLinesOn = True
-  
-if (plot_gen) then
-  res@mpMinLatF             = 3
-  res@mpMaxLatF             = 48
-  res@mpMinLonF             = 261
-  res@mpMaxLonF             = 355
+
+
+if (plot_region .eq. "natl") then
+  if (plot_gen) then
+    res@mpMinLatF             = 3
+    res@mpMaxLatF             = 48
+    res@mpMinLonF             = 261
+    res@mpMaxLonF             = 355
+  else
+    res@mpMinLatF             = 9
+    res@mpMaxLatF             = 47
+    res@mpMinLonF             = 261
+    res@mpMaxLonF             = 302
+  end if
 else
-  res@mpMinLatF             = 9
-  res@mpMaxLatF             = 47
-  res@mpMinLonF             = 261
-  res@mpMaxLonF             = 302
+  res@mpMinLatF             = -56
+  res@mpMaxLatF             = 56
 end if
 
 res@tmXBOn = False
@@ -281,14 +290,14 @@ res@mpGeophysicalLineThicknessF = 1.5          ; thickness of outlines
 res@mpOutlineDrawOrder="Draw"
 ;res@tfPolyDrawOrder="PostDraw"
 
-color_NCA=False
+color_NCA=True
 if (color_NCA) then
   color_SE="Pink"
   color_NE="PaleGreen"
   color_CE="LightBlue"
   res@mpFillAreaSpecifiers = (/"Texas","Oklahoma","Kansas", \
     "Florida","Alabama","Louisiana","Mississippi","Georgia","South Carolina","North Carolina","Virginia","Georgia","Tennessee","Arkansas","Kentucky", \
-    "New York","New Jersey","Connecticut","Massachusetts","Maine","New Hampshire","Rhode Island","Vermont","Pennsylvania","Maryland","Delaware","West Virginia"/) 
+    "New York","New Jersey","Connecticut","Massachusetts","Maine","New Hampshire","Rhode Island","Vermont","Pennsylvania","Maryland","Delaware","West Virginia"/)
   res@mpSpecifiedFillColors = (/color_CE,color_CE,color_CE, \
     color_SE,color_SE,color_SE,color_SE,color_SE,color_SE,color_SE,color_SE,color_SE,color_SE,color_SE,color_SE, \
     color_NE,color_NE,color_NE,color_NE,color_NE,color_NE,color_NE,color_NE,color_NE,color_NE,color_NE,color_NE/)
@@ -298,11 +307,11 @@ end if
 map = gsn_csm_map_ce(wks,res)
 
 gsn_define_colormap(wks,"rainbow+white+gray")
-  polyres               = True          ; poly marker mods desired 
+  polyres               = True          ; poly marker mods desired
   polyres@tfPolyDrawOrder = "PostDraw"
   polyres@gsMarkerIndex = 1            ; choose circle as polymarker
   lineres = True
-  
+
 dum = new((/npossLF,nstorms/),graphic)
 dum1 = dum
 dum2 = dum
@@ -344,8 +353,15 @@ if (how_to_color .eq. "landfall_psl")
     print("---")
 end if
 
-;polyres@gsMarkerSizeF = 0.035
-polyres@gsMarkerSizeF = 0.045
+if (plot_region .eq. "natl") then
+  ;polyres@gsMarkerSizeF = 0.035
+  ;polyres@gsMarkerSizeF = 0.045
+
+  ; for AGU 2022
+  polyres@gsMarkerSizeF = 0.020
+else
+  polyres@gsMarkerSizeF = 0.015
+end if
 
 if (how_to_color .eq. "region") then
   if (landfall_region(i,j) .eq. 1)
@@ -358,7 +374,7 @@ if (how_to_color .eq. "region") then
     polyres@gsMarkerColor = (/"green"/)
     lineres@gsLineColor = (/"green"/)
   else
-    polyres@gsMarkerColor = (/"white"/) 
+    polyres@gsMarkerColor = (/"white"/)
     lineres@gsLineColor = (/"white"/)
   end if
   end if
@@ -393,20 +409,20 @@ else
 end if
 end if
 
-  txres               = True                            
+  txres               = True
   txres@txFontHeightF = 0.01             ; Set the font height
- 
+
   polyresback=polyres
   polyresback@gsMarkerSizeF= polyres@gsMarkerSizeF + (polyres@gsMarkerSizeF*0.5)
-  polyresback@gsMarkerColor="black" 
+  polyresback@gsMarkerColor="black"
 
   ;if (landfall_region(i,j) .eq. 3) then
     if (plot_gen) then
       dum2(i,j) = gsn_add_polymarker(wks,map,genLon,genLat,polyresback)
-      dum3(i,j) = gsn_add_polymarker(wks,map,genLon,genLat,polyres)  
+      dum3(i,j) = gsn_add_polymarker(wks,map,genLon,genLat,polyres)
     else
       dum1(i,j) = gsn_add_polymarker(wks,map,thisLon,thisLat,polyresback)
-      dum(i,j) = gsn_add_polymarker(wks,map,thisLon,thisLat,polyres) 
+      dum(i,j) = gsn_add_polymarker(wks,map,thisLon,thisLat,polyres)
     end if
   ;end if
 
@@ -418,8 +434,8 @@ end if
   ;text(i,j) = gsn_add_text(wks,map,str,thisLon+0.5,thisLat-0.5,txres)
 
   system("echo "+quote+   thisDate+delim+thisLon+delim+thisLat+delim+thisPres+delim+thisWind+delim+genLon+delim+genLat+delim+landfall_region(i,j)   +quote+" >> "+txtfilename)
-  
- 
+
+
 end if
 
 end do
@@ -477,14 +493,14 @@ if (plot_legend) then
   amres@amJust = "CenterRight"
 
   annoid1 = gsn_add_annotation(map,legend,amres)   ; add legend to plot
-  
+
 end if
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
 print("Drawing plot")
 
 draw(map)
