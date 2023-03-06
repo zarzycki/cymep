@@ -33,7 +33,7 @@ ncols = trajdims(1)
 
 lon = traj_data(:,2,:)
 lat = traj_data(:,3,:)
-wind = traj_data(:,5,:)
+wind = traj_data(:,5,:)*factor
 pres = traj_data(:,4,:)/100.
 yyyy=  traj_data(:,ncols-4,:)
 mm= traj_data(:,ncols-3,:)
@@ -82,10 +82,10 @@ end if
 ;--------------------------------------------------------
 print("Beginning plot sequence")
 ;wks_type@wkWidth = 2500
-;wks_type@wkHeight = 2500 
+;wks_type@wkHeight = 2500
 wks  = gsn_open_wks(output_type,"traj."+thefile)
 map = new(1,graphic)
-  
+
 res  = True
 res@gsnDraw    = False
 res@gsnFrame   = False
@@ -96,14 +96,14 @@ res@mpOceanFillColor = "LightBlue1"
 res@mpOutlineOn = True
 res@mpInlandWaterFillColor = res@mpOceanFillColor
 res@mpGreatCircleLinesOn = True
- 
-if (basin .eq. "atlantic")  
+
+if (basin .eq. "atlantic")
   res@mpMinLatF             = 5
   res@mpMaxLatF             = 45
   res@mpMinLonF             = 260
   res@mpMaxLonF             = 355
 end if
-if (basin .eq. "wpac")  
+if (basin .eq. "wpac")
   res@mpMinLatF             = 5
   res@mpMaxLatF             = 45
   res@mpMinLonF             = 115
@@ -126,14 +126,14 @@ if (basin .eq. "tropics")
   res@mpMaxLatF             = 65
   res@mpCenterLonF = 200.
 end if
- 
+
 map = gsn_csm_map_ce(wks,res)
 
 gsn_define_colormap(wks,"rainbow+white+gray")
-  polyres               = True          ; poly marker mods desired 
+  polyres               = True          ; poly marker mods desired
   polyres@gsMarkerIndex = 1            ; choose circle as polymarker
   lineres = True
-  
+
 dum = new((/nstorms,ntimes/),graphic)
 text = new((/nstorms/),graphic)
 
@@ -165,11 +165,14 @@ print(SSthresh_wind)
 
 ;nstorms=10
 do i = 0,nstorms-1
-print("storm: "+i)
+print("storm: "+i+" of "+(nstorms-1))
 do j = 0,ntimes-1
 
 if (color_pw) then
   thisWind=-pres(i,j)
+  if (.not.ismissing(thisWind) .and. thisWind .gt. 0) then
+    thisWind = -9999.0
+  end if
 else
   thisWind=wind(i,j)
 end if
@@ -199,7 +202,7 @@ if (.not.ismissing(thisWind))
     lineres@gsLineColor = (/"darkorange3"/)
     lineres@gsLineThicknessF  = linethicknesses(4)
   else
-    polyres@gsMarkerColor = (/"red"/) 
+    polyres@gsMarkerColor = (/"red"/)
     lineres@gsLineColor = (/"red"/)
     lineres@gsLineThicknessF  = linethicknesses(5)
   end if
@@ -208,7 +211,10 @@ if (.not.ismissing(thisWind))
   end if
   end if
 
-;print(thisWind+""+lineres@gsLineColor)
+;if (lat(i,j) .gt. 30. .and. lon(i,j) .gt. 180. .and. lon(i,j) .lt. 270.) then
+;  print(lon(i,j)+" "+lat(i,j))
+;  print(thisWind+""+lineres@gsLineColor)
+;end if
 
   if (j .ne. 0) then
     if(thisWind .ge. SSthresh_wind(0) .and. cutatTS) then
@@ -318,7 +324,7 @@ end if
 end if
 
 annoid1 = gsn_add_annotation(map,legend,amres)   ; add legend to plot
-  
+
 print("Drawing plot")
 
 resP = True
