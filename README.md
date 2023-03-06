@@ -26,7 +26,7 @@ scipy
 netCDF4
 ```
 
-Also required for graphic generation (`graphics-cymep`) is NCL. NCL can either be installed from [source or binary](https://www.ncl.ucar.edu/Download/) or via [conda](https://www.ncl.ucar.edu/Download/conda.shtml). The latter is preferred.
+Also required for graphic generation (`graphics-cymep`) is NCL. NCL can either be installed from [source or binary](https://www.ncl.ucar.edu/Download/), MacPorts, or via [conda](https://www.ncl.ucar.edu/Download/conda.shtml). The latter is preferred.
 
 ### 1. Add trajectory files to ./traj/ folder.
 
