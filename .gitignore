@@ -1,12 +1,18 @@
+## Do not save generic trajectory files
+traj_*
+ncl/trajs/traj*
+trajectories.CFSR.*
+traj.txt.*
+traj.lat.*
+trajectories.txt.*
+
 IBTrACS.ALL.v04r00.nc
 wrf_grid.nc
 *connect*.dat
 dev/
-python/trajs/hiresmip
 seeds.txt.*
 netcdf_*nc
 __pycache__/
-ncl/trajs/traj*
 spatial_*.nc
 netcdf-files/*.nc
 spatial-tau.ncl
@@ -22,10 +28,6 @@ projects/snowstorms/RoS/data/
 CPC_gauge_precip_1985-2017.nc
 *_to_CPC_conserve.nc
 *mpi.out.*
-trajectories.CFSR.*
-traj.txt.*
-traj.lat.*
-trajectories.txt.*
 LF.*
 *.txt
 projects/clubb/momentum/netcdf/*
