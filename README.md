@@ -18,12 +18,17 @@ This directory (the root) is defined as `${CYMEP}`. The released version of CyMe
 The actual statistics package is all written in Python3 and requires several libraries. The easiest way to install relevant things is via `conda install`. `pip` or the full Anaconda package may also be an option. Required Python packages are:
 
 ```
-sys
-re
 numpy
 pandas
 scipy
 netCDF4
+```
+
+Or you can use the configuration file included in this repository:
+
+```
+conda env create -n cymep --file configuration.yaml 
+conda activate cymep   
 ```
 
 Also required for graphic generation (`graphics-cymep`) is NCL. NCL can either be installed from [source or binary](https://www.ncl.ucar.edu/Download/), MacPorts, or via [conda](https://www.ncl.ucar.edu/Download/conda.shtml). The latter is preferred.
