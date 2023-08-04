@@ -89,7 +89,7 @@ ibpres=where(ismissing(ibpres),-9999.,ibpres)
 ; Load optional PHIS file
 ;=============================================================================
 
-phisfile=addfile("/Users/cmz5202/NetCDF/MERRA.topo.nc","r")
+phisfile=addfile("/storage/home/cmz5202/work/topo-files/MERRA.topo.nc","r")
 PHIS=phisfile->PHIS
 
 
@@ -110,7 +110,7 @@ do ii = 0,ibstormcount-1
   ;if (toint(ibbasin(ii,0)) .eq. 0 .or. toint(ibbasin(ii,0)) .eq. 12 .or. toint(ibbasin(ii,0)) .eq. 13) then
   ;if (toint(ibbasin(ii,0)) .eq. 0 ) then
     numentries=num(.not.ismissing(iblat(ii,:)) .and. ibflag(ii,:) .eq. 1)
-    
+
     ;if (.not.ismissing(ibname(ii,0))) then
     if (numentries .gt. DURTHRESH .and. sum(ibflag(ii,:)) .gt. 0) then
 
@@ -170,7 +170,7 @@ do ii = 0,ibstormcount-1
             thisLat=-999
             thisLon=-999
           end if
-          
+
           ;print(iblat(ii,jj)+" "+iblon(ii,jj))
           if (iblon(ii,jj) .le. max(PHIS&lon) .and. iblon(ii,jj) .ge. min(PHIS&lon)) then
             thisPHIS=tofloat(PHIS({iblat(ii,jj)},{iblon(ii,jj)}))
@@ -180,7 +180,7 @@ do ii = 0,ibstormcount-1
 
           ; There is a potential bug here, where either the calendar converts to missing
           ; or it converts such that the hour is off by one
-          
+
           ; this should be cd_calendar, but we get errors. trying ut_calendar_fix
           thisdate=ut_calendar_fix(ibtime(ii,jj),0)
           if (any(ismissing(thisdate))) then
@@ -210,6 +210,6 @@ do ii = 0,ibstormcount-1
   ;end if
 end do
 end
-  
+
 print("Total errors! "+totalerrors)
-	;13056	41.470669	-19.662915	9.957811e+04	1.960049e+01	1979	1	16	12	
+	;13056	41.470669	-19.662915	9.957811e+04	1.960049e+01	1979	1	16	12
