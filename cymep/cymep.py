@@ -17,10 +17,10 @@ from pattern_cor import *
 ##### User settings
 
 basin = 1
-csvfilename = 'highresmip_configs.csv'
+csvfilename = 'sens_configs.csv'
 gridsize = 8.0
-styr = 2005
-enyr = 2005
+styr = 1900
+enyr = 2100
 stmon = 1
 enmon = 12
 truncate_years = False
@@ -29,7 +29,7 @@ THRESHOLD_PACE_PRES = -100.    # slp (in hPa) to threshold PACE. Negative means 
 do_special_filter_obs = True   # Special "if" block for first line (control)
 do_fill_missing_pw = True
 do_defineMIbypres = False
-print_debug=False
+debug_level=1                  # 0 = no debug, 1 = semi-verbose, 2 = very verbose
 
 #----------------------------------------------------------------------------------------
 
@@ -214,6 +214,15 @@ for ii in range(len(files)):
 
   ####### MASKING
 
+  if debug_level >= 2:
+    print("DEBUG2: glat, glon, gmonth, gyear")
+    for qq in range(len(xglon)):
+      if not (np.isnan(xglon[qq]) and np.isnan(xglat[qq]) ):
+        print("DEBUG2: ",xglat[qq], xglon[qq], xgmonth[qq], xgyear[qq])
+
+  if debug_level >= 1:
+    print("DEBUG1: Storms originally: ",np.sum(~np.isnan(xglon)))
+
   # Mask TCs for particular basin based on genesis location
   if basin > 0:
     for kk, zz in enumerate(range(nstorms)):
@@ -234,6 +243,9 @@ for ii in range(len(files)):
         xgyear[kk]   = float('NaN')
         xgday[kk]    = float('NaN')
         xghour[kk]   = float('NaN')
+
+  if debug_level >= 1:
+    print("DEBUG1: Storms after basin filter: ",np.sum(~np.isnan(xglon)))
 
   # Mask TCs based on temporal characteristics
   for kk, zz in enumerate(range(nstorms)):
@@ -265,6 +277,8 @@ for ii in range(len(files)):
       xgday[kk]    = float('NaN')
       xghour[kk]   = float('NaN')
 
+  if debug_level >= 1:
+    print("DEBUG1: Storms after time filter: ",np.sum(~np.isnan(xglon)))
   #########################################
 
   # Calculate LMI
@@ -326,7 +340,7 @@ for ii in range(len(files)):
     xwindtmp = quad_a[2] + quad_a[1]*(1010.-xpres) + quad_a[0]*((1010.-xpres)**2)
     xpacepp = 1.0e-4 * (ms_to_kts*xwindtmp)**2.0
 
-    if print_debug:
+    if debug_level >= 2:
       # Flatten the 2-D arrays
       xwindtmp_flat = xwindtmp.flatten()
       xwind_flat = xwind.flatten()
@@ -334,7 +348,7 @@ for ii in range(len(files)):
       # Print the flattened values in sets of three
       for ss in range(len(xwindtmp_flat)):
         if not (np.isnan(xwindtmp_flat[ss]) and np.isnan(xwind_flat[ss]) and np.isnan(xpres_flat[ss])):
-          print(xwindtmp_flat[ss], xwind_flat[ss], xpres_flat[ss])
+          print("DEBUG2: ",xwindtmp_flat[ss], xwind_flat[ss], xpres_flat[ss])
 
   else:
     # Here, we apply a predetermined PW relationship from Holland
