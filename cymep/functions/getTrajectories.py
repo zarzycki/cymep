@@ -54,8 +54,14 @@ def getTrajectories(filename,nVars,headerDelimStr,isUnstruc):
           prodata[jj,stormID,lineOfTraj]=ptArr[jj]
       lineOfTraj += 1   # increment line
 
+  # Make sure we return the correct size of the array
+  if isUnstruc:
+    ncols=nVars+1
+  else:
+    ncols=nVars
+
   print("... done reading data")
-  return numtraj, maxNumPts, nVars, prodata
+  return numtraj, maxNumPts, ncols, prodata
 
 
 
