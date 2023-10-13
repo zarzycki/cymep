@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import scipy.stats as sps
 from netCDF4 import Dataset
+import warnings
 
 sys.path.insert(0, './functions')
 from getTrajectories import *
@@ -15,11 +16,11 @@ from pattern_cor import *
 #----------------------------------------------------------------------------------------
 ##### User settings
 
-basin = 6     # -1 = global, 20 = NH, 21 = SH
+basin = 1
 csvfilename = 'highresmip_configs.csv'
 gridsize = 8.0
-styr = 1985
-enyr = 2020
+styr = 2005
+enyr = 2005
 stmon = 1
 enmon = 12
 truncate_years = False
@@ -28,6 +29,7 @@ THRESHOLD_PACE_PRES = -100.    # slp (in hPa) to threshold PACE. Negative means 
 do_special_filter_obs = True   # Special "if" block for first line (control)
 do_fill_missing_pw = True
 do_defineMIbypres = False
+print_debug=False
 
 #----------------------------------------------------------------------------------------
 
@@ -119,18 +121,24 @@ for ii in range(len(files)):
   xwind  = traj_data[5,:,:]*wind_factor
   xyear  = traj_data[ncol-4,:,:]
   xmonth = traj_data[ncol-3,:,:]
+  xday   = traj_data[ncol-2,:,:]
+  xhour  = traj_data[ncol-1,:,:]
 
   # Initialize nan'ed arrays specific to this traj file
   xglon      = np.empty(nstorms)
   xglat      = np.empty(nstorms)
   xgmonth    = np.empty(nstorms)
   xgyear     = np.empty(nstorms)
+  xgday      = np.empty(nstorms)
+  xghour     = np.empty(nstorms)
   xlatmi     = np.empty(nstorms)
   xlonmi     = np.empty(nstorms)
   xglon[:]   = np.nan
   xglat[:]   = np.nan
   xgmonth[:] = np.nan
   xgyear[:]  = np.nan
+  xgday[:]   = np.nan
+  xghour[:]  = np.nan
   xlatmi[:]  = np.nan
   xlonmi[:]  = np.nan
 
@@ -185,6 +193,8 @@ for ii in range(len(files)):
     validlat = xlat[kk,:][np.isfinite(xlat[kk,:])]
     validmon = xmonth[kk,:][np.isfinite(xmonth[kk,:])]
     validyear= xyear[kk,:][np.isfinite(xyear[kk,:])]
+    validday = xday[kk,:][np.isfinite(xday[kk,:])]
+    validhour= xhour[kk,:][np.isfinite(xhour[kk,:])]
     # If the resulting validity array is > 0, it means we have at least 1 non-nan value
     # Set the genesis information to that first valid point
     if validlon.size > 0:
@@ -192,6 +202,8 @@ for ii in range(len(files)):
       xglat[kk]   = validlat[0]
       xgmonth[kk] = validmon[0]
       xgyear[kk]  = validyear[0]
+      xgday[kk]   = validday[0]
+      xghour[kk]  = validhour[0]
 
   # Porting debugging
   #print(np.count_nonzero(~np.isnan(xglon)))
@@ -218,6 +230,8 @@ for ii in range(len(files)):
         xglat[kk]    = float('NaN')
         xgmonth[kk]  = float('NaN')
         xgyear[kk]   = float('NaN')
+        xgday[kk]    = float('NaN')
+        xghour[kk]   = float('NaN')
 
   # Mask TCs based on temporal characteristics
   for kk, zz in enumerate(range(nstorms)):
@@ -246,6 +260,8 @@ for ii in range(len(files)):
       xglat[kk]    = float('NaN')
       xgmonth[kk]  = float('NaN')
       xgyear[kk]   = float('NaN')
+      xgday[kk]    = float('NaN')
+      xghour[kk]   = float('NaN')
 
   #########################################
 
@@ -278,6 +294,7 @@ for ii in range(len(files)):
   xace   = np.nansum( xacepp , axis=1 )
 
   # Calculate storm-accumulated PACE
+  quadratic_fit=True
   calcPolyFitPACE=True
   xprestmp = xpres
 
@@ -287,19 +304,36 @@ for ii in range(len(files)):
     xprestmp = np.where(xprestmp > THRESHOLD_PACE_PRES,float('NaN'),xprestmp)
 
   xprestmp = np.ma.array(xprestmp, mask=np.isnan(xprestmp))
-  np.warnings.filterwarnings('ignore')
-  if calcPolyFitPACE:
-    # Here, we calculate a quadratic P/W fit based off of the "control"
-    if ii == 0:
-      polyn = 2
-      xprestmp = np.ma.where(xprestmp < 1010.0, xprestmp, 1010.0)
-      xprestmp = 1010.-xprestmp
-      idx = np.isfinite(xprestmp) & np.isfinite(xwind)
-      quad_a = np.polyfit(xprestmp[idx].flatten(), xwind[idx].flatten() , polyn)
-      print(quad_a)
+  warnings.filterwarnings('ignore')
+  if quadratic_fit:
+    if calcPolyFitPACE:
+      # Here, we calculate a quadratic P/W fit based off of the "control"
+      if ii == 0:
+        polyn = 2
+        xprestmp = np.ma.where(xprestmp < 1010.0, xprestmp, 1010.0)
+        xprestmp = 1010.-xprestmp
+        idx = np.isfinite(xprestmp) & np.isfinite(xwind)
+        quad_a = np.polyfit(xprestmp[idx].flatten(), xwind[idx].flatten() , polyn)
+    else: # Use the coefficients from Z2021
+      print("calcPolyFitPACE is False, using coefficients from Z2021")
+      quad_a=np.array([-1.05371378e-03,5.68356519e-01,1.43290190e+01])
+    print("m/s")
+    print(quad_a)
+    print("kts")
+    print(quad_a*ms_to_kts)
     xwindtmp = quad_a[2] + quad_a[1]*(1010.-xpres) + quad_a[0]*((1010.-xpres)**2)
     xpacepp = 1.0e-4 * (ms_to_kts*xwindtmp)**2.0
-    print(xwindtmp," ",xwind," ",xpres)
+
+    if print_debug:
+      # Flatten the 2-D arrays
+      xwindtmp_flat = xwindtmp.flatten()
+      xwind_flat = xwind.flatten()
+      xpres_flat = xpres.flatten()
+      # Print the flattened values in sets of three
+      for ss in range(len(xwindtmp_flat)):
+        if not (np.isnan(xwindtmp_flat[ss]) and np.isnan(xwind_flat[ss]) and np.isnan(xpres_flat[ss])):
+          print(xwindtmp_flat[ss], xwind_flat[ss], xpres_flat[ss])
+
   else:
     # Here, we apply a predetermined PW relationship from Holland
     xprestmp = np.ma.where(xprestmp < 1010.0, xprestmp, 1010.0)
@@ -317,6 +351,14 @@ for ii in range(len(files)):
   xtcd   = np.where(xtcd  == 0,float('NaN'),xtcd)
   xace   = np.where(xace  == 0,float('NaN'),xace)
   xpace  = np.where(xpace == 0,float('NaN'),xpace)
+
+  # Print some CSV files with storm-level information from each dataset
+  storm_level_data = np.column_stack((xgyear,xgmonth,xgday,xghour,xglat,xglon,xmpres,xmwind,xtcd,xace,xpace))
+  filtered_storm_data = storm_level_data[~np.all(np.isnan(storm_level_data), axis=1)]
+  data_formatting = ['%d', '%d', '%d', '%d'] + ['%.2f'] * (filtered_storm_data.shape[1] - 4)
+  header_str = "gYear,gMonth,gDay,gHour,gLat,gLon,minPres,maxWind,TCD,ACE,PACE"
+  np.savetxt("./csv-files/storms_"+os.path.splitext(csvfilename)[0]+'_'+strbasin+"_"+strs[ii]+"_output.csv",
+    filtered_storm_data, delimiter=",", fmt=data_formatting, header=header_str, comments='')
 
   # Bin storms per dataset per calendar month
   for jj in range(1, 12+1):
