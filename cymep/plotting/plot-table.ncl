@@ -21,7 +21,7 @@ f = addfile(ncfile,"r")
 out_type="pdf"
 out_dir="./fig/tables/"
 system("mkdir -p "+out_dir)
-  
+
 strbasin=tostring(f@strbasin)
 fullfilename=tostring(f@csvfilename)
 
@@ -100,7 +100,7 @@ end if
   lines(0) = ","+lines(0)
   do jj = 0,nvars-1
     header(jj) = str_get_field(lines(0),jj+2,delim)
-    
+
     ;if (header(jj) .eq. "SLP") then
     ;  header(jj) = "r~B~xy,SLP~N~"
     ;end if
@@ -115,7 +115,7 @@ end if
     ;end if
 
     header(jj) = header(jj)+"~N~"
-    ; 
+    ;
     header(jj) = str_sub_str(header(jj),"rxy","r~B~xy")
     header(jj) = str_sub_str(header(jj),"rp","r~B~p")
     header(jj) = str_sub_str(header(jj),"rs","~F33~r"+"~F21~~B~s")
@@ -123,7 +123,7 @@ end if
     header(jj) = str_sub_str(header(jj),"utc","u~B~tc")
     header(jj) = str_sub_str(header(jj),"uclim","u~B~clim")
     header(jj) = str_sub_str(header(jj),"_",",")
-   
+
   end do
 
   name_var  =           str_get_field(lines(stloadix:),1,delim)
@@ -156,13 +156,13 @@ end if
   end if
 
   if (plot_bias) then
-    barvar = "b~H-15V6F35~E~FV-6H3~" 
+    barvar = "b~H-15V6F35~E~FV-6H3~"
     ;http://www.ncl.ucar.edu/Applications/text.shtml text 14
     ;Uuml    = "U~H-15V6F35~H~FV-6H3~"
     ;uuml    = "u~H-13V2F35~H~FV-2H3~"
     header = str_sub_str(header,"u~B~",barvar+"~B~")
   else
-    barvar = "x~H-13V2F35~E~FV-2H3~" 
+    barvar = "x~H-13V2F35~E~FV-2H3~"
     header = str_sub_str(header,"u~B~",barvar+"~B~")
   end if
 
@@ -214,19 +214,19 @@ end if
       stringToMatch = text2(0,jj)
       if (str_get_cols(stringToMatch, 0, 0) .ne. "r") then
         if .not.ismissing((str_match(stringToMatch,",count"))) then
-          text5(0,jj) = "#"  
+          text5(0,jj) = "#"
         else if .not.ismissing((str_match(stringToMatch,",tcd"))) then
-          text5(0,jj) = "days"  
+          text5(0,jj) = "days"
         else if .not.ismissing((str_match(stringToMatch,",ace"))) then
-          text5(0,jj) = "10~S~4~N~ kn~S~2~N~"  
+          text5(0,jj) = "10~S~4~N~ kn~S~2~N~"
         else if .not.ismissing((str_match(stringToMatch,",pace"))) then
-          text5(0,jj) = "10~S~4~N~ kn~S~2~N~"  
+          text5(0,jj) = "10~S~4~N~ kn~S~2~N~"
         else if .not.ismissing((str_match(stringToMatch,",lmi"))) then
           text5(0,jj) = "~S~o~N~ lat."
         else if .not.ismissing((str_match(stringToMatch,",latgen"))) then
-          text5(0,jj) = "~S~o~N~ lat."  
+          text5(0,jj) = "~S~o~N~ lat."
         else
-          text5(0,jj) = "-"  
+          text5(0,jj) = "-"
         end if
         end if
         end if
@@ -265,6 +265,8 @@ end if
 
   print(name_var)
 
+
+
   xreshape = reshape(name_var,(/ncases,1/))
   do ii = 1,nvars-1
     if (ii .eq. 1) then
@@ -293,9 +295,9 @@ end if
   ntotcolors=tofloat(tmpdims(0))
   ncolors=ntotcolors-2-1
 
-  setvalues wks            
-    "wkBackgroundColor" : (/1.,1.,1./) 
-    "wkForegroundColor" : (/0.,0.,0./)  
+  setvalues wks
+    "wkBackgroundColor" : (/1.,1.,1./)
+    "wkForegroundColor" : (/0.,0.,0./)
   end setvalues
 ;
 ; Sub header
@@ -316,7 +318,17 @@ end if
 
 ; left column names
   res4 = True
-  res4@txFontHeightF = 0.018
+  ; scale font size for these columns by string length
+  if ( max(strlen(name_var)) .lt. 10) then
+    res4@txFontHeightF = 0.018
+  else if ( max(strlen(name_var)) .ge. 10 .and. max(strlen(name_var)) .lt. 15 ) then
+    res4@txFontHeightF = 0.013
+  else
+    res4@txFontHeightF = 0.010
+  end if
+  end if
+
+
   res4@gsFillColor = "white"
   res4@txFont   = "helvetica"
 
@@ -336,7 +348,7 @@ end if
 
   FillColors = new(dimsizes(text3),"string")
   FillColors = "white"
-  
+
   if (calc_deltas) then
     STCOLORVAR=1
   else
@@ -404,14 +416,14 @@ end if
         percentage = (thisVal - minVal) / denom
         percentage = max((/0.,percentage/))
         percentage = min((/1.,percentage/))
-        
+
         ; this block of code allows for the normalization to be "compressed"
         ; e.g., if you have a deep blue and deep red at opposite ends of your map
         ; and want the scaling to only go 65% into each color range
         ;percentage = percentage - 0.5
         ;percentage = percentage * 0.65
         ;percentage = percentage + 0.5
-        
+
         ;if (ii .eq. 1) then
         ;  FillColors(zz,ii) = floor(ncolors*(1.-percentage))+2
         ;else
@@ -422,11 +434,11 @@ end if
       print(name_var(zz)+" "+percentage+"   "+floor(ncolors*percentage)+" "+FillColors(zz,ii))
     end do
   end do
-  
+
 
   res3@gsFillColor = FillColors
 
-  ;draw_color_palette(wks,cmap,False)  
+  ;draw_color_palette(wks,cmap,False)
 
   res3@txFont   = "helvetica-bold"
 
@@ -457,7 +469,7 @@ end if
   lbres@lbJustification = "topleft"
   lbres@lbLeftMarginF = 0.0
   lbres@lbTopMarginF = 0.0 ; eliminate any margin at the top and left of
-  lbres@lbBoxMinorExtentF = 1.0 
+  lbres@lbBoxMinorExtentF = 1.0
 
   ; x and y are UL corner
   gsn_labelbar_ndc(wks,nboxes,labels,labelbarwidthdelta/2.,top_of_label_bar,lbres)
