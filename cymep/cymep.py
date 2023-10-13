@@ -40,6 +40,8 @@ deg2rad = pi / 180.
 
 #----------------------------------------------------------------------------------------
 
+print("****** "+"./config-lists/"+csvfilename)
+
 # Read in configuration file and parse columns for each case
 # Ignore commented lines starting with !
 df=pd.read_csv("./config-lists/"+csvfilename, sep=',', comment='!', header=None)
@@ -357,6 +359,7 @@ for ii in range(len(files)):
   filtered_storm_data = storm_level_data[~np.all(np.isnan(storm_level_data), axis=1)]
   data_formatting = ['%d', '%d', '%d', '%d'] + ['%.2f'] * (filtered_storm_data.shape[1] - 4)
   header_str = "gYear,gMonth,gDay,gHour,gLat,gLon,minPres,maxWind,TCD,ACE,PACE"
+  os.makedirs(os.path.dirname('./csv-files/'), exist_ok=True)
   np.savetxt("./csv-files/storms_"+os.path.splitext(csvfilename)[0]+'_'+strbasin+"_"+strs[ii]+"_output.csv",
     filtered_storm_data, delimiter=",", fmt=data_formatting, header=header_str, comments='')
 
