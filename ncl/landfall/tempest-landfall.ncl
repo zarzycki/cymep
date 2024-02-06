@@ -12,6 +12,7 @@ plot_region="natl"   ;natl or glob
 plot_gen=False
 maskBasins=True
 basin = 1
+how_to_color="region"
 
 trajdir="../../cymep/trajs/"
 ;=================== Get traj data ================================
@@ -106,11 +107,15 @@ lat = where(abs(lonjump) .gt. 90.,lat@_FillValue,lat)
 
 ;===========================================================================================
 
-landfall_lat=new((/2,npossLF,nstorms/),typeof(lat))
-landfall_lon=new((/2,npossLF,nstorms/),typeof(lon))
-landfall_wind=new((/2,npossLF,nstorms/),typeof(wind))
-landfall_pres=new((/2,npossLF,nstorms/),typeof(pres))
-landfall_time=new((/2,npossLF,nstorms/),typeof(time))
+nfields=3
+;0 = landfall
+;1 = genesis
+;2 = time before landfall
+landfall_lat=new((/nfields,npossLF,nstorms/),typeof(lat))
+landfall_lon=new((/nfields,npossLF,nstorms/),typeof(lon))
+landfall_wind=new((/nfields,npossLF,nstorms/),typeof(wind))
+landfall_pres=new((/nfields,npossLF,nstorms/),typeof(pres))
+landfall_time=new((/nfields,npossLF,nstorms/),typeof(time))
 
 ;===========================================================================================
 
@@ -120,20 +125,21 @@ interp_wind=interp_traj(wind,hrsbase,hrsinterp,False)
 interp_pres=interp_traj(pres,hrsbase,hrsinterp,False)
 interp_time=interp_traj(time,hrsbase,hrsinterp,False)
 
+interp_landmask=new(dimsizes(interp_lat),"logical")
+interp_landmask=interp_landmask@_FillValue
+
 ;===========================================================================================
-
-; find landfalls
-
-;stormtest=49
 
 verbosity=0
 debug=False
+plot_full_traj=False
+plot_storm_ids=False
 
 STIX=0
 ENIX=nstorms-1
 if (debug) then
-  STIX=2497
-  ENIX=2497
+  STIX=1365
+  ENIX=1365
 end if
 
 do ii = STIX,ENIX
@@ -144,31 +150,53 @@ do ii = STIX,ENIX
   latClean=strip_missing(interp_lat(ii,:))
   lonClean=strip_missing(interp_lon(ii,:))
 
-  IX = find_landfalls(latClean,lonClean,1,12,0.8,npossLF,verbosity)
+  IX = find_landfalls(latClean,lonClean,hrsinterp,12,0.5,npossLF,verbosity)
+  interp_landmask(ii,0:dimsizes(IX@landorsea)-1) = IX@landorsea
 
   do zz = 0,npossLF-1
-    if(.not.ismissing(IX(zz)))
+    if ( .not.ismissing(IX(zz)) .and. .not.ismissing(interp_lat(ii,IX(zz))) .and. .not.ismissing(interp_lat(ii,IX(zz))) )
       landfall_lat(0,zz,ii) = interp_lat(ii,IX(zz))
       landfall_lon(0,zz,ii) = interp_lon(ii,IX(zz))
       landfall_wind(0,zz,ii) = interp_wind(ii,IX(zz))
       landfall_pres(0,zz,ii) = interp_pres(ii,IX(zz))
       landfall_time(0,zz,ii) = interp_time(ii,IX(zz))
-      landfall_lat(1,zz,ii) = interp_lat(ii,1)
-      landfall_lon(1,zz,ii) = interp_lon(ii,1)
+
+      landfall_lat(1,zz,ii) = interp_lat(ii,0)
+      landfall_lon(1,zz,ii) = interp_lon(ii,0)
+      landfall_time(1,zz,ii) = interp_time(ii,0)
+
+      ; take floor (00UTC day of landfall) and subtract 24 hours
+      landfall_time(2,zz,ii) = floor(landfall_time(0,zz,ii)) - 1.0
+      matching_index=ind(interp_time(ii,:) .eq. landfall_time(2,zz,ii))
+
+      if (.not.ismissing(matching_index))
+        landfall_lat(2,zz,ii) = interp_lat(ii,matching_index)
+        landfall_lon(2,zz,ii) = interp_lon(ii,matching_index)
+      else
+        ; take floor (00UTC day of landfall)
+        landfall_time(2,zz,ii) = floor(landfall_time(0,zz,ii)) - 0.0
+        matching_index=ind(interp_time(ii,:) .eq. landfall_time(2,zz,ii))
+        if (.not.ismissing(matching_index))
+          landfall_lat(2,zz,ii) = interp_lat(ii,matching_index)
+          landfall_lon(2,zz,ii) = interp_lon(ii,matching_index)
+        else
+          ; storm formed after 00Z on landfall day
+          landfall_lat(2,zz,ii) = landfall_lat@_FillValue
+          landfall_lon(2,zz,ii) = landfall_lon@_FillValue
+        end if
+      end if
     end if
   end do
 
   if (debug) then
-    print("       ")
-    print(IX+" "+landfall_lat(0,:,ii)+" "+landfall_lon(0,:,ii))
+    print("LANDFALLS       ")
+    print(IX+" "+landfall_lat(0,:,ii)+" "+landfall_lon(0,:,ii)+" "+landfall_time(0,:,ii)+"  gen time: "+landfall_time(1,:,ii))
   end if
 
   delete(latClean)
   delete(lonClean)
   end if
 end do
-
-print(num(landfall_lat(0,0,:)))
 
 ;===========================================================================================
 
@@ -239,13 +267,10 @@ end if
 map = new(1,graphic)
 
 res  = True
-res@gsnDraw    = False
-res@gsnFrame   = False
+res@gsnDraw     = False
+res@gsnFrame    = False
 res@gsnMaximize = True
-res@mpFillOn             = True              ; turn off gray continents
-
-;res@mpLandFillColor = "moccasin"
-;res@mpOceanFillColor = "lightcyan"
+res@mpFillOn    = True
 
 res@mpLandFillColor = "grey95"
 res@mpOceanFillColor = "white"
@@ -257,18 +282,19 @@ res@mpOutlineOn = True
 res@mpInlandWaterFillColor = res@mpOceanFillColor
 res@mpGreatCircleLinesOn = True
 
-
 if (plot_region .eq. "natl") then
   if (plot_gen) then
-    res@mpMinLatF             = 3
-    res@mpMaxLatF             = 48
-    res@mpMinLonF             = 261
-    res@mpMaxLonF             = 355
+    res@mpMinLatF             = 3.
+    res@mpMaxLatF             = 48.
+    res@mpMinLonF             = 261.
+    res@mpMaxLonF             = 355.
+    res@mpCenterLonF = ( res@mpMinLonF + res@mpMaxLonF ) / 2.
   else
-    res@mpMinLatF             = 9
-    res@mpMaxLatF             = 47
-    res@mpMinLonF             = 261
-    res@mpMaxLonF             = 302
+    res@mpMinLatF             = 9.
+    res@mpMaxLatF             = 47.
+    res@mpMinLonF             = 261.
+    res@mpMaxLonF             = 302.
+    res@mpCenterLonF = ( res@mpMinLonF + res@mpMaxLonF ) / 2.
   end if
 else
   res@mpMinLatF             = -56
@@ -312,10 +338,16 @@ gsn_define_colormap(wks,"rainbow+white+gray")
   polyres@gsMarkerIndex = 1            ; choose circle as polymarker
   lineres = True
 
+; generate a bunch of dummy arrays for plotting
 dum = new((/npossLF,nstorms/),graphic)
 dum1 = dum
 dum2 = dum
 dum3 = dum
+dum4 = dum
+dum5 = new((/10000,nstorms/),graphic)
+dum6 = dum5
+dum7 = dum5
+dum8 = dum5
 text = dum
 
 ; output file
@@ -327,87 +359,89 @@ system("rm "+txtfilename)
 do j = 0,nstorms-1
 do i = 0,npossLF-1
 
-thisWind=landfall_wind(0,i,j)
-thisPres=landfall_pres(0,i,j)
-thisLat=landfall_lat(0,i,j)
-thisLon=landfall_lon(0,i,j)
-genLat=landfall_lat(1,i,j)
-genLon=landfall_lon(1,i,j)
-thisDate=cd_calendar(landfall_time(0,i,j),-3)
+  thisWind=landfall_wind(0,i,j)
+  thisPres=landfall_pres(0,i,j)
+  thisLat=landfall_lat(0,i,j)
+  thisLon=landfall_lon(0,i,j)
+  genLat=landfall_lat(1,i,j)
+  genLon=landfall_lon(1,i,j)
+  thisDate=cd_calendar(landfall_time(0,i,j),-3)
+  daysBeforeDate=cd_calendar(landfall_time(2,i,j),-3)
+  beforeLat=landfall_lat(2,i,j)
+  beforeLon=landfall_lon(2,i,j)
 
-if (.not.ismissing(thisWind) .and. thisWind .gt. windThresh)
+  if (.not.ismissing(thisWind) .and. thisWind .gt. windThresh)
 
 
-  linethicknesses = (/0.5,1.0,1.3,1.9,2.3,2.6/)
-  linethicknesses = 4.0*linethicknesses
+    linethicknesses = (/0.5,1.0,1.3,1.9,2.3,2.6/)
+    linethicknesses = 4.0*linethicknesses
 
-how_to_color="landfall_psl"
 
-if (how_to_color .eq. "landfall_psl")
-    aaa=2.3
-    bbb=1010.
-    ccc=0.76
-    print(thisWind+" "+thisPres)
-    thisWind = aaa*(bbb-min((/thisPres,bbb/)))^ccc
-    print(thisWind+"")
-    print("---")
-end if
+  if (how_to_color .eq. "landfall_psl")
+      aaa=2.3
+      bbb=1010.
+      ccc=0.76
+      print(thisWind+" "+thisPres)
+      thisWind = aaa*(bbb-min((/thisPres,bbb/)))^ccc
+      print(thisWind+"")
+      print("---")
+  end if
 
-if (plot_region .eq. "natl") then
-  ;polyres@gsMarkerSizeF = 0.035
-  ;polyres@gsMarkerSizeF = 0.045
+  if (plot_region .eq. "natl") then
+    ;polyres@gsMarkerSizeF = 0.035
+    ;polyres@gsMarkerSizeF = 0.045
 
-  ; for AGU 2022
-  polyres@gsMarkerSizeF = 0.020
-else
-  polyres@gsMarkerSizeF = 0.015
-end if
-
-if (how_to_color .eq. "region") then
-  if (landfall_region(i,j) .eq. 1)
-    polyres@gsMarkerColor = (/"blue"/)
-    lineres@gsLineColor = (/"blue"/)
-  else if (landfall_region(i,j) .eq. 2)
-    polyres@gsMarkerColor = (/"red"/)
-    lineres@gsLineColor = (/"red"/)
-  else if (landfall_region(i,j) .eq. 3)
-    polyres@gsMarkerColor = (/"green"/)
-    lineres@gsLineColor = (/"green"/)
+    ; for AGU 2022
+    polyres@gsMarkerSizeF = 0.020
   else
-    polyres@gsMarkerColor = (/"white"/)
-    lineres@gsLineColor = (/"white"/)
+    polyres@gsMarkerSizeF = 0.015
   end if
-  end if
-  end if
-else if (how_to_color .eq. "landfall_wind" .or. how_to_color .eq. "landfall_psl") then
-  SSthresh_wind = (/17.,33.,43.,49.,58./)
-  if (thisWind .lt. SSthresh_wind(0))
-    polyres@gsMarkerColor = (/"green3"/)
-    lineres@gsLineColor = (/"green3"/)
-  else if (thisWind .ge. SSthresh_wind(0) .and. thisWind .lt. SSthresh_wind(1))
-    polyres@gsMarkerColor = (/"green3"/)
-    lineres@gsLineColor = (/"green3"/)
-  else if (thisWind .ge. SSthresh_wind(1) .and. thisWind .lt. SSthresh_wind(2))
-    polyres@gsMarkerColor = (/"yellow1"/)
-    lineres@gsLineColor = (/"yellow1"/)
-  else if (thisWind .ge. SSthresh_wind(2) .and. thisWind .lt. SSthresh_wind(3))
-    polyres@gsMarkerColor = (/"orange"/)
-    lineres@gsLineColor = (/"orange"/)
-  else if (thisWind .ge. SSthresh_wind(3) .and. thisWind .lt. SSthresh_wind(4))
-    polyres@gsMarkerColor = (/"darkorange3"/)
-    lineres@gsLineColor = (/"darkorange3"/)
+
+  if (how_to_color .eq. "region") then
+    if (landfall_region(i,j) .eq. 1)
+      polyres@gsMarkerColor = (/"blue"/)
+      lineres@gsLineColor = (/"blue"/)
+    else if (landfall_region(i,j) .eq. 2)
+      polyres@gsMarkerColor = (/"red"/)
+      lineres@gsLineColor = (/"red"/)
+    else if (landfall_region(i,j) .eq. 3)
+      polyres@gsMarkerColor = (/"green"/)
+      lineres@gsLineColor = (/"green"/)
+    else
+      polyres@gsMarkerColor = (/"white"/)
+      lineres@gsLineColor = (/"white"/)
+    end if
+    end if
+    end if
+  else if (how_to_color .eq. "landfall_wind" .or. how_to_color .eq. "landfall_psl") then
+    SSthresh_wind = (/17.,33.,43.,49.,58./)
+    if (thisWind .lt. SSthresh_wind(0))
+      polyres@gsMarkerColor = (/"green3"/)
+      lineres@gsLineColor = (/"green3"/)
+    else if (thisWind .ge. SSthresh_wind(0) .and. thisWind .lt. SSthresh_wind(1))
+      polyres@gsMarkerColor = (/"green3"/)
+      lineres@gsLineColor = (/"green3"/)
+    else if (thisWind .ge. SSthresh_wind(1) .and. thisWind .lt. SSthresh_wind(2))
+      polyres@gsMarkerColor = (/"yellow1"/)
+      lineres@gsLineColor = (/"yellow1"/)
+    else if (thisWind .ge. SSthresh_wind(2) .and. thisWind .lt. SSthresh_wind(3))
+      polyres@gsMarkerColor = (/"orange"/)
+      lineres@gsLineColor = (/"orange"/)
+    else if (thisWind .ge. SSthresh_wind(3) .and. thisWind .lt. SSthresh_wind(4))
+      polyres@gsMarkerColor = (/"darkorange3"/)
+      lineres@gsLineColor = (/"darkorange3"/)
+    else
+      polyres@gsMarkerColor = (/"red"/)
+      lineres@gsLineColor = (/"red"/)
+    end if
+    end if
+    end if
+    end if
+    end if
   else
-    polyres@gsMarkerColor = (/"red"/)
-    lineres@gsLineColor = (/"red"/)
+    exit
   end if
   end if
-  end if
-  end if
-  end if
-else
-  exit
-end if
-end if
 
   txres               = True
   txres@txFontHeightF = 0.01             ; Set the font height
@@ -416,25 +450,62 @@ end if
   polyresback@gsMarkerSizeF= polyres@gsMarkerSizeF + (polyres@gsMarkerSizeF*0.5)
   polyresback@gsMarkerColor="black"
 
-  ;if (landfall_region(i,j) .eq. 3) then
-    if (plot_gen) then
-      dum2(i,j) = gsn_add_polymarker(wks,map,genLon,genLat,polyresback)
-      dum3(i,j) = gsn_add_polymarker(wks,map,genLon,genLat,polyres)
-    else
-      dum1(i,j) = gsn_add_polymarker(wks,map,thisLon,thisLat,polyresback)
-      dum(i,j) = gsn_add_polymarker(wks,map,thisLon,thisLat,polyres)
+  if (plot_gen) then
+    dum2(i,j) = gsn_add_polymarker(wks,map,genLon,genLat,polyresback)
+    dum3(i,j) = gsn_add_polymarker(wks,map,genLon,genLat,polyres)
+  else
+    dum1(i,j) = gsn_add_polymarker(wks,map,thisLon,thisLat,polyresback)
+    dum(i,j) = gsn_add_polymarker(wks,map,thisLon,thisLat,polyres)
+    if (.not. ismissing(beforeLon)) then
+      dum4(i,j) = gsn_add_polyline(wks,map,(/beforeLon,thisLon/),(/beforeLat,thisLat/),lineres)
     end if
-  ;end if
+  end if
 
-  ;str=tostring(toint(j))
-  ;txres = True
-  ;txres@txFontColor = "black"
-  ;txres@txFontHeightF = 0.015             ; Set the font height
-  ;txres@amJust = "TopLeft"
-  ;text(i,j) = gsn_add_text(wks,map,str,thisLon+0.5,thisLat-0.5,txres)
+  if (plot_full_traj) then
+    if (i .eq. 0)
+      plot_lats:=strip_missing(lat(j,:))
+      plot_lons:=strip_missing(lon(j,:))
+      plot_times:=strip_missing(time(j,:))
+      print(plot_lats+" "+plot_lons+" "+plot_times)
+      ; plot TempestExtremes trajectories
+      do zz = 1,dimsizes(plot_lats)-1
+        dum5(j,zz) = gsn_add_polyline(wks,map,(/plot_lons(zz),plot_lons(zz-1)/),(/plot_lats(zz),plot_lats(zz-1)/),False)
+      end do
+      ; plot TempestExtremes tracks
+      TEmarker               = True
+      TEmarker@gsMarkerSizeF = 0.012
+      TEmarker@gsMarkerIndex = 3
+      TEmarker@gsMarkerColor = "black"
+      dum6(j,zz) = gsn_add_polymarker(wks,map,plot_lons,plot_lats,TEmarker)
+      ; plot individual land/sea points
+      ; over land
+      landornotres               = True
+      landornotres@gsMarkerSizeF = 0.002
+      landornotres@gsMarkerIndex = 4
+      landornotres@gsMarkerColor = "red"
+      land_lats:=interp_lat(j,ind(interp_landmask(j,:).eq.True))
+      land_lons:=interp_lon(j,ind(interp_landmask(j,:).eq.True))
+      dum7(0:dimsizes(land_lats)-1,j) = gsn_add_polymarker(wks,map,land_lons,land_lats,landornotres)
+      ; over ocean
+      landornotres@gsMarkerIndex = 16
+      landornotres@gsMarkerColor = "blue"
+      land_lats:=interp_lat(j,ind(interp_landmask(j,:).eq.False))
+      land_lons:=interp_lon(j,ind(interp_landmask(j,:).eq.False))
+      dum8(0:dimsizes(land_lats)-1,j) = gsn_add_polymarker(wks,map,land_lons,land_lats,landornotres)
+    end if
+  end if
 
-  system("echo "+quote+   thisDate+delim+thisLon+delim+thisLat+delim+thisPres+delim+thisWind+delim+genLon+delim+genLat+delim+landfall_region(i,j)   +quote+" >> "+txtfilename)
+  stormIDstr=tostring(toint(j))
+  if (plot_storm_ids)
+    txres = True
+    txres@txFontColor = "black"
+    txres@txFontHeightF = 0.01
+    txres@amJust = "TopLeft"
+    txtdegoffset=0.1
+    text(i,j) = gsn_add_text(wks,map,stormIDstr,thisLon+txtdegoffset,thisLat-txtdegoffset,txres)
+  end if
 
+  system("echo "+quote+   stormIDstr+delim+thisDate+delim+thisLon+delim+thisLat+delim+thisPres+delim+thisWind+delim+genLon+delim+genLat+delim+landfall_region(i,j)   +quote+" >> "+txtfilename)
 
 end if
 
@@ -442,13 +513,7 @@ end do
 end do
 
 
-
-
 if (plot_legend) then
-
-  ;******************
-  ; Plot a legend   *
-  ;******************
 
   lgres                    = True
 
@@ -472,18 +537,16 @@ if (plot_legend) then
   lgres@lgLabelFontAspectF      = 1.5
   lgres@lgLabelConstantSpacingF = 0.0
 
-  legendType = "Markers"
-  markerSize = .023
+  legendType  = "Markers"
+  markerSize  = 0.023
   markerIndex = 16
 
   lgres@lgItemCount        = 5
   lgres@lgItemTypes        = (/legendType,legendType,legendType,legendType,legendType/)
   lgres@lgMarkerIndexes    = (/markerIndex,markerIndex,markerIndex,markerIndex,markerIndex/)
   lgres@lgMarkerSizes   = (/    markerSize,    markerSize,    markerSize,    markerSize,    markerSize/)
-  lgres@lgMarkerColors       = (/ "red",     "darkorange3",   "orange",  "yellow2",   "green4" /) ; colors for legend lines
+  lgres@lgMarkerColors       = (/ "red",     "darkorange3",   "orange",  "yellow2",   "green4" /)
   legend_labels = (/"Cat. 4/5","Cat. 3","Cat. 2","Cat. 1","TS"/)
-
-
 
   legend = gsn_create_legend(wks,lgres@lgItemCount,legend_labels,lgres)
 
@@ -498,9 +561,6 @@ end if
 
 
 
-
-
-
 print("Drawing plot")
 
 draw(map)
@@ -510,9 +570,9 @@ delete(map)
 delete(wks)
 delete(traj_data)
 delete([/mn,sc,time,interp_time,landfall_time/])
-delete([/dum,dum1,dum2,dum3,text/])
-delete([/lon,lat,IX,landfall_lon,landfall_lat,yyyy,mm,dd,hh,landfall_region,pres,interp_pres,wind,interp_wind,interp_lon,interp_lat,landfall_wind,landfall_pres,lonjump/])
-list_vars()
+delete([/dum,dum1,dum2,dum3,dum4,dum5,dum6,dum7,dum8,text/])
+delete([/lon,lat,IX,landfall_lon,landfall_lat,yyyy,mm,dd,hh,landfall_region,pres,interp_pres,wind,interp_wind,interp_lon,interp_lat,interp_landmask,landfall_wind,landfall_pres,lonjump/])
+;list_vars()
 
 end if  ; end check for !
 end do  ; end file loop

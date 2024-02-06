@@ -39,9 +39,10 @@ end do
 ; what indices of lat/lon do we exceed our threshold?
 landIX=ind(landorsea.ge.critland)
 
+
+; where does landmask exceed our threshold?
+landTF=where(landorsea.ge.critland,True,False)
 if (verbose .ge. 2) then
-  ; where does landmask exceed our threshold?
-  landTF=where(landorsea.ge.critland,True,False)
   print("       ")
   print(latClean+" "+lonClean+" "+landTF)
   print("       ")
@@ -64,13 +65,14 @@ if (.not.all(ismissing(landIX)))   ; if NO landfalls, ignore this traj
         landfallIX=landfallIX+1                   ; increment index to next landfall counter
       end if
     else                           ; now we have established at least ONE landfall (maybe)
-      if ( (landIX(kk)-landIX(kk-1)) .le. toint(conshours/hrstride) ) then
+      time_between_lands = (landIX(kk)-landIX(kk-1))
+      if ( time_between_lands .le. toint(conshours/hrstride) ) then
         if (verbose .ge. 1) then
-          print("Consecutive points, no sep landfall")
+          print("Consecutive points, no sep landfall --> time_between_lands: "+time_between_lands+"  thresh: "+toint(conshours/hrstride))
         end if
       else
         if (verbose .ge. 1) then
-          print("landfall spotted!")
+          print("landfall spotted --> time_between_lands: "+time_between_lands+"  thresh: "+toint(conshours/hrstride))
         end if
         landfallIXreturn(landfallIX)=landIX(kk)   ; add this landIX as a landfall in our return array
         landfallIX=landfallIX+1                   ; increment index to next landfall counter
@@ -86,6 +88,10 @@ if (.not.all(ismissing(landIX)))   ; if NO landfalls, ignore this traj
 end if
 
 ; return the list of indexes corresponding to lat, lon where we have made landfall
+
+; attach landorsea
+landfallIXreturn@landorsea=landTF
+
 return(landfallIXreturn)
 
 end
@@ -143,7 +149,7 @@ end if
 
 fiCyclic=False  ;An option to indicate whether the dim-th dimension of fi is cyclic.
 foOption=0      ; Reserved for future use. It is currently not used, but set it to 0.
-varout =linint1_n_Wrap(xi,varin,fiCyclic,xo,foOption,interpDim) 
+varout =linint1_n_Wrap(xi,varin,fiCyclic,xo,foOption,interpDim)
 
 ; return interpolated array to main script
 return(varout)
