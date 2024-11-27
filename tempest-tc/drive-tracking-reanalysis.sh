@@ -1,41 +1,37 @@
 #!/bin/bash -l
 
-##SBATCH --job-name=tempest
-##SBATCH --account=P05010048
-##SBATCH --ntasks=4
-##SBATCH --ntasks-per-node=4
-##SBATCH --time=01:00:00
-##SBATCH --partition=dav
-##SBATCH --output=tempest.out.%j
-
 ###=======================================================================
 #PBS -N tempest.par
-#PBS -A UNSB0017 
+#PBS -A P93300042
 #PBS -l walltime=0:59:00
-#PBS -q premium
+#PBS -q main
 #PBS -j oe
-#PBS -l select=4:ncpus=36:mpiprocs=36
+#PBS -l select=1:ncpus=128:mpiprocs=128
 ###############################################################
 
 ############ USER OPTIONS #####################
 
 ## Unique string (useful for processing multiple data sets in same folder
-UQSTR=MERRA2
+UQSTR=ERA5
 
-## Path to TempestExtremes binaries on YS
-TEMPESTEXTREMESDIR=/glade/work/zarzycki/tempestextremes/
+## Path to TempestExtremes binaries on Derecho
+TEMPESTEXTREMESDIR=/glade/work/zarzycki/derecho/tempestextremes/
 
 ## Topography filter file (needs to be on same grid as PSL, U, V, etc. data
-TOPOFILE=/glade/u/home/zarzycki/work/reanalysis-detection/topo/MERRA2.topo.nc
+TOPOFILE=/glade/work/zarzycki/reanalysis-detection/topo/$UQSTR.topo.nc
 
 ## If using unstructured CAM-SE ne120 data
-CONNECTFLAG="" 
+CONNECTFLAG=""
 
 ## List of years to process
-YEARSTRARR=`seq 1980 2018`
+YEARSTRARR=`seq 1980 2023`
 
 ## Path where files are
-PATHTOFILES=/glade/u/home/zarzycki/scratch/h1files/MERRA2/
+PATHTOFILES=/glade/campaign/cgd/amp/zarzycki/h1files/$UQSTR/
+
+## Parallel string
+PARSTRING="mpiexec"
+#PARSTRING=""
 
 ############ TRACKER MECHANICS #####################
 starttime=$(date -u +"%s")
@@ -68,27 +64,10 @@ SN_MAXLAT=50.0
 SN_MINWIND=10.0
 SN_MINLEN=10
 
-## KARTHIK
-# DCU_PSLFOMAG=300.0
-# DCU_PSLFODIST=4.0
-# DCU_WCFOMAG=-0.6    # DCU_WCFOMAG=-6.0
-# DCU_WCFODIST=4.0
-# DCU_WCMAXOFFSET=0.3
-# DCU_WCVAR=T400   #DCU_WCVAR generally _DIFF(Z300,Z500) or T400
-# DCU_MERGEDIST=6.0
-# SN_TRAJRANGE=6.0
-# SN_TRAJMINLENGTH=6
-# SN_TRAJMAXGAP=1
-# SN_MAXTOPO=999999.0
-# SN_MAXLAT=40.0
-# SN_MINWIND=17.5
-# SN_MINLEN=6
-
 STRDETECT="--verbosity 0 --timestride 1 ${CONNECTFLAG} --out cyclones_tempest.${DATESTRING} --closedcontourcmd PSL,${DCU_PSLFOMAG},${DCU_PSLFODIST},0;${DCU_WCVAR},${DCU_WCFOMAG},${DCU_WCFODIST},${DCU_WCMAXOFFSET} --mergedist ${DCU_MERGEDIST} --searchbymin PSL --outputcmd PSL,min,0;_VECMAG(UBOT,VBOT),max,2;PHIS,max,0"
 echo $STRDETECT
 touch cyclones.${DATESTRING}
-#srun ${TEMPESTEXTREMESDIR}/bin/DetectNodes --in_data_list "${FILELISTNAME}" ${STRDETECT} </dev/null
-mpiexec_mpt ${TEMPESTEXTREMESDIR}/bin/DetectNodes --in_data_list "${FILELISTNAME}" ${STRDETECT} </dev/null
+$PARSTRING ${TEMPESTEXTREMESDIR}/bin/DetectNodes --in_data_list "${FILELISTNAME}" ${STRDETECT} </dev/null
 cat cyclones_tempest.${DATESTRING}* >> cyclones.${DATESTRING}
 rm cyclones_tempest.${DATESTRING}*
 
