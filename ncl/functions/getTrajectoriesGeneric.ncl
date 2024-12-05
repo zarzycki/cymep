@@ -15,6 +15,8 @@ function getTrajectoriesGeneric(tfile,ncol,maxLines,headerDelimStr,tab_space,isU
 
 ; isHeader (boolean) -- does the trajectory file have a header? If yes, ditch first row of file.
 
+local tfile,ncol,maxLines,headerDelimStr,tab_space,isUnstruc,isHeader,tab_space,startloop,tdata_tmp,nstorms_tot
+
 begin
 
 ; ====DO NOT TOUCH THIS==============

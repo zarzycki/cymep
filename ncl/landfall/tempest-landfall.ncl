@@ -225,7 +225,7 @@ do ii = 0,npossLF-1
   thisLon=landfall_lon(0,ii,jj)
 
   if (.not. ismissing(thisLat))
-    if (thisLon .lt. LATXLON) then
+    if (thisLon .lt. LATXLON .and. thisLon .gt. 180.0) then  ; needs to be E of dateline
       if (thisLat .gt. TXMXLAT) then
         print("Southern Great Plains landfall!")
         landfall_region(ii,jj)=1
@@ -505,7 +505,7 @@ do i = 0,npossLF-1
     text(i,j) = gsn_add_text(wks,map,stormIDstr,thisLon+txtdegoffset,thisLat-txtdegoffset,txres)
   end if
 
-  system("echo "+quote+   stormIDstr+delim+thisDate+delim+thisLon+delim+thisLat+delim+thisPres+delim+thisWind+delim+genLon+delim+genLat+delim+landfall_region(i,j)   +quote+" >> "+txtfilename)
+  system("echo "+quote+   stormIDstr+delim+thisDate+delim+thisLon+delim+thisLat+delim+thisPres+delim+thisWind+delim+genLon+delim+genLat+delim+daysBeforeDate+delim+landfall_region(i,j)   +quote+" >> "+txtfilename)
 
 end if
 
