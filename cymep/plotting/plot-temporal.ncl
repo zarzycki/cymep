@@ -8,6 +8,7 @@ models = chartostring(f->model_names)
 
 strbasin=tostring(f@strbasin)
 filename=tostring(f@csvfilename)
+fullname_foroutput = str_sub_str(filename,".csv","_"+strbasin)
 
 stmon=toint(f@stmon)
 enmon=toint(f@enmon)
@@ -28,17 +29,17 @@ lineunitsstr=(/"number","days","10~S~-4~N~ kn~S~2~N~","10~S~-4~N~ kn~S~2~N~","nu
 
 do mm = 0,dimsizes(linepltvarsstr)-1
   DOPLOT=True
-  
+
   toPlot=f->$linepltvars(mm)$
 
   if (isStrSubset(linepltvars(mm),"pm_")) then
     print("Seasonal plots!")
     linefilelabstr="seasonal"
-  else        
+  else
     print("Interannual plots!")
     linefilelabstr="interann"
   end if
-  
+
   plot_dims = dimsizes(toPlot)
   if (plot_dims(1) .le. 1) then
     print("ONLY 1 MONTH/YEAR, CANNOT PLOT LINE PLOT")
@@ -46,7 +47,7 @@ do mm = 0,dimsizes(linepltvarsstr)-1
   end if
 
   if (DOPLOT) then
-    wks   = gsn_open_wks("pdf",out_dir+"/"+linefilelabstr+"_"+tostring(linepltvarsstr(mm))+"."+strbasin+"_"+filename)
+    wks   = gsn_open_wks("pdf",out_dir+"/"+linefilelabstr+"_"+tostring(linepltvarsstr(mm))+"."+fullname_foroutput)
 
     ; draw xy curves
     res                   = True                      ; plot mods desired
@@ -59,19 +60,19 @@ do mm = 0,dimsizes(linepltvarsstr)-1
     res@xyLineColors      = linecolors ; we have to use linecolors here since missing data included
     res@tiYAxisString = linepltvarsstr(mm)+" ("+lineunitsstr(mm)+")"
 
-    if (isStrSubset(linepltvarsstr(mm),"Month")) then  
+    if (isStrSubset(linepltvarsstr(mm),"Month")) then
       res@tiMainString = linepltvarsstr(mm)+" seasonal cycle"
       res@tiXAxisString = "Month"
       res@trXMinF = 1
       res@trXMaxF = 12
       plot = gsn_csm_xy (wks,monArr,toPlot,res) ; create plot
-    else                                    
-      res@tiMainString = linepltvarsstr(mm)+" interannual cycle"     
+    else
+      res@tiMainString = linepltvarsstr(mm)+" interannual cycle"
       res@tiXAxisString = "Year"
       res@trXMinF = styr
       res@trXMaxF = enyr
       plot = gsn_csm_xy (wks,yearArr,toPlot,res) ; create plot
-    end if   
+    end if
 
     ; Build legend
     textres=True

@@ -12,16 +12,13 @@ fullfilename=tostring(f@csvfilename)
 namesplit = get_file_suffix(fullfilename,0)
 filename = namesplit@fBase
 
-
-
-
   spapltvarsstr=(/"trackdens","minpres","maxwind","gendens","pacedens","acedens","tcddens", "trackbias","genbias","acebias","pacebias"/)
   spapltvars=(/"fulldens", "fullpres", "fullwind", "fullgen", "fullpace","fullace","fulltcd", "fulltrackbias" , "fullgenbias", "fullacebias", "fullpacebias" /)
-  
+
   print(strbasin+"")
   if (strbasin .eq. "NATL") then
     spapltmincontour=(/0. ,900. ,20. ,0. ,0. ,0., 0.,-10.,-1.0,-5.,-5./)  ; use this for NATL
-    spapltmaxcontour=(/15.,1000.,80.,1. ,6. ,6., 3., 10., 1.0, 5., 5./)    
+    spapltmaxcontour=(/15.,1000.,80.,1. ,6. ,6., 3., 10., 1.0, 5., 5./)
   else
     ; use these settings for global or generic basin default
     spapltmincontour=(/0. , 900.,20., 0., 0., 0., 0.,-20.,-1.5,-5.,-5./) ; use this for global
@@ -34,7 +31,7 @@ filename = namesplit@fBase
 
   do bb = 0,dimsizes(spapltvarsstr)-1
 
-    wks = gsn_open_wks(out_type,out_dir+"/"+tostring(spapltvarsstr(bb))+"."+strbasin+"_"+filename)
+    wks = gsn_open_wks(out_type,out_dir+"/"+tostring(spapltvarsstr(bb))+"."+filename+"_"+strbasin)
 
 
     toPlot=f->$spapltvars(bb)$
@@ -42,10 +39,10 @@ filename = namesplit@fBase
       dims=dimsizes(toPlot)
       nfiles=dims(0)
     end if
-    
+
     plot = new(nfiles,"graphic")
-        
-        
+
+
     if (spapltvarsstr(bb) .eq. "trackbias" .or. spapltvarsstr(bb) .eq. "genbias" .or. spapltvarsstr(bb) .eq. "acebias" .or. spapltvarsstr(bb) .eq. "pacebias") then
       ;colorMap1="NCV_blu_red"
       ;colorMap1="BlueWhiteOrangeRed"
@@ -63,7 +60,7 @@ filename = namesplit@fBase
     res                       = True     ; plot mods desired
     res@gsnDraw = False
     res@gsnFrame = False
-    res@gsnAddCyclic          = False    
+    res@gsnAddCyclic          = False
     res@cnFillOn              = True     ; turn on color fill
     res@cnFillMode            = "RasterFill"       ; Raster Mode
     res@cnLinesOn             = False    ; turn of contour lines
@@ -111,7 +108,7 @@ filename = namesplit@fBase
     else if (nfiles .gt. 8 .and. nfiles .le. 12) then
       gsn_panel(wks,plot,(/4,3/),resP)
     else if (nfiles .gt. 12 .and. nfiles .le. 16) then
-      gsn_panel(wks,plot,(/4,4/),resP)    
+      gsn_panel(wks,plot,(/4,4/),resP)
     else
       gsn_panel(wks,plot,(/4,5/),resP)
     end if
