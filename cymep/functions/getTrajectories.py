@@ -2,137 +2,217 @@ import numpy as np
 import re
 
 def getTrajectories(filename,nVars,headerDelimStr,isUnstruc):
-  print("Getting trajectories from TempestExtremes file...")
-  print("Running getTrajectories on '%s' with unstruc set to '%s'" % (filename, isUnstruc))
-  print("nVars set to %d and headerDelimStr set to '%s'" % (nVars, headerDelimStr))
+    """
+    Read trajectory data from a TempestExtremes file format.
 
-  # Using the newer with construct to close the file automatically.
-  with open(filename) as f:
-      data = f.readlines()
+    Parameters:
+    ----------
+    filename (str): Path to input trajectory file
+    nVars (int): Number of variables per trajectory point (-1 for auto-detection)
+    headerDelimStr (str): String that marks header lines (e.g. "start")
+    isUnstruc (bool): If True, adds an extra column for unstructured grid data
 
-  # Find total number of trajectories and maximum length of trajectories
-  numtraj=0
-  numPts=[]
-  for line in data:
-    if headerDelimStr in line:
-      # if header line, store number of points in given traj in numPts
-      headArr = line.split()
-      numtraj += 1
-      numPts.append(int(headArr[1]))
-    else:
-      # if not a header line, and nVars = -1, find number of columns in data point
-      if nVars < 0:
-        nVars=len(line.split())
+    Returns:
+    ----------
+    numtraj (int): Number of trajectories found
+    maxNumPts (int): Maximum length of any trajectory
+    ncols (int): Number of data columns per point
+    prodata (np.ndarray): Array of shape (nvars, ntraj, maxpts) containing trajectory data
+    """
 
-  maxNumPts = max(numPts) # Maximum length of ANY trajectory
+    print("Getting trajectories from TempestExtremes file...")
+    print("Running getTrajectories on '%s' with unstruc set to '%s'" % (filename, isUnstruc))
+    print("nVars set to %d and headerDelimStr set to '%s'" % (nVars, headerDelimStr))
 
-  print("Found %d columns" % nVars)
-  print("Found %d trajectories" % numtraj)
+    # Using the newer with construct to close the file automatically.
+    with open(filename) as f:
+        data = f.readlines()
 
-  # Initialize storm and line counter
-  stormID=-1
-  lineOfTraj=-1
+    # Find total number of trajectories and maximum length of trajectories
+    numtraj=0
+    numPts=[]
 
-  # Create array for data
-  if isUnstruc:
-    prodata = np.empty((nVars+1,numtraj,maxNumPts))
-  else:
-    prodata = np.empty((nVars,numtraj,maxNumPts))
-
-  prodata[:] = np.NAN
-
-  for i, line in enumerate(data):
-    if headerDelimStr in line:  # check if header string is satisfied
-      stormID += 1      # increment storm
-      lineOfTraj = 0    # reset trajectory line to zero
-    else:
-      ptArr = line.split()
-      for jj in range(nVars):
-        if isUnstruc:
-          prodata[jj+1,stormID,lineOfTraj]=ptArr[jj]
+    for line in data:
+        if headerDelimStr in line:
+            # if header line, store number of points in given traj in numPts
+            headArr = line.split()
+            numtraj += 1
+            numPts.append(int(headArr[1]))
         else:
-          prodata[jj,stormID,lineOfTraj]=ptArr[jj]
-      lineOfTraj += 1   # increment line
+            # if not a header line, and nVars = -1, find number of columns in data point
+            if nVars < 0:
+                nVars=len(line.split())
 
-  # Make sure we return the correct size of the array
-  if isUnstruc:
-    ncols=nVars+1
-  else:
-    ncols=nVars
+    maxNumPts = max(numPts) # Maximum length of ANY trajectory
+    print("Found %d columns" % nVars)
+    print("Found %d trajectories" % numtraj)
 
-  print("... done reading data")
-  return numtraj, maxNumPts, ncols, prodata
+    # Initialize storm and line counter
+    stormID=-1
+    lineOfTraj=-1
 
-
-
-
-def getNodes(filename,nVars,isUnstruc):
-  print("Getting nodes from TempestExtremes file...")
-
-  # Using the newer with construct to close the file automatically.
-  with open(filename) as f:
-      data = f.readlines()
-
-  # Find total number of trajectories and maximum length of trajectories
-  numnodetimes=0
-  numPts=[]
-  for line in data:
-    if re.match(r'\w', line):
-      # if header line, store number of points in given traj in numPts
-      headArr = line.split()
-      numnodetimes += 1
-      numPts.append(int(headArr[3]))
+    # Create array for data
+    if isUnstruc:
+        prodata = np.empty((nVars+1,numtraj,maxNumPts))
     else:
-      # if not a header line, and nVars = -1, find number of columns in data point
-      if nVars < 0:
-        nVars=len(line.split())
+        prodata = np.empty((nVars,numtraj,maxNumPts))
+    prodata[:] = np.NAN
 
-  maxNumPts = max(numPts) # Maximum length of ANY trajectory
-
-  print("Found %d columns" % nVars)
-  print("Found %d trajectories" % numnodetimes)
-  print("Found %d maxNumPts" % maxNumPts)
-
-  # Initialize storm and line counter
-  stormID=-1
-  lineOfTraj=-1
-
-  # Create array for data
-  if isUnstruc:
-    prodata = np.empty((nVars+5,numnodetimes,maxNumPts))
-  else:
-    prodata = np.empty((nVars+4,numnodetimes,maxNumPts))
-
-  prodata[:] = np.NAN
-
-  nextHeadLine=0
-  for i, line in enumerate(data):
-    if re.match(r'\w', line):  # check if header string is satisfied
-      stormID += 1      # increment storm
-      lineOfTraj = 0    # reset trajectory line to zero
-      headArr = line.split()
-      YYYY = int(headArr[0])
-      MM = int(headArr[1])
-      DD = int(headArr[2])
-      HH = int(headArr[4])
-    else:
-      ptArr = line.split()
-      for jj in range(nVars-1):
-        if isUnstruc:
-          prodata[jj+1,stormID,lineOfTraj]=ptArr[jj]
+    for i, line in enumerate(data):
+        if headerDelimStr in line:  # check if header string is satisfied
+            stormID += 1      # increment storm
+            lineOfTraj = 0    # reset trajectory line to zero
         else:
-          prodata[jj,stormID,lineOfTraj]=ptArr[jj]
-      if isUnstruc:
-        prodata[nVars+1,stormID,lineOfTraj]=YYYY
-        prodata[nVars+2,stormID,lineOfTraj]=MM
-        prodata[nVars+3,stormID,lineOfTraj]=DD
-        prodata[nVars+4,stormID,lineOfTraj]=HH
-      else:
-        prodata[nVars  ,stormID,lineOfTraj]=YYYY
-        prodata[nVars+1,stormID,lineOfTraj]=MM
-        prodata[nVars+2,stormID,lineOfTraj]=DD
-        prodata[nVars+3,stormID,lineOfTraj]=HH
-      lineOfTraj += 1   # increment line
+            ptArr = line.split()
+            for jj in range(nVars):
+                if isUnstruc:
+                    prodata[jj+1,stormID,lineOfTraj]=ptArr[jj]
+                else:
+                    prodata[jj,stormID,lineOfTraj]=ptArr[jj]
+            lineOfTraj += 1   # increment line
 
-  print("... done reading data")
-  return numnodetimes, maxNumPts, prodata
+    # Make sure we return the correct size of the array
+    if isUnstruc:
+        ncols=nVars+1
+    else:
+        ncols=nVars
+
+    print("... done reading data")
+    return numtraj, maxNumPts, ncols, prodata
+
+
+def writeTrajectories(filename, data, ntraj, npts, headerDelimStr="start"):
+    """
+    Write trajectory data to a file in TempestExtremes format.
+
+    Parameters:
+    ----------
+    filename (str): Output file path
+    data (np.ndarray): Data array of shape (nvars, ntraj, maxpts)
+    ntraj (int): Number of trajectories
+    npts (int): Max number of points
+    headerDelimStr (str): Header delimiter string
+    """
+
+    print(f"Writing TempestExtremes file to {filename}...")
+    with open(filename, 'w') as f:
+        for storm in range(ntraj):
+            # Find valid points for this storm
+            valid_points = ~np.isnan(data[0,storm,:])
+            num_valid = int(np.sum(valid_points))
+
+            # Get time values from last 4 columns for header
+            yyyy = int(data[-4,storm,0])
+            mm = int(data[-3,storm,0])
+            dd = int(data[-2,storm,0])
+            hh = int(data[-1,storm,0])
+
+            # Write header
+            f.write(f"{headerDelimStr}\t{num_valid}\t{yyyy}\t{mm}\t{dd}\t{hh}\n")
+
+            # Write data points
+            for pt in range(num_valid):
+                line_data = []
+                # Process all columns except time columns
+                for col in range(data.shape[0]-4):
+                    val = data[col,storm,pt]
+                    if col <= 1:  # First two columns are integers
+                        line_data.append(f"{int(val)}")
+                    else:
+                        line_data.append(f"{val:e}")
+
+                # Add time columns
+                for timevar in [-4, -3, -2, -1]:
+                    line_data.append(f"{int(data[timevar,storm,pt])}")
+
+                f.write("\t" + "\t".join(line_data) + "\n")
+
+
+
+
+def getNodes(filename, nVars, isUnstruc):
+    """
+    Read node data from a TempestExtremes nodes file format.
+
+    Parameters:
+    ----------
+    filename (str): Path to input nodes file
+    nVars (int): Number of variables per node (-1 for auto-detection)
+    isUnstruc (bool): If True, adds extra columns for unstructured grid data
+
+    Returns:
+    ----------
+    numnodetimes (int): Number of timesteps with nodes
+    maxNumPts (int): Maximum number of nodes at any timestep
+    prodata (np.ndarray): Array of shape (nvars+4/5, numnodetimes, maxpts) containing node data
+    """
+
+    print("Getting nodes from TempestExtremes file...")
+
+    # Using the newer with construct to close the file automatically.
+    with open(filename) as f:
+        data = f.readlines()
+
+    # Find total number of trajectories and maximum length of trajectories
+    numnodetimes=0
+    numPts=[]
+
+    for line in data:
+        if re.match(r'\w', line):
+            # if header line, store number of points in given traj in numPts
+            headArr = line.split()
+            numnodetimes += 1
+            numPts.append(int(headArr[3]))
+        else:
+            # if not a header line, and nVars = -1, find number of columns in data point
+            if nVars < 0:
+                nVars=len(line.split())
+
+    maxNumPts = max(numPts) # Maximum length of ANY trajectory
+    print("Found %d columns" % nVars)
+    print("Found %d trajectories" % numnodetimes)
+    print("Found %d maxNumPts" % maxNumPts)
+
+    # Initialize storm and line counter
+    stormID=-1
+    lineOfTraj=-1
+
+    # Create array for data
+    if isUnstruc:
+        prodata = np.empty((nVars+5,numnodetimes,maxNumPts))
+    else:
+        prodata = np.empty((nVars+4,numnodetimes,maxNumPts))
+
+    prodata[:] = np.NAN
+    nextHeadLine=0
+
+    for i, line in enumerate(data):
+        if re.match(r'\w', line):  # check if header string is satisfied
+            stormID += 1      # increment storm
+            lineOfTraj = 0    # reset trajectory line to zero
+            headArr = line.split()
+            YYYY = int(headArr[0])
+            MM = int(headArr[1])
+            DD = int(headArr[2])
+            HH = int(headArr[4])
+        else:
+            ptArr = line.split()
+            for jj in range(nVars-1):
+                if isUnstruc:
+                    prodata[jj+1,stormID,lineOfTraj]=ptArr[jj]
+                else:
+                    prodata[jj,stormID,lineOfTraj]=ptArr[jj]
+            if isUnstruc:
+                prodata[nVars+1,stormID,lineOfTraj]=YYYY
+                prodata[nVars+2,stormID,lineOfTraj]=MM
+                prodata[nVars+3,stormID,lineOfTraj]=DD
+                prodata[nVars+4,stormID,lineOfTraj]=HH
+            else:
+                prodata[nVars  ,stormID,lineOfTraj]=YYYY
+                prodata[nVars+1,stormID,lineOfTraj]=MM
+                prodata[nVars+2,stormID,lineOfTraj]=DD
+                prodata[nVars+3,stormID,lineOfTraj]=HH
+            lineOfTraj += 1   # increment line
+
+    print("... done reading data")
+    return numnodetimes, maxNumPts, prodata
