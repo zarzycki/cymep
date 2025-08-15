@@ -216,3 +216,37 @@ def getNodes(filename, nVars, isUnstruc):
 
     print("... done reading data")
     return numnodetimes, maxNumPts, prodata
+
+
+
+def append_column(data, new_column, position=-5):
+    """
+    Add a new column to 3D numpy array at specified position.
+
+    Parameters:
+    ----------
+    data (np.ndarray): Original TE 3D array of shape (nvars, ntraj, npts)
+    new_column (np.ndarray): Column to add, must be shape (ntraj, npts)
+    position (int): Position to insert column, counting from end. Default -5 puts column before last 4
+
+    Returns:
+    ----------
+    new_data (np.ndarray): Array with new column inserted
+    """
+    # Check dimensions
+    if new_column.shape != data.shape[1:]:
+        raise ValueError(f"New column shape {new_column.shape} does not match required shape {data.shape[1:]}")
+
+    # Create new array with space for additional column
+    new_data = np.empty((data.shape[0]+1, data.shape[1], data.shape[2]))
+
+    # Copy data before insertion point
+    new_data[:position] = data[:position+1]
+
+    # Insert new column
+    new_data[position] = new_column
+
+    # Copy remaining data after insertion point
+    new_data[position+1:] = data[position+1:]
+
+    return new_data
