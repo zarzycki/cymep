@@ -119,11 +119,11 @@ landfall_time=new((/nfields,npossLF,nstorms/),typeof(time))
 
 ;===========================================================================================
 
-interp_lat =interp_traj(lat,hrsbase,hrsinterp,True)
-interp_lon =interp_traj(lon,hrsbase,hrsinterp,False)
-interp_wind=interp_traj(wind,hrsbase,hrsinterp,False)
-interp_pres=interp_traj(pres,hrsbase,hrsinterp,False)
-interp_time=interp_traj(time,hrsbase,hrsinterp,False)
+interp_lat =interp_traj(lat,hrsbase,hrsinterp,0,True)
+interp_lon =interp_traj(lon,hrsbase,hrsinterp,0,False)
+interp_wind=interp_traj(wind,hrsbase,hrsinterp,1,False)
+interp_pres=interp_traj(pres,hrsbase,hrsinterp,1,False)
+interp_time=interp_traj(time,hrsbase,hrsinterp,0,False)
 
 interp_landmask=new(dimsizes(interp_lat),"logical")
 interp_landmask=interp_landmask@_FillValue
@@ -166,23 +166,32 @@ do ii = STIX,ENIX
       landfall_time(1,zz,ii) = interp_time(ii,0)
 
       ; take floor (00UTC day of landfall) and subtract 24 hours
-      landfall_time(2,zz,ii) = floor(landfall_time(0,zz,ii)) - 1.0
+      ;landfall_time(2,zz,ii) = floor(landfall_time(0,zz,ii)) - 1.0
+      landfall_time(2,zz,ii) = round((landfall_time(0,zz,ii) - (37.0/24.0)) * 2.0, 0) / 2.0
       matching_index=ind(interp_time(ii,:) .eq. landfall_time(2,zz,ii))
 
       if (.not.ismissing(matching_index))
         landfall_lat(2,zz,ii) = interp_lat(ii,matching_index)
         landfall_lon(2,zz,ii) = interp_lon(ii,matching_index)
       else
-        ; take floor (00UTC day of landfall)
-        landfall_time(2,zz,ii) = floor(landfall_time(0,zz,ii)) - 0.0
+        ; if missing, first try just going 24 hours back instead of 36 hours
+        landfall_time(2,zz,ii) = floor(landfall_time(0,zz,ii)) - 1.0
         matching_index=ind(interp_time(ii,:) .eq. landfall_time(2,zz,ii))
         if (.not.ismissing(matching_index))
           landfall_lat(2,zz,ii) = interp_lat(ii,matching_index)
           landfall_lon(2,zz,ii) = interp_lon(ii,matching_index)
         else
-          ; storm formed after 00Z on landfall day
-          landfall_lat(2,zz,ii) = landfall_lat@_FillValue
-          landfall_lon(2,zz,ii) = landfall_lon@_FillValue
+          ; if still missing, take floor (00UTC day of landfall)
+          landfall_time(2,zz,ii) = floor(landfall_time(0,zz,ii)) - 0.0
+          matching_index=ind(interp_time(ii,:) .eq. landfall_time(2,zz,ii))
+          if (.not.ismissing(matching_index))
+            landfall_lat(2,zz,ii) = interp_lat(ii,matching_index)
+            landfall_lon(2,zz,ii) = interp_lon(ii,matching_index)
+          else
+            ; storm formed after 00Z on landfall day
+            landfall_lat(2,zz,ii) = landfall_lat@_FillValue
+            landfall_lon(2,zz,ii) = landfall_lon@_FillValue
+          end if
         end if
       end if
     end if
