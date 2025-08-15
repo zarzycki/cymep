@@ -100,12 +100,13 @@ end
 ;###################################################################################################
 
 undef("interp_traj")
-function interp_traj(varin,hrsbase,hrsinterp,debug)
+function interp_traj(varin,hrsbase,hrsinterp,interp_option,debug)
 
 ; INPUTS:
 ; varin = traj var to be interpolated in time, can be 1-D (ntimes) or 2-D (nstorms x ntimes)
 ; hrsbase = hours between timesteps of input data (INTEGER)
 ; hrsinterp = desired hours between timesteps of output data (FLOAT)
+; interp_option = 0 linear interp, 1 = forward fill
 ; debug = do we want to debug?
 
 ; RETURNS
@@ -146,10 +147,61 @@ if (debug) then
 end if
 
 ; do interpolation in time of trajectory array
+if (interp_option .eq. 0) then
+  if (debug) then
+    print("Using linear interpolation")
+  end if
+  ; Linear interpolation
+  fiCyclic=False  ;An option to indicate whether the dim-th dimension of fi is cyclic.
+  foOption=0      ; Reserved for future use. It is currently not used, but set it to 0.
+  varout = linint1_n_Wrap(xi,varin,fiCyclic,xo,foOption,interpDim)
 
-fiCyclic=False  ;An option to indicate whether the dim-th dimension of fi is cyclic.
-foOption=0      ; Reserved for future use. It is currently not used, but set it to 0.
-varout =linint1_n_Wrap(xi,varin,fiCyclic,xo,foOption,interpDim)
+else if (interp_option .eq. 1) then
+  ; Forward fill interpolation
+  if (debug) then
+    print("Using forward fill interpolation")
+  end if
+
+  ; Create output array with proper dimensions and type
+  if (interpDim .eq. 0) then
+    varout = new(ntimesinterp, typeof(varin))
+  else
+    varout = new((/nstorms, ntimesinterp/), typeof(varin))
+  end if
+
+  ; Copy attributes from input variable
+  copy_VarAtts(varin, varout)
+
+  ; For each output time point, find corresponding input index for forward fill
+  xiIndices = new(ntimesinterp, integer)
+  do j = 0, ntimesinterp-1
+    ; Find largest index where xi <= xo[j] (forward fill logic)
+    validIndices = ind(xi .le. xo(j))
+    if (.not. all(ismissing(validIndices))) then
+      xiIndices(j) = max(validIndices)
+      delete(validIndices)  ; clean up for next iteration
+    else
+      ; If no xi <= xo[j], use the first point (edge case)
+      xiIndices(j) = 0
+      if (debug) then
+        print("Warning: xo("+j+") = "+xo(j)+" is before first xi point, using index 0")
+      end if
+    end if
+  end do
+
+  ; Fill output array using forward fill indices
+  if (interpDim .eq. 0) then
+    varout = varin(xiIndices)
+  else
+    varout = varin(:, xiIndices)
+  end if
+
+else
+  print("Error: Unknown interp_option = "+interp_option)
+  print("Valid options: 0 (linear interpolation), 1 (forward fill)")
+  exit()
+end if
+end if
 
 ; return interpolated array to main script
 return(varout)
