@@ -95,21 +95,29 @@ filename = namesplit@fBase
     resP=True
     ;resP@txString           = "Annual TC track density, all storms"
     resP@amJust           = "TopLeft"
-    resP@gsnPanelFigureStringsFontHeightF = 0.015
     resP@gsnPanelFigureStrings=models
 
     resP@gsnPanelLabelBar    = True                ; add common colorbar
-    resP@lbLabelFontHeightF  = 0.012               ; make labels smaller
 
     if (nfiles .le. 4) then
+      resP@gsnPanelFigureStringsFontHeightF = 0.015
+      resP@lbLabelFontHeightF  = 0.012
       gsn_panel(wks,plot,(/4,1/),resP)
     else if (nfiles .gt. 4 .and. nfiles .le. 8) then
+      resP@gsnPanelFigureStringsFontHeightF = 0.012
+      resP@lbLabelFontHeightF  = 0.011
       gsn_panel(wks,plot,(/4,2/),resP)
     else if (nfiles .gt. 8 .and. nfiles .le. 12) then
+      resP@gsnPanelFigureStringsFontHeightF = 0.009
+      resP@lbLabelFontHeightF  = 0.010
       gsn_panel(wks,plot,(/4,3/),resP)
     else if (nfiles .gt. 12 .and. nfiles .le. 16) then
+      resP@gsnPanelFigureStringsFontHeightF = 0.007
+      resP@lbLabelFontHeightF  = 0.008
       gsn_panel(wks,plot,(/4,4/),resP)
     else
+      resP@gsnPanelFigureStringsFontHeightF = 0.005
+      resP@lbLabelFontHeightF  = 0.006
       gsn_panel(wks,plot,(/4,5/),resP)
     end if
     end if
