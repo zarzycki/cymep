@@ -16,11 +16,11 @@ from pattern_cor import *
 #----------------------------------------------------------------------------------------
 ##### User settings
 
-basin = 1
-csvfilename = 'sens_configs.csv'
+basin = 20     # 20 = NHEMI
+csvfilename = 'cam7_configs.csv'
 gridsize = 8.0
-styr = 1900
-enyr = 2100
+styr = 1980
+enyr = 2020
 stmon = 1
 enmon = 12
 truncate_years = False
@@ -28,8 +28,8 @@ THRESHOLD_ACE_WIND = -1.0      # wind speed (in m/s) to threshold ACE. Negative 
 THRESHOLD_PACE_PRES = -100.    # slp (in hPa) to threshold PACE. Negative means off.
 do_special_filter_obs = True   # Special "if" block for first line (control)
 do_fill_missing_pw = True
-do_defineMIbypres = False
-debug_level=1                  # 0 = no debug, 1 = semi-verbose, 2 = very verbose
+do_defineMIbypres = True
+debug_level=0                  # 0 = no debug, 1 = semi-verbose, 2 = very verbose
 
 #----------------------------------------------------------------------------------------
 
