@@ -34,7 +34,12 @@ def track_density(gridsize,lonstart,clat,clon,setzeros):
   il = 0
   
   npts = clat.size
-  
+
+  num_neg_lon = np.sum(clon[~np.isnan(clon)] < 0.)
+  if num_neg_lon > 0:
+    print("track_density: normalizing "+str(int(num_neg_lon))+" negative longitudes to 0-360")
+  clon = np.where(clon < 0., clon + 360., clon)
+
   for nn, zz in enumerate(range(npts)):
     if ~np.isnan(clon[nn]):
       jl = int( (clat[nn]-latS) / dlat )
@@ -43,7 +48,7 @@ def track_density(gridsize,lonstart,clat,clon,setzeros):
         print("mlon needs correcting at: "+str(il))
         il = 0
       countarr[jl,il] = countarr[jl,il] + 1
-  
+
   print("count: min="+str(int(np.nanmin(countarr)))+"   max="+str(int(np.nanmax(countarr))))
   print("count: sum="+str(int(np.nansum(countarr))))
   
@@ -85,7 +90,12 @@ def track_mean(gridsize,lonstart,clat,clon,cvar,meanornot,minhits):
   il = 0
   
   npts = clat.size
-  
+
+  num_neg_lon = np.sum(clon[~np.isnan(clon)] < 0.)
+  if num_neg_lon > 0:
+    print("track_mean: normalizing "+str(int(num_neg_lon))+" negative longitudes to 0-360")
+  clon = np.where(clon < 0., clon + 360., clon)
+
   for nn, zz in enumerate(range(npts)):
     if ~np.isnan(clon[nn]):
       jl = int( (clat[nn]-latS) / dlat )
@@ -141,7 +151,12 @@ def track_minmax(gridsize,lonstart,clat,clon,cvar,minmax,minhits):
   il = 0
   
   npts = clat.size
-  
+
+  num_neg_lon = np.sum(clon[~np.isnan(clon)] < 0.)
+  if num_neg_lon > 0:
+    print("track_minmax: normalizing "+str(int(num_neg_lon))+" negative longitudes to 0-360")
+  clon = np.where(clon < 0., clon + 360., clon)
+
   for nn, zz in enumerate(range(npts)):
     if ~np.isnan(clon[nn]):
       jl = int( (clat[nn]-latS) / dlat )
