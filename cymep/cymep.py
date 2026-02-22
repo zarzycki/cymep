@@ -208,7 +208,7 @@ for ii in range(len(files)):
 
   # Get genesis location latitude and longitude
   # Loop over all storms, check for "finite" (non nan) points within that storm's traj
-  for kk, zz in enumerate(range(nstorms)):
+  for kk in range(nstorms):
     validlon = xlon[kk,:][np.isfinite(xlon[kk,:])]
     validlat = xlat[kk,:][np.isfinite(xlat[kk,:])]
     validmon = xmonth[kk,:][np.isfinite(xmonth[kk,:])]
@@ -243,7 +243,7 @@ for ii in range(len(files)):
 
   # Mask TCs for particular basin based on genesis location
   if basin > 0:
-    for kk, zz in enumerate(range(nstorms)):
+    for kk in range(nstorms):
       if basin == 20 or basin == 21:
         test_basin = maskTC(xglat[kk],xglon[kk],dohemi=True)
       else:
@@ -266,7 +266,7 @@ for ii in range(len(files)):
     print("DEBUG1: Storms after basin filter: ",np.sum(~np.isnan(xglon)))
 
   # Mask TCs based on temporal characteristics
-  for kk, zz in enumerate(range(nstorms)):
+  for kk in range(nstorms):
     maskoff = True
     if not np.isnan(xglat[kk]):
       maskoff = False
@@ -300,7 +300,7 @@ for ii in range(len(files)):
   #########################################
 
   # Calculate LMI
-  for kk, zz in enumerate(range(nstorms)):
+  for kk in range(nstorms):
     if not np.isnan(xglat[kk]):
       if do_defineMIbypres:
         locMI=np.nanargmin(xpres[kk,:])
