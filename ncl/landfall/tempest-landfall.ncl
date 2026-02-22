@@ -227,6 +227,7 @@ BAHALAT=26.145386923899665
 landfall_region=new((/npossLF,nstorms/),"integer")
 landfall_region=-999
 
+
 do jj = 0,nstorms-1
 do ii = 0,npossLF-1
 
@@ -364,6 +365,8 @@ quote = inttochar(34)
 delim = ","
 txtfilename="./landfall_txt/LF."+filebase
 system("rm "+txtfilename)
+
+header_printed = False
 
 do j = 0,nstorms-1
 do i = 0,npossLF-1
@@ -514,7 +517,11 @@ do i = 0,npossLF-1
     text(i,j) = gsn_add_text(wks,map,stormIDstr,thisLon+txtdegoffset,thisLat-txtdegoffset,txres)
   end if
 
-  system("echo "+quote+   stormIDstr+delim+thisDate+delim+thisLon+delim+thisLat+delim+thisPres+delim+thisWind+delim+genLon+delim+genLat+delim+daysBeforeDate+delim+landfall_region(i,j)   +quote+" >> "+txtfilename)
+  if (.not. header_printed) then
+    system("echo "+quote+   "stormIDstr"+delim+"thisDate"+delim+"thisLon"+delim+"thisLat"+delim+"thisPres"+delim+"thisWind"+delim+"genLon"+delim+"genLat"+delim+"daysBeforeDate"+delim+"beforeLon"+delim+"beforeLat"+delim+"landfall_region"   +quote+" >> "+txtfilename)
+    header_printed = True
+  end if
+  system("echo "+quote+   stormIDstr+delim+thisDate+delim+thisLon+delim+thisLat+delim+thisPres+delim+thisWind+delim+genLon+delim+genLat+delim+daysBeforeDate+delim+beforeLon+delim+beforeLat+delim+landfall_region(i,j)   +quote+" >> "+txtfilename)
 
 end if
 
