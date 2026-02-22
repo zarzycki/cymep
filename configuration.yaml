@@ -2,7 +2,7 @@ name: cymep
 channels:
   - conda-forge
 dependencies:
-  - numpy=1.23.5
+  - numpy
   - pandas
   - scipy
   - netCDF4

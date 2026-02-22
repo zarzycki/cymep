@@ -7,11 +7,10 @@ Zarzycki, C. M., Ullrich, P. A., and Reed, K. A. (2021). Metrics for evaluating 
 This directory (the root) is defined as `${CYMEP}`. The released version of CyMeP is stored in `${CYMEP}/cymep/`.
 
 ### General workflow
-1. Add TempestExtremes ASCII trajectories to ./traj/
-2. Create a configuration .csv file in ./config-lists/
-3. Edit user settings in cymep.py
-4. Run cymep.py
-5. Run graphics-cymep.sh
+1. Add TempestExtremes ASCII trajectories to `./trajs/`
+2. Create a configuration CSV file in `./config-lists/`
+3. Run `cymep.py` with appropriate command-line arguments
+4. Run `graphics-cymep.sh`
 
 ### 0. Install dependencies
 
@@ -100,33 +99,42 @@ Using the first line as an example...
 
 **NOTE**: The wind speed correction factor is a multiplier on the "wind" variable in the trajectory file to normalized from lowest model level to some reference height (e.g., lowest model level to 10m winds for TCs).
 
-### 3. Edit cymep.py
+### 3. Run cymep.py
 
-| Variable | Description |
-| --- | --- |
-| gridsize | Length of side of each square gridbox used for spatial analysis in degrees (e.g., 8.0) |
-| basin | Set to negative to turn off filtering, otherwise specify particular ocean basin/hemisphere based on mask functions |
-| csvfilename | The name of the file stored in `config_files` that contains the list of files to be analyzed |
-| styr | Start year for overlapping interannual correlation analysis |
-| enyr | End year for overlapping interannual correlation analysis |
-| truncate_years | If `True` then filter out years external to styr and enyr. If `False` keep all data |
-| do_defineMIbypres | Define maximum intensity location by PSL instead of wind? (default: False = wind) |
-| do_fill_missing_pw | Fill missing data with observed pressure-wind curve? (False leaves data as missing) |
-| do_special_filter_obs | Do we have special observational filtering? (if true, code modifications needed) |
-| THRESHOLD_ACE_WIND | Select threshold wind (in m/s) for ACE calculations (negative value means no threshold) |
-| THRESHOLD_PACE_PRES | Select threshold SLP (in hPa) for PACE calculations (negative value means no threshold) |
+Analysis settings are passed as command-line arguments. All arguments are optional and fall back to the defaults shown below:
+
+```
+$> python cymep.py --csvfile cam7_configs.csv \
+                   --basin 20 \
+                   --gridsize 8.0 \
+                   --styr 1980 --enyr 2020 \
+                   --stmon 1 --enmon 12
+```
+
+Full list of options (also available via `python cymep.py --help`):
+
+| Argument | Default | Description |
+| --- | --- | --- |
+| `--csvfile` | `cam7_configs.csv` | Config CSV filename in `config-lists/` |
+| `--basin` | `20` | Basin mask: -1=global, 1=NATL, 2=EPAC, 3=CPAC, 4=WPAC, 5=NIO, 6=SIO, 7=SPAC, 20=NHEMI, 21=SHEMI |
+| `--gridsize` | `8.0` | Grid box side length in degrees for spatial analysis |
+| `--styr` | `1980` | Start year |
+| `--enyr` | `2020` | End year |
+| `--stmon` | `1` | Start month |
+| `--enmon` | `12` | End month |
+| `--truncate-years` | off | If set, filter out years outside styr/enyr range |
+| `--ace-wind-threshold` | `-1.0` | Wind threshold (m/s) for ACE; negative=off |
+| `--pace-pres-threshold` | `-100.0` | SLP threshold (hPa) for PACE; negative=off |
+| `--no-special-filter-obs` | off | Disable the 17.5 m/s wind threshold applied to the control dataset |
+| `--no-fill-missing-pw` | off | Disable filling missing pressure/wind values via the P-W curve |
+| `--lmi-by-wind` | off | Define LMI location by max wind instead of min pressure |
+| `--debug` | `0` | Debug verbosity: 0=off, 1=semi-verbose, 2=very verbose |
 
 **NOTE**: if you have a non-TempestExtremes-TC configuration, you need to modify the array extraction found by grepping for `USER_MODIFY` in `cymep.py`.
 
-### 4. Run cymep.py
-
-Finally, run cymep.
-
-```
-$> python cymep.py
-```
-
 This will produce two sets of files. One, a handful of CSV files in `${CYMEP}/cymep/csv-files/`. Two, a NetCDF file in `${CYMEP}/cymep/netcdf-files/`.
+
+NOTE: Eventually, the `csv-files` folder will become obsolete and all output from the suite will be packaged via NetCDF.
 
 NOTE: Eventually, the `csv-files` folder will become obsolete and all output from the suite will be packaged via NetCDF.
 

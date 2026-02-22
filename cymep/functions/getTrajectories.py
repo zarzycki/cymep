@@ -56,7 +56,7 @@ def getTrajectories(filename,nVars,headerDelimStr,isUnstruc):
         prodata = np.empty((nVars+1,numtraj,maxNumPts))
     else:
         prodata = np.empty((nVars,numtraj,maxNumPts))
-    prodata[:] = np.NAN
+    prodata[:] = np.nan
 
     for i, line in enumerate(data):
         if headerDelimStr in line:  # check if header string is satisfied
@@ -183,7 +183,7 @@ def getNodes(filename, nVars, isUnstruc):
     else:
         prodata = np.empty((nVars+4,numnodetimes,maxNumPts))
 
-    prodata[:] = np.NAN
+    prodata[:] = np.nan
     nextHeadLine=0
 
     for i, line in enumerate(data):

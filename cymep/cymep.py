@@ -1,5 +1,6 @@
 import sys
 import re
+import argparse
 import numpy as np
 import pandas as pd
 import scipy.stats as sps
@@ -14,22 +15,39 @@ from write_spatial import *
 from pattern_cor import *
 
 #----------------------------------------------------------------------------------------
-##### User settings
+##### User settings (override defaults via command-line arguments)
 
-basin = 20     # 20 = NHEMI
-csvfilename = 'cam7_configs.csv'
-gridsize = 8.0
-styr = 1980
-enyr = 2020
-stmon = 1
-enmon = 12
-truncate_years = False
-THRESHOLD_ACE_WIND = -1.0      # wind speed (in m/s) to threshold ACE. Negative means off.
-THRESHOLD_PACE_PRES = -100.    # slp (in hPa) to threshold PACE. Negative means off.
-do_special_filter_obs = True   # Special "if" block for first line (control)
-do_fill_missing_pw = True
-do_defineMIbypres = True
-debug_level=0                  # 0 = no debug, 1 = semi-verbose, 2 = very verbose
+parser = argparse.ArgumentParser(description='CyMeP: Cyclone Metrics Package')
+parser.add_argument('--csvfile',            type=str,   default='cam7_configs.csv', help='Config CSV filename in config-lists/')
+parser.add_argument('--basin',              type=int,   default=20,    help='Basin mask: -1=global, 1=NATL, 2=EPAC, 3=CPAC, 4=WPAC, 5=NIO, 6=SIO, 7=SPAC, 20=NHEMI, 21=SHEMI')
+parser.add_argument('--gridsize',           type=float, default=8.0,   help='Grid box side length in degrees for spatial analysis')
+parser.add_argument('--styr',               type=int,   default=1980,  help='Start year')
+parser.add_argument('--enyr',               type=int,   default=2020,  help='End year')
+parser.add_argument('--stmon',              type=int,   default=1,     help='Start month')
+parser.add_argument('--enmon',              type=int,   default=12,    help='End month')
+parser.add_argument('--truncate-years',     action='store_true',       help='Filter out years outside styr/enyr range')
+parser.add_argument('--ace-wind-threshold', type=float, default=-1.0,  help='Wind threshold (m/s) for ACE; negative=off')
+parser.add_argument('--pace-pres-threshold',type=float, default=-100., help='SLP threshold (hPa) for PACE; negative=off')
+parser.add_argument('--no-special-filter-obs', action='store_true',   help='Disable special observational filtering on control dataset')
+parser.add_argument('--no-fill-missing-pw', action='store_true',      help='Disable filling missing pressure/wind via P-W curve')
+parser.add_argument('--lmi-by-wind',        action='store_true',       help='Define LMI location by max wind instead of min pressure')
+parser.add_argument('--debug',              type=int,   default=0,     help='Debug level: 0=off, 1=semi-verbose, 2=very verbose')
+args = parser.parse_args()
+
+csvfilename          = args.csvfile
+basin                = args.basin
+gridsize             = args.gridsize
+styr                 = args.styr
+enyr                 = args.enyr
+stmon                = args.stmon
+enmon                = args.enmon
+truncate_years       = args.truncate_years
+THRESHOLD_ACE_WIND   = args.ace_wind_threshold
+THRESHOLD_PACE_PRES  = args.pace_pres_threshold
+do_special_filter_obs= not args.no_special_filter_obs
+do_fill_missing_pw   = not args.no_fill_missing_pw
+do_defineMIbypres    = not args.lmi_by_wind
+debug_level          = args.debug
 
 #----------------------------------------------------------------------------------------
 
