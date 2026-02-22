@@ -13,17 +13,17 @@ is_grid_2D=False
 flip_grid_180=True
 cut_regional=False     ; if our grid is regional, we can cut TCs along the boundary ring
 cut_regional_ring_width=8  ; what stencil at boundaries to toss? needs to be >=1
-correct_pres_wind = True ; do we want to fill in missing P/W with K&Z 07?
+correct_pres_wind=True ; do we want to fill in missing P/W with K&Z 07?
 DURTHRESH=3
 
 print_to_screen=True
 print_names=False
 
-ibstyr=1979
-ibenyr=2021
+ibstyr=1900
+ibenyr=2024
 
 ibdir = "./"
-ibfilename="IBTrACS.ALL.v04r00.nc"
+ibfilename="IBTrACS.ALL.v04r01.nc"
 ibversion="v4"
 
 factor=1.0
@@ -161,13 +161,13 @@ do ii = 0,ibstormcount-1
   ;print(ibname(ii,0)+" "+toint(ibbasin(ii,0)))
   ;if (toint(ibbasin(ii,0)) .eq. 0 .or. toint(ibbasin(ii,0)) .eq. 12 .or. toint(ibbasin(ii,0)) .eq. 13) then
   ;if (toint(ibbasin(ii,0)) .eq. 0 ) then
-  
+
       latix = toint(iblat(ii,:))
       lonix = toint(iblon(ii,:))
-      
+
       do jj = 0,ibntimes-1
         if (.not.ismissing(iblat(ii,jj))) then
-        
+
           if correct_pres_wind then
             aaa=2.3
             bbb=1010.
@@ -206,9 +206,9 @@ do ii = 0,ibstormcount-1
               a_indices  = ind_resolve(minind(a1D),dsizes_a)
               latix(jj) = a_indices(0,0)
               lonix(jj) = a_indices(0,1)
-              
+
               if (cut_regional) then
-                if (latix(jj) .le. (cut_regional_ring_width-1) .or. \ 
+                if (latix(jj) .le. (cut_regional_ring_width-1) .or. \
                     latix(jj) .ge. (num2dlat-cut_regional_ring_width) .or. \
                     lonix(jj) .le. (cut_regional_ring_width-1) .or. \
                     lonix(jj) .ge. (num2dlon-cut_regional_ring_width)) then
@@ -216,7 +216,7 @@ do ii = 0,ibstormcount-1
                   iblon(ii,jj) = iblat@_FillValue
                 end if
               end if
-                            
+
             else
               if (.not. isdefined("gridlat")) then
                 gridf=addfile(gridfile,"r")
@@ -298,7 +298,7 @@ do ii = 0,ibstormcount-1
 ;>              if (gcdist(thisLat,thisLon) .gt. DIST_THRESHOLD) then
 ;>                continue
 ;>              end if
-;>              
+;>
 ;>            else
 ;>              if (.not. isdefined("gridlat")) then
 ;>                gridf=addfile(gridfile,"r")
@@ -315,7 +315,7 @@ do ii = 0,ibstormcount-1
 
           thisLat = latix(jj)
           thisLon = lonix(jj)
-          
+
           ;print(iblat(ii,jj)+" "+iblon(ii,jj))
           if (iblon(ii,jj) .le. max(PHIS&lon) .and. iblon(ii,jj) .ge. min(PHIS&lon)) then
             thisPHIS=tofloat(PHIS({iblat(ii,jj)},{iblon(ii,jj)}))
@@ -339,5 +339,5 @@ do ii = 0,ibstormcount-1
   ;end if
 end do
 end
-  
-	;13056	41.470669	-19.662915	9.957811e+04	1.960049e+01	1979	1	16	12	
+
+	;13056	41.470669	-19.662915	9.957811e+04	1.960049e+01	1979	1	16	12
