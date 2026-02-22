@@ -1,10 +1,10 @@
 import sys
+import os
 import re
 import argparse
 import numpy as np
 import pandas as pd
 import scipy.stats as sps
-from netCDF4 import Dataset
 import warnings
 
 sys.path.insert(0, './functions')
