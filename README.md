@@ -123,6 +123,8 @@ Full list of options (also available via `python cymep.py --help`):
 | `--stmon` | `1` | Start month |
 | `--enmon` | `12` | End month |
 | `--truncate-years` | off | If set, filter out years outside styr/enyr range |
+| `--min-storm-wind` | `-1.0` | Minimum peak wind (m/s) a storm must reach to be counted; negative=off |
+| `--max-storm-pres` | `-1.0` | Maximum minimum SLP (hPa) a storm must reach to be counted; negative=off |
 | `--ace-wind-threshold` | `-1.0` | Wind threshold (m/s) for ACE; negative=off |
 | `--pace-pres-threshold` | `-100.0` | SLP threshold (hPa) for PACE; negative=off |
 | `--no-special-filter-obs` | off | Disable the 17.5 m/s wind threshold applied to the control dataset |
