@@ -26,6 +26,8 @@ parser.add_argument('--enyr',               type=int,   default=2020,  help='End
 parser.add_argument('--stmon',              type=int,   default=1,     help='Start month')
 parser.add_argument('--enmon',              type=int,   default=12,    help='End month')
 parser.add_argument('--truncate-years',     action='store_true',       help='Filter out years outside styr/enyr range')
+parser.add_argument('--min-storm-wind',     type=float, default=-1.0,  help='Minimum peak wind (m/s) a storm must reach to be counted; negative=off')
+parser.add_argument('--max-storm-pres',     type=float, default=-1.0,  help='Maximum minimum SLP (hPa) a storm must reach to be counted; negative=off')
 parser.add_argument('--ace-wind-threshold', type=float, default=-1.0,  help='Wind threshold (m/s) for ACE; negative=off')
 parser.add_argument('--pace-pres-threshold',type=float, default=-100., help='SLP threshold (hPa) for PACE; negative=off')
 parser.add_argument('--no-special-filter-obs', action='store_true',   help='Disable special observational filtering on control dataset')
@@ -42,6 +44,8 @@ enyr                 = args.enyr
 stmon                = args.stmon
 enmon                = args.enmon
 truncate_years       = args.truncate_years
+MIN_STORM_WIND       = args.min_storm_wind
+MAX_STORM_PRES       = args.max_storm_pres
 THRESHOLD_ACE_WIND   = args.ace_wind_threshold
 THRESHOLD_PACE_PRES  = args.pace_pres_threshold
 do_special_filter_obs= not args.no_special_filter_obs
@@ -297,6 +301,46 @@ for ii in range(len(files)):
 
   if debug_level >= 1:
     print("DEBUG1: Storms after time filter: ",np.sum(~np.isnan(xglon)))
+
+  # Filter storms that never reach the minimum peak wind threshold
+  if MIN_STORM_WIND > 0:
+    for kk in range(nstorms):
+      if not np.isnan(xglat[kk]):
+        if np.nanmax(xwind[kk,:]) < MIN_STORM_WIND:
+          xlon[kk,:]   = float('NaN')
+          xlat[kk,:]   = float('NaN')
+          xpres[kk,:]  = float('NaN')
+          xwind[kk,:]  = float('NaN')
+          xyear[kk,:]  = float('NaN')
+          xmonth[kk,:] = float('NaN')
+          xglon[kk]    = float('NaN')
+          xglat[kk]    = float('NaN')
+          xgmonth[kk]  = float('NaN')
+          xgyear[kk]   = float('NaN')
+          xgday[kk]    = float('NaN')
+          xghour[kk]   = float('NaN')
+    if debug_level >= 1:
+      print("DEBUG1: Storms after min-storm-wind filter: ",np.sum(~np.isnan(xglon)))
+
+  # Filter storms that never reach the maximum minimum SLP threshold
+  if MAX_STORM_PRES > 0:
+    for kk in range(nstorms):
+      if not np.isnan(xglat[kk]):
+        if np.nanmin(xpres[kk,:]) > MAX_STORM_PRES:
+          xlon[kk,:]   = float('NaN')
+          xlat[kk,:]   = float('NaN')
+          xpres[kk,:]  = float('NaN')
+          xwind[kk,:]  = float('NaN')
+          xyear[kk,:]  = float('NaN')
+          xmonth[kk,:] = float('NaN')
+          xglon[kk]    = float('NaN')
+          xglat[kk]    = float('NaN')
+          xgmonth[kk]  = float('NaN')
+          xgyear[kk]   = float('NaN')
+          xgday[kk]    = float('NaN')
+          xghour[kk]   = float('NaN')
+    if debug_level >= 1:
+      print("DEBUG1: Storms after max-storm-pres filter: ",np.sum(~np.isnan(xglon)))
   #########################################
 
   # Calculate LMI
@@ -567,7 +611,7 @@ write_single_csv(stdydict,strs[0],'./csv-files/','means_'+os.path.splitext(csvfi
 
 # Package a series of global package inputs for storage as NetCDF attributes
 globaldict={}
-globaldictvars = ["styr","enyr","stmon","enmon","strbasin","do_special_filter_obs","do_fill_missing_pw","csvfilename","truncate_years","do_defineMIbypres","gridsize"]
+globaldictvars = ["styr","enyr","stmon","enmon","strbasin","do_special_filter_obs","do_fill_missing_pw","csvfilename","truncate_years","do_defineMIbypres","gridsize","MIN_STORM_WIND","MAX_STORM_PRES"]
 for x in globaldictvars:
   globaldict[x] = globals()[x]
 
