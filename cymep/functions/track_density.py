@@ -1,6 +1,6 @@
 import numpy as np
 
-def track_density(gridsize,lonstart,clat,clon,setzeros):
+def track_density(gridsize,lonstart,clat,clon,setzeros,label="track"):
 
   #=================== Error checking ==================================
   if clat.size != clon.size:
@@ -49,8 +49,8 @@ def track_density(gridsize,lonstart,clat,clon,setzeros):
         il = 0
       countarr[jl,il] = countarr[jl,il] + 1
 
-  print("count: min="+str(int(np.nanmin(countarr)))+"   max="+str(int(np.nanmax(countarr))))
-  print("count: sum="+str(int(np.nansum(countarr))))
+  prefix = f"{label} " if label else ""
+  print(f"  {prefix}density (grid-box hit counts): min={int(np.nanmin(countarr))}   max={int(np.nanmax(countarr))}   sum={int(np.nansum(countarr))}")
   
   if setzeros:
     countarr = np.where(countarr == 0, float('NaN'), countarr)
@@ -61,7 +61,7 @@ def track_density(gridsize,lonstart,clat,clon,setzeros):
 
 
 
-def track_mean(gridsize,lonstart,clat,clon,cvar,meanornot,minhits):
+def track_mean(gridsize,lonstart,clat,clon,cvar,meanornot,minhits,label="value"):
 
   #=================== Create grid ==================================
 
@@ -114,17 +114,15 @@ def track_mean(gridsize,lonstart,clat,clon,cvar,meanornot,minhits):
     countarr = np.where(countarr == 0, float('NaN'), countarr)
     cumulative = cumulative / countarr
 
-  #print("count: min="+str(int(np.nanmin(countarr)))+"   max="+str(int(np.nanmax(countarr))))
-  #print("count: sum="+str(int(np.nansum(countarr))))
-  print("cumulative: min="+str(np.nanmin(cumulative))+"   max="+str(np.nanmax(cumulative)))
-  print("cumulative: sum="+str(np.nansum(cumulative)))  
+  prefix = f"{label} " if label else ""
+  print(f"  {prefix}density (cumulative sum per grid box): min={np.nanmin(cumulative):.3f}   max={np.nanmax(cumulative):.3f}   sum={np.nansum(cumulative):.3f}")  
 
   return cumulative, lat, lon
   
 
 
 
-def track_minmax(gridsize,lonstart,clat,clon,cvar,minmax,minhits):
+def track_minmax(gridsize,lonstart,clat,clon,cvar,minmax,minhits,label="value"):
 
   #=================== Create grid ==================================
 
@@ -177,7 +175,8 @@ def track_minmax(gridsize,lonstart,clat,clon,cvar,minmax,minhits):
             # This means we have a valid cvar but a countarr value exists that is more extreme
             pass
   
-  print("count: min="+str(np.nanmin(countarr))+"   max="+str(np.nanmax(countarr)))
+  suffix = f" {label}" if label else ""
+  print(f"  {minmax}{suffix} per grid box: min={np.nanmin(countarr):.4f}   max={np.nanmax(countarr):.4f}")
 
   return countarr, lat, lon
   

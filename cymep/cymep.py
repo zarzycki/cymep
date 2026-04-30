@@ -431,10 +431,10 @@ for ii in range(len(files)):
   xpace  = np.where(xpace == 0,float('NaN'),xpace)
 
   # Print some CSV files with storm-level information from each dataset
-  storm_level_data = np.column_stack((xgyear,xgmonth,xgday,xghour,xglat,xglon,xmpres,xmwind,xtcd,xace,xpace))
+  storm_level_data = np.column_stack((xgyear,xgmonth,xgday,xghour,xglat,xglon,xmpres,xmwind,xtcd,xace,xpace,xlatmi,xlonmi))
   filtered_storm_data = storm_level_data[~np.all(np.isnan(storm_level_data), axis=1)]
   data_formatting = ['%d', '%d', '%d', '%d'] + ['%.2f'] * (filtered_storm_data.shape[1] - 4)
-  header_str = "gYear,gMonth,gDay,gHour,gLat,gLon,minPres,maxWind,TCD,ACE,PACE"
+  header_str = "gYear,gMonth,gDay,gHour,gLat,gLon,minPres,maxWind,TCD,ACE,PACE,lmiLat,lmiLon"
   os.makedirs(os.path.dirname('./csv-files/'), exist_ok=True)
   np.savetxt("./csv-files/storms_"+os.path.splitext(csvfilename)[0]+'_'+strbasin+"_"+strs[ii]+"_output.csv",
     filtered_storm_data, delimiter=",", fmt=data_formatting, header=header_str, comments='')
@@ -483,18 +483,18 @@ for ii in range(len(files)):
   asdict['utc_latgen'][ii] = np.nanmean(np.absolute(xglat))
 
   # Calculate spatial densities, integrals, and min/maxes
-  trackdens, denslat, denslon = track_density(gridsize,0.0,xlat.flatten(),xlon.flatten(),False)
+  trackdens, denslat, denslon = track_density(gridsize,0.0,xlat.flatten(),xlon.flatten(),False,label="track")
   trackdens = trackdens/nmodyears
-  gendens, denslat, denslon = track_density(gridsize,0.0,xglat.flatten(),xglon.flatten(),False)
+  gendens, denslat, denslon = track_density(gridsize,0.0,xglat.flatten(),xglon.flatten(),False,label="genesis")
   gendens = gendens/nmodyears
-  tcddens, denslat, denslon = track_mean(gridsize,0.0,xlat.flatten(),xlon.flatten(),xtcdpp.flatten(),False,0)
+  tcddens, denslat, denslon = track_mean(gridsize,0.0,xlat.flatten(),xlon.flatten(),xtcdpp.flatten(),False,0,label="TCD")
   tcddens = tcddens/nmodyears
-  acedens, denslat, denslon = track_mean(gridsize,0.0,xlat.flatten(),xlon.flatten(),xacepp.flatten(),False,0)
+  acedens, denslat, denslon = track_mean(gridsize,0.0,xlat.flatten(),xlon.flatten(),xacepp.flatten(),False,0,label="ACE")
   acedens = acedens/nmodyears
-  pacedens, denslat, denslon = track_mean(gridsize,0.0,xlat.flatten(),xlon.flatten(),xpacepp.flatten(),False,0)
+  pacedens, denslat, denslon = track_mean(gridsize,0.0,xlat.flatten(),xlon.flatten(),xpacepp.flatten(),False,0,label="PACE")
   pacedens = pacedens/nmodyears
-  minpres, denslat, denslon = track_minmax(gridsize,0.0,xlat.flatten(),xlon.flatten(),xpres.flatten(),"min",-1)
-  maxwind, denslat, denslon = track_minmax(gridsize,0.0,xlat.flatten(),xlon.flatten(),xwind.flatten(),"max",-1)
+  minpres, denslat, denslon = track_minmax(gridsize,0.0,xlat.flatten(),xlon.flatten(),xpres.flatten(),"min",-1,label="SLP (hPa)")
+  maxwind, denslat, denslon = track_minmax(gridsize,0.0,xlat.flatten(),xlon.flatten(),xwind.flatten(),"max",-1,label="wind (m/s)")
 
   # If there are no storms tracked in this particular dataset, set everything to NaN
   if np.nansum(trackdens) == 0:
