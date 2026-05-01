@@ -14,8 +14,10 @@ import sys
 import os
 import argparse
 import numpy as np
+import warnings
 import matplotlib
 matplotlib.use('Agg')
+warnings.filterwarnings('ignore', message='Attempting to set identical low and high xlims')
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import matplotlib.ticker as mticker
@@ -49,6 +51,8 @@ def main():
         description='CyMeP Spatial — Python port of plot-spatial.ncl')
     parser.add_argument('ncfile',
                         help='Path to CyMeP output NetCDF file')
+    parser.add_argument('--fixed-scale', action='store_true', default=False,
+                        help='Use hardcoded NCL-matched thresholds instead of data-driven scaling (for comparison)')
     args = parser.parse_args()
 
     # ---- Read NetCDF ----
@@ -74,14 +78,16 @@ def main():
 
     print(strbasin)
 
-    # ---- Contour level bounds (mirrors NCL spapltmincontour/spapltmaxcontour) ----
+    # ---- Fixed colorbar thresholds (--fixed-scale, mirrors original NCL values) ----
+    # Only used when --fixed-scale is passed; otherwise bounds are derived from data.
 
-    if strbasin == 'NATL':
-        spapltmincontour = [0.,  900., 20., 0., 0.,  0.,  0., -10., -1.0, -5., -5.]
-        spapltmaxcontour = [15., 1000., 80., 1., 6.,  6.,  3.,  10.,  1.0,  5.,  5.]
-    else:
-        spapltmincontour = [0.,  900., 20., 0., 0.,  0.,  0., -20., -1.5, -5., -5.]
-        spapltmaxcontour = [40., 1000., 80., 3., 10., 10., 10.,  20.,  1.5,  5.,  5.]
+    if args.fixed_scale:
+        if strbasin == 'NATL':
+            fixed_min = [0.,  900., 20., 0., 0.,  0.,  0., -10., -1.0, -5., -5.]
+            fixed_max = [15., 1000., 80., 1., 6.,  6.,  3.,  10.,  1.0,  5.,  5.]
+        else:
+            fixed_min = [0.,  900., 20., 0., 0.,  0.,  0., -20., -1.5, -5., -5.]
+            fixed_max = [40., 1000., 80., 3., 10., 10., 10.,  20.,  1.5,  5.,  5.]
 
     # ---- Map extent ----
 
@@ -132,8 +138,6 @@ def main():
 
         varname   = spapltvarsstr[bb]
         ncvarname = spapltvars[bb]
-        vmin      = spapltmincontour[bb]
-        vmax      = spapltmaxcontour[bb]
 
         print(f'  plotting {varname} ...')
 
@@ -143,9 +147,38 @@ def main():
         is_bias = varname in bias_vars
         if not is_bias:
             toPlot = np.where(toPlot > 0., toPlot, np.nan)
+            if args.fixed_scale:
+                vmin = fixed_min[bb]
+                vmax = fixed_max[bb]
+                norm = mcolors.Normalize(vmin=vmin, vmax=vmax)
+            else:
+                vmax = np.nanmax(toPlot)
+                if vmax == 0 or np.isnan(vmax):
+                    vmax = 1.0
+                # Power-law boundary spacing: gamma=1 is linear; gamma<1 compresses the top
+                # (more color levels at low values, wider steps at high values).
+                # Lower gamma = stronger compression. 0.5 = sqrt stretch of the low end.
+                gamma = 0.5
+                boundaries = np.linspace(0, vmax ** gamma, nlevels + 1) ** (1.0 / gamma)
+                norm = mcolors.BoundaryNorm(boundaries, ncolors=nlevels)
             cmap = cmap_inferno
         else:
-            # White band: the two center-most levels (indices nlevels//2-1 and nlevels//2) are white.
+            if args.fixed_scale:
+                vmin = fixed_min[bb]
+                vmax = fixed_max[bb]
+                norm = mcolors.Normalize(vmin=vmin, vmax=vmax)
+            else:
+                absmax = np.nanmax(np.abs(toPlot))
+                if absmax == 0 or np.isnan(absmax):
+                    absmax = 1.0
+                # Power-law boundary spacing: gamma=1 is linear; gamma>1 compresses near zero
+                # (more color levels for small differences, wider steps at the extremes).
+                # Higher gamma = more colors clustered near zero. 2.0 = quadratic.
+                gamma = 2.0
+                half = np.linspace(0, absmax ** (1.0 / gamma), nlevels // 2 + 1) ** gamma
+                boundaries = np.concatenate([-half[::-1][:-1], half])
+                norm = mcolors.BoundaryNorm(boundaries, ncolors=nlevels)
+            # White band: the two center-most levels straddle zero
             lo_idx = nlevels // 2 - 1
             hi_idx = nlevels // 2
             bias_colors = list(seismic_base_colors)
@@ -176,7 +209,7 @@ def main():
             # zorder stack: land(0) → data(1) → coastlines(2) → gridlines(3) → label(4)
             # edgecolors='none' + linewidth=0 prevent a red sliver artifact at the left colormap edge
             im = ax.pcolormesh(lon, lat, toPlot[zz, :, :],
-                               vmin=vmin, vmax=vmax,
+                               norm=norm,
                                cmap=cmap,
                                transform=proj,
                                shading='auto',
@@ -214,8 +247,8 @@ def main():
                            top=True, right=True)
 
             # Model name label: white-boxed inset in top-left (mirrors NCL gsnPanelFigureStrings)
-            ax.text(0.02, 0.97, models[zz],
-                    transform=ax.transAxes, fontsize=13,
+            ax.text(0.03, 0.94, models[zz],
+                    transform=ax.transAxes, fontsize=11,
                     va='top', ha='left', zorder=4,
                     bbox=dict(facecolor='white', edgecolor='black', linewidth=0.6, pad=2, alpha=0.85))
             axes.append(ax)
@@ -226,14 +259,16 @@ def main():
 
         # Shared colorbar (mirrors NCL gsnPanelLabelBar)
         cbar_ax = fig.add_axes([0.15, 0.04, 0.70, 0.025])
-        sm = plt.cm.ScalarMappable(cmap=cmap, norm=mcolors.Normalize(vmin=vmin, vmax=vmax))
+        sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
         sm.set_array([])
         cbar = fig.colorbar(sm, cax=cbar_ax, orientation='horizontal')
         cbar.ax.tick_params(labelsize=9)
 
         # wspace is negative to pull panels together — cartopy panels have inherent padding
-        # that subplots_adjust alone can't eliminate without going negative
-        plt.subplots_adjust(left=0.02, right=0.98, top=0.93, bottom=0.10, hspace=0.14, wspace=-0.15)
+        # that subplots_adjust alone can't eliminate without going negative.
+        # With fewer columns the axes are wider, so less negative wspace is needed.
+        wspace = {1: 0.10, 2: 0.12, 3: -0.08, 4: -0.12}.get(ncols, -0.15)
+        plt.subplots_adjust(left=0.02, right=0.98, top=0.93, bottom=0.10, hspace=0.14, wspace=wspace)
 
         outfile = f'{out_dir}/p{varname}.{filename}_{strbasin}.pdf'
         plt.savefig(outfile, bbox_inches='tight', dpi=150)
