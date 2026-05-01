@@ -226,14 +226,16 @@ def main():
             lat_major     = np.arange(np.ceil(map_extent[2] / 20) * 20, map_extent[3] + 0.1, 20)
             lon_minor_360 = np.arange(np.ceil(map_extent[0] / 10) * 10, map_extent[1] + 0.1, 10)
             lat_minor     = np.arange(np.ceil(map_extent[2] / 10) * 10, map_extent[3] + 0.1, 10)
+            lon_label_360 = np.arange(np.ceil(map_extent[0] / 60) * 60, map_extent[1] + 0.1, 60)
             lon_major = np.where(lon_major_360 > 180, lon_major_360 - 360, lon_major_360)
             lon_minor = np.where(lon_minor_360 > 180, lon_minor_360 - 360, lon_minor_360)
+            lon_label = np.where(lon_label_360 > 180, lon_label_360 - 360, lon_label_360)
 
             gl = ax.gridlines(crs=proj, draw_labels=False,
                               linewidth=0.5, color='gray', alpha=0.6, linestyle='--',
                               xlocs=lon_major, ylocs=lat_major, zorder=3)
 
-            ax.set_xticks(lon_major, crs=proj)
+            ax.set_xticks(lon_label, crs=proj)
             ax.set_yticks(lat_major, crs=proj)
             ax.xaxis.set_major_formatter(LongitudeFormatter())
             ax.yaxis.set_major_formatter(LatitudeFormatter())
@@ -257,18 +259,41 @@ def main():
         for zz in range(nfiles, nrows * ncols):
             fig.add_subplot(nrows, ncols, zz + 1).set_visible(False)
 
-        # Shared colorbar (mirrors NCL gsnPanelLabelBar)
-        cbar_ax = fig.add_axes([0.15, 0.04, 0.70, 0.025])
+        # wspace is negative to pull panels together — cartopy panels have inherent padding
+        # that subplots_adjust alone can't eliminate without going negative.
+        # With fewer columns the axes are wider, so less negative wspace is needed.
+        wspace = {1: 0.10, 2: 0.00, 3: -0.08, 4: -0.12}.get(ncols, -0.15)
+
+        fig.subplots_adjust(
+            left=0.02,
+            right=0.98,
+            top=0.93,
+            bottom=0.14,
+            hspace=0.25,   # space between rows
+            wspace=wspace
+        )
+
+        fig.canvas.draw()
+
+        panel_left   = min(ax.get_position().x0 for ax in axes)
+        panel_right  = max(ax.get_position().x1 for ax in axes)
+        panel_bottom = min(ax.get_position().y0 for ax in axes)
+
+        cbar_height = 0.025
+        cbar_tuner = 0.95  # lower puts cbar closer to panels, higher goes away
+        cbar_gap = max(cbar_tuner*0.015, cbar_tuner*0.30 / fig_h)
+
+        cbar_ax = fig.add_axes([
+            panel_left,
+            panel_bottom - cbar_gap - cbar_height,
+            panel_right - panel_left,
+            cbar_height
+        ])
+
         sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
         sm.set_array([])
         cbar = fig.colorbar(sm, cax=cbar_ax, orientation='horizontal')
         cbar.ax.tick_params(labelsize=9)
-
-        # wspace is negative to pull panels together — cartopy panels have inherent padding
-        # that subplots_adjust alone can't eliminate without going negative.
-        # With fewer columns the axes are wider, so less negative wspace is needed.
-        wspace = {1: 0.10, 2: 0.12, 3: -0.08, 4: -0.12}.get(ncols, -0.15)
-        plt.subplots_adjust(left=0.02, right=0.98, top=0.93, bottom=0.10, hspace=0.14, wspace=wspace)
 
         outfile = f'{out_dir}/p{varname}.{filename}_{strbasin}.pdf'
         plt.savefig(outfile, bbox_inches='tight', dpi=150)
