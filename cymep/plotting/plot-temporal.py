@@ -102,10 +102,10 @@ def main():
 
         if 'pm_' in linepltvars[mm]:
             print(f'Seasonal plots!  [{linepltvarsstr[mm]}]')
-            linefilelabstr = 'peasonal'    # 'p' prefix avoids overwriting NCL's seasonal_ files
+            linefilelabstr = 'seasonal'
         else:
             print(f'Interannual plots!  [{linepltvarsstr[mm]}]')
-            linefilelabstr = 'pinterann'   # 'p' prefix avoids overwriting NCL's interann_ files
+            linefilelabstr = 'interann'
 
         plot_dims = toPlot.shape
         if plot_dims[1] <= 1:

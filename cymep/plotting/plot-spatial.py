@@ -71,7 +71,7 @@ def main():
 
     # ---- Output path ----
 
-    out_dir = './fig/pspatial/'
+    out_dir = './fig/spatial/'
     os.makedirs(out_dir, exist_ok=True)
 
     filename = os.path.splitext(os.path.basename(fullfilename))[0]
@@ -89,12 +89,20 @@ def main():
             fixed_min = [0.,  900., 20., 0., 0.,  0.,  0., -20., -1.5, -5., -5.]
             fixed_max = [40., 1000., 80., 3., 10., 10., 10.,  20.,  1.5,  5.,  5.]
 
-    # ---- Map extent ----
+    # ---- Map extent and projection ----
+
+    geo_crs = ccrs.PlateCarree()   # standard geographic CRS for data/ticks
 
     if strbasin == 'NATL':
         map_extent = [260., 350., 5., 55.]   # [lonmin, lonmax, latmin, latmax]
+        proj = geo_crs
     else:
         map_extent = [0., 360., -60., 60.]
+        # GLOB/NHEMI: center at antimeridian so 0° is the left edge
+        if strbasin in ('GLOB', 'NHEMI'):
+            proj = ccrs.PlateCarree(central_longitude=180)
+        else:
+            proj = geo_crs
 
     # ---- Variable definitions (mirrors NCL spapltvarsstr / spapltvars) ----
 
@@ -151,6 +159,12 @@ def main():
                 vmin = fixed_min[bb]
                 vmax = fixed_max[bb]
                 norm = mcolors.Normalize(vmin=vmin, vmax=vmax)
+            elif varname == 'minpres':
+                # Pressure spans ~900-1020 hPa; starting from 0 wastes the whole color range
+                vmin = np.floor(np.nanmin(toPlot) / 10) * 10
+                vmax = min(1020., np.ceil(np.nanmax(toPlot) / 10) * 10)
+                boundaries = np.linspace(vmin, vmax, nlevels + 1)
+                norm = mcolors.BoundaryNorm(boundaries, ncolors=nlevels)
             else:
                 vmax = np.nanmax(toPlot)
                 if vmax == 0 or np.isnan(vmax):
@@ -195,15 +209,13 @@ def main():
 
         fig = plt.figure(figsize=(fig_w, fig_h))
 
-        proj = ccrs.PlateCarree()
-
         axes = []
         for zz in range(nfiles):
             row = zz // ncols
             col = zz % ncols
             ax  = fig.add_subplot(nrows, ncols, zz + 1, projection=proj)
 
-            ax.set_extent(map_extent, crs=proj)
+            ax.set_extent(map_extent, crs=geo_crs)
             ax.add_feature(cfeature.LAND, facecolor='#b0b0b0', zorder=0)  # gray land drawn first, under data
 
             # zorder stack: land(0) → data(1) → coastlines(2) → gridlines(3) → label(4)
@@ -211,7 +223,7 @@ def main():
             im = ax.pcolormesh(lon, lat, toPlot[zz, :, :],
                                norm=norm,
                                cmap=cmap,
-                               transform=proj,
+                               transform=geo_crs,
                                shading='auto',
                                zorder=1,
                                edgecolors='none', linewidth=0)
@@ -231,20 +243,20 @@ def main():
             lon_minor = np.where(lon_minor_360 > 180, lon_minor_360 - 360, lon_minor_360)
             lon_label = np.where(lon_label_360 > 180, lon_label_360 - 360, lon_label_360)
 
-            gl = ax.gridlines(crs=proj, draw_labels=False,
+            gl = ax.gridlines(crs=geo_crs, draw_labels=False,
                               linewidth=0.5, color='gray', alpha=0.6, linestyle='--',
                               xlocs=lon_major, ylocs=lat_major, zorder=3)
 
-            ax.set_xticks(lon_label, crs=proj)
-            ax.set_yticks(lat_major, crs=proj)
+            ax.set_xticks(lon_label, crs=geo_crs)
+            ax.set_yticks(lat_major, crs=geo_crs)
             ax.xaxis.set_major_formatter(LongitudeFormatter())
             ax.yaxis.set_major_formatter(LatitudeFormatter())
             ax.tick_params(axis='both', which='major', length=4, width=0.8,
                            labelsize=7, top=True, right=True,
                            labeltop=False, labelright=False,
                            labelbottom=True, labelleft=True)
-            ax.set_xticks(lon_minor, minor=True, crs=proj)
-            ax.set_yticks(lat_minor, minor=True, crs=proj)
+            ax.set_xticks(lon_minor, minor=True, crs=geo_crs)
+            ax.set_yticks(lat_minor, minor=True, crs=geo_crs)
             ax.tick_params(axis='both', which='minor', length=2, width=0.5,
                            top=True, right=True)
 
@@ -295,7 +307,7 @@ def main():
         cbar = fig.colorbar(sm, cax=cbar_ax, orientation='horizontal')
         cbar.ax.tick_params(labelsize=9)
 
-        outfile = f'{out_dir}/p{varname}.{filename}_{strbasin}.pdf'
+        outfile = f'{out_dir}/{varname}.{filename}_{strbasin}.pdf'
         plt.savefig(outfile, bbox_inches='tight', dpi=150)
         plt.close()
 

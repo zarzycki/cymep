@@ -339,7 +339,7 @@ def main():
     # ---- Save ----
     out_dir = './fig/taylor/'
     os.makedirs(out_dir, exist_ok=True)
-    outfile = os.path.join(out_dir, f'taylor_{filename}_{strbasin}.py.pdf')
+    outfile = os.path.join(out_dir, f'taylor_{filename}_{strbasin}.pdf')
 
     plt.tight_layout()
     plt.savefig(outfile, bbox_inches='tight', dpi=150)

@@ -442,7 +442,7 @@ def main():
 
     out_dir = './fig/tables/'
     os.makedirs(out_dir, exist_ok=True)
-    outfile = os.path.join(out_dir, f'pable.{csvfilename}.pdf')  # 'pable' prefix distinguishes from NCL's 'table.' output
+    outfile = os.path.join(out_dir, f'table.{csvfilename}.pdf')
     plt.savefig(outfile, bbox_inches='tight', dpi=150)
     plt.close()
 
