@@ -51,7 +51,8 @@ def main():
     parser.add_argument('ncfile',
                         help='Path to CyMeP output NetCDF file')
     parser.add_argument('--csvtype', required=True,
-                        choices=['spatial_corr', 'climo_mean', 'storm_mean', 'temporal_scorr'],
+                        choices=['spatial_corr', 'climo_mean', 'storm_mean', 'temporal_scorr',
+                                 'spatial_nrmse', 'spatial_sdrat'],
                         help='Type of CSV metrics table to plot')
     parser.add_argument('--plot-bias', action='store_true', default=False,
                         help='Color cells as bias (blue-red) instead of performance (red-green)')
@@ -101,6 +102,10 @@ def main():
         plot_title = f'{DESCSTR} storm mean bias ({BASINTXT})'
     elif args.csvtype == 'temporal_scorr':
         plot_title = f'{DESCSTR} seasonal correlation ({BASINTXT})'
+    elif args.csvtype == 'spatial_nrmse':
+        plot_title = f'{DESCSTR} spatial NRMSE ({BASINTXT})'
+    elif args.csvtype == 'spatial_sdrat':
+        plot_title = f'{DESCSTR} spatial std dev ratio ({BASINTXT})'
     else:
         plot_title = ''
     plot_title = plot_title.replace('_', ' ')
@@ -156,7 +161,7 @@ def main():
     # ---- Load colormap ----
 
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    if args.plot_bias:
+    if args.plot_bias or args.csvtype == 'spatial_sdrat':
         cmap_name = 'seaborn_bluetored2.rgb'
     elif args.invert_stoplight:
         cmap_name = 'excel_greentored.rgb'
@@ -176,6 +181,11 @@ def main():
                 if r > 1 or g > 1 or b > 1:
                     r, g, b = r / 255.0, g / 255.0, b / 255.0
                 colors.append((r, g, b))
+
+    # Strip NCL background/foreground entries (white then black) if present
+    if len(colors) >= 2 and colors[0] == (1.0, 1.0, 1.0) and colors[1] == (0.0, 0.0, 0.0):
+        colors = colors[2:]
+
     ncolors = len(colors)
 
     # ---- Check for stdev file (sigma-normalized coloring for bias tables) ----
@@ -197,7 +207,12 @@ def main():
         # Reference row always gets grey
         FillColors[0][ii] = (0.75, 0.75, 0.75)   # grey75
 
-        if args.plot_bias:
+        if args.csvtype == 'spatial_sdrat':
+            # Symmetric around 1.0: deviation in either direction is equally bad
+            maxDev = np.nanmax(np.abs(var[ii, STCOLORVAR:] - 1.0))
+            minVal = 1.0 - maxDev
+            maxVal = 1.0 + maxDev
+        elif args.plot_bias:
             if colorstd:
                 minVal = -float(howmanystd)
                 maxVal =  float(howmanystd)
@@ -245,7 +260,13 @@ def main():
     header = []
     for h in raw_headers:
         h = h.strip()
-        if h.startswith('rmsexy'):
+        if h.startswith('nrmsexy'):
+            sub = 'xy' + (',' + h[len('nrmsexy'):].lstrip('_') if h[len('nrmsexy'):].lstrip('_') else '')
+            label = rf'$\hat{{E}}_{{\mathrm{{{sub}}}}}$'
+        elif h.startswith('sdrat'):
+            sub = h[len('sdrat'):].lstrip('_')
+            label = rf'$\sigma_{{\mathrm{{{sub}}}}}$' if sub else r'$\sigma_r$'
+        elif h.startswith('rmsexy'):
             sub = 'xy' + (',' + h[len('rmsexy'):].lstrip('_') if h[len('rmsexy'):].lstrip('_') else '')
             label = rf'$\mathrm{{rmse}}_{{\mathrm{{{sub}}}}}$'
         elif h.startswith('rxy'):
@@ -394,7 +415,7 @@ def main():
     bar_x0    = labelbarwidthdelta / 2.0
     bar_w     = total_width - labelbarwidthdelta
     box_w     = bar_w / nboxes
-    bar_colors = colors[::-1] if args.invert_stoplight else colors
+    bar_colors = colors
 
     for k, c in enumerate(bar_colors):
         ax.add_patch(mpatches.Rectangle(
@@ -412,7 +433,18 @@ def main():
 
     lbl_fs = max(6, data_fs * 0.85)
 
-    if args.plot_bias:
+    if args.csvtype == 'spatial_sdrat':
+        labelstrings = ['Low Variability', 'High Variability', 'σ = 1']
+        ax.text(bar_x0, top_of_label_text, labelstrings[0],
+                fontsize=lbl_fs, ha='left', va='center',
+                transform=ax.transAxes, clip_on=False)
+        ax.text(total_width - labelbarwidthdelta / 2.0, top_of_label_text, labelstrings[1],
+                fontsize=lbl_fs, ha='right', va='center',
+                transform=ax.transAxes, clip_on=False)
+        ax.text(total_width / 2, top_of_label_text, labelstrings[2],
+                fontsize=lbl_fs, ha='center', va='center',
+                transform=ax.transAxes, clip_on=False)
+    elif args.plot_bias:
         if colorstd:
             labelstrings = [f'−{howmanystd}σ', f'+{howmanystd}σ', '0']
         else:
@@ -427,7 +459,9 @@ def main():
                 fontsize=lbl_fs, ha='center', va='center',
                 transform=ax.transAxes, clip_on=False)
     else:
-        if args.relative_performance:
+        if args.invert_stoplight:
+            labelstrings = ['Better Performance', 'Worse Performance']
+        elif args.relative_performance:
             labelstrings = ['Worse Performance', 'Better Performance']
         else:
             labelstrings = ['Low', 'High']

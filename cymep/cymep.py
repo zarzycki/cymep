@@ -534,13 +534,7 @@ for ii in range(len(files)):
 
 ### Back to the main program
 
-#for zz in pydict:
-#  print(pydict[zz])
-#  pydict[zz] = np.where( pydict[zz] <= 0.     , 0. , pydict[zz] )
-#  pydict[zz] = np.where( np.isnan(pydict[zz]) , 0. , pydict[zz] )
-#  pydict[zz] = np.where( np.isinf(pydict[zz]) , 0. , pydict[zz] )
-
-# Spatial correlation calculations
+# ----- Spatial correlation calculations
 
 ## Initialize dict
 rxydict={}
@@ -556,7 +550,40 @@ for ii in range(nfiles):
   rxydict['rxy_ace'][ii]   = pattern_cor(msdict['fullace'][0,:,:],  msdict['fullace'][ii,:,:],  denslatwgt, 0)
   rxydict['rxy_pace'][ii]  = pattern_cor(msdict['fullpace'][0,:,:], msdict['fullpace'][ii,:,:], denslatwgt, 0)
 
-# Temporal correlation calculations
+# ----- Spatial NRMSE calculations (cheat by getting these from taylor_stats, return [7])
+
+## Initialize dict
+nrmsedict={}
+nrmsevars = ["nrmsexy_track","nrmsexy_gen","nrmsexy_u10","nrmsexy_slp","nrmsexy_ace","nrmsexy_pace"]
+for x in nrmsevars:
+  nrmsedict[x] = np.empty(nfiles)
+
+for ii in range(nfiles):
+  nrmsedict['nrmsexy_track'][ii] = taylor_stats(msdict['fulldens'][ii,:,:], msdict['fulldens'][0,:,:], denslatwgt, 0)[7]
+  nrmsedict['nrmsexy_gen'][ii]   = taylor_stats(msdict['fullgen'][ii,:,:],  msdict['fullgen'][0,:,:],  denslatwgt, 0)[7]
+  nrmsedict['nrmsexy_u10'][ii]   = taylor_stats(msdict['fullwind'][ii,:,:], msdict['fullwind'][0,:,:], denslatwgt, 0)[7]
+  nrmsedict['nrmsexy_slp'][ii]   = taylor_stats(msdict['fullpres'][ii,:,:], msdict['fullpres'][0,:,:], denslatwgt, 0)[7]
+  nrmsedict['nrmsexy_ace'][ii]   = taylor_stats(msdict['fullace'][ii,:,:],  msdict['fullace'][0,:,:],  denslatwgt, 0)[7]
+  nrmsedict['nrmsexy_pace'][ii]  = taylor_stats(msdict['fullpace'][ii,:,:], msdict['fullpace'][0,:,:], denslatwgt, 0)[7]
+
+# ----- Spatial std dev ratio calculations (sigma_model / sigma_obs)  (cheat by getting these from taylor_stats, return [1])
+
+## Initialize dict
+sdratdict={}
+sdratvars = ["sdrat_track","sdrat_gen","sdrat_u10","sdrat_slp","sdrat_ace","sdrat_pace"]
+for x in sdratvars:
+  sdratdict[x] = np.empty(nfiles)
+
+for ii in range(nfiles):
+  sdratdict['sdrat_track'][ii] = taylor_stats(msdict['fulldens'][ii,:,:], msdict['fulldens'][0,:,:], denslatwgt, 0)[1]
+  sdratdict['sdrat_gen'][ii]   = taylor_stats(msdict['fullgen'][ii,:,:],  msdict['fullgen'][0,:,:],  denslatwgt, 0)[1]
+  sdratdict['sdrat_u10'][ii]   = taylor_stats(msdict['fullwind'][ii,:,:], msdict['fullwind'][0,:,:], denslatwgt, 0)[1]
+  sdratdict['sdrat_slp'][ii]   = taylor_stats(msdict['fullpres'][ii,:,:], msdict['fullpres'][0,:,:], denslatwgt, 0)[1]
+  sdratdict['sdrat_ace'][ii]   = taylor_stats(msdict['fullace'][ii,:,:],  msdict['fullace'][0,:,:],  denslatwgt, 0)[1]
+  sdratdict['sdrat_pace'][ii]  = taylor_stats(msdict['fullpace'][ii,:,:], msdict['fullpace'][0,:,:], denslatwgt, 0)[1]
+
+# ----- Temporal correlation calculations
+
 # Spearman Rank
 rsdict = {}
 for jj in pmdict:
@@ -583,6 +610,8 @@ for jj in pmdict:
     nas = np.logical_or(np.isnan(tmpx), np.isnan(tmpy))
     rpdict[repStr][ii], tmp =sps.pearsonr(tmpx[~nas],tmpy[~nas])
 
+# ----- Taylor statistics
+
 # Generate Taylor dict
 taydict={}
 tayvars = ["tay_pc","tay_ratio","tay_bias","tay_xmean","tay_ymean","tay_xvar","tay_yvar","tay_rmse"]
@@ -603,6 +632,8 @@ for ii in range(nfiles):
 
 # Write out primary stats files
 write_single_csv(rxydict,strs,'./csv-files/','metrics_'+os.path.splitext(csvfilename)[0]+'_'+strbasin+'_spatial_corr.csv')
+write_single_csv(nrmsedict,strs,'./csv-files/','metrics_'+os.path.splitext(csvfilename)[0]+'_'+strbasin+'_spatial_nrmse.csv')
+write_single_csv(sdratdict,strs,'./csv-files/','metrics_'+os.path.splitext(csvfilename)[0]+'_'+strbasin+'_spatial_sdrat.csv')
 write_single_csv(rsdict,strs,'./csv-files/','metrics_'+os.path.splitext(csvfilename)[0]+'_'+strbasin+'_temporal_scorr.csv')
 write_single_csv(rpdict,strs,'./csv-files/','metrics_'+os.path.splitext(csvfilename)[0]+'_'+strbasin+'_temporal_pcorr.csv')
 write_single_csv(aydict,strs,'./csv-files/','metrics_'+os.path.splitext(csvfilename)[0]+'_'+strbasin+'_climo_mean.csv')
