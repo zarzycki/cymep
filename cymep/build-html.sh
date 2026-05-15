@@ -35,10 +35,10 @@ find fig/ -name "*$config_string*.pdf" | while read pdf_file; do
     base_name=$(basename "$pdf_file" .pdf)
 
     # Create full-size PNG
-    magick -density $DPI "$pdf_file" -trim +repage "${output_dir}/${dir_name}/${base_name}.png"
+    magick -density $DPI "$pdf_file" -background white -flatten -fuzz 5% -trim +repage "${output_dir}/${dir_name}/${base_name}.png"
 
     # Create thumbnail version
-    magick -density $DPI "$pdf_file" -trim +repage -resize 300x300 "${output_dir}/${dir_name}/${base_name}_thumb.png"
+    magick -density $DPI "$pdf_file" -background white -flatten -fuzz 5% -trim +repage -resize 300x300 "${output_dir}/${dir_name}/${base_name}_thumb.png"
 done
 
 # Create base HTML file with header
