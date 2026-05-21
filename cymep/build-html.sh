@@ -176,8 +176,16 @@ echo "</div></div>" >> "${output_dir}/index.html"
 # Close HTML file
 echo "</body></html>" >> "${output_dir}/index.html"
 
-# Create zip file
-zip -r "${output_dir}.zip" "${output_dir}"
+# Create zip/archive file
+if command -v zip &>/dev/null; then
+    zip -r "${output_dir}.zip" "${output_dir}"
+    echo "Zip file created as ${output_dir}.zip"
+elif command -v tar &>/dev/null; then
+    tar -czf "${output_dir}.tar.gz" "${output_dir}"
+    echo "Archive created as ${output_dir}.tar.gz (zip not available)"
+else
+    echo "Warning: neither 'zip' nor 'tar' found, skipping archive creation."
+fi
 
 # Done!
 echo "Gallery created in ${output_dir}/"
